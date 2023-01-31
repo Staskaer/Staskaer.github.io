@@ -1,0 +1,832 @@
+
+
+<!DOCTYPE html>
+<html lang="en" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="76x76" href="/imgs/theme_pic/staskaer.png">
+  <link rel="icon" href="/imgs/theme_pic/staskaer.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="Staskaer">
+  <meta name="keywords" content="">
+  
+    <meta name="description" content="内核线程">
+<meta property="og:type" content="article">
+<meta property="og:title" content="从ucore来总结操作系统(4)----内核线程">
+<meta property="og:url" content="http://example.com/2023/01/20/%E4%BB%8Eucore%E6%9D%A5%E6%80%BB%E7%BB%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-4/index.html">
+<meta property="og:site_name" content="Staskaer">
+<meta property="og:description" content="内核线程">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="http://example.com/imgs/post_index_img/ucore4.jpg">
+<meta property="article:published_time" content="2023-01-20T14:14:16.000Z">
+<meta property="article:modified_time" content="2023-01-22T06:13:05.957Z">
+<meta property="article:author" content="Staskaer">
+<meta property="article:tag" content="ucore操作系统">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="http://example.com/imgs/post_index_img/ucore4.jpg">
+  
+  
+  
+  <title>从ucore来总结操作系统(4)----内核线程 - Staskaer</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_hj8rtnfg7um.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_lbnruvf0jn.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"example.com","root":"/","version":"1.9.2","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":true,"follow_dnt":false,"baidu":null,"google":null,"gtag":null,"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":"xH8NDrh9u4SQrUpQOd0lICnX-MdYXbMMI","app_key":"jl3JjPS4jsosZG29Zv24Y7LE","server_url":null,"path":"window.location.pathname","ignore_local":false}},"search_path":"/local-search.xml"};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+  
+
+
+
+  
+<meta name="generator" content="Hexo 6.2.0"><style>mjx-container[jax="SVG"] {
+  direction: ltr;
+}
+
+mjx-container[jax="SVG"] > svg {
+  overflow: visible;
+}
+
+mjx-container[jax="SVG"][display="true"] {
+  display: block;
+  text-align: center;
+  margin: 1em 0;
+}
+
+mjx-container[jax="SVG"][justify="left"] {
+  text-align: left;
+}
+
+mjx-container[jax="SVG"][justify="right"] {
+  text-align: right;
+}
+
+g[data-mml-node="merror"] > g {
+  fill: red;
+  stroke: red;
+}
+
+g[data-mml-node="merror"] > rect[data-background] {
+  fill: yellow;
+  stroke: none;
+}
+
+g[data-mml-node="mtable"] > line[data-line] {
+  stroke-width: 70px;
+  fill: none;
+}
+
+g[data-mml-node="mtable"] > rect[data-frame] {
+  stroke-width: 70px;
+  fill: none;
+}
+
+g[data-mml-node="mtable"] > .mjx-dashed {
+  stroke-dasharray: 140;
+}
+
+g[data-mml-node="mtable"] > .mjx-dotted {
+  stroke-linecap: round;
+  stroke-dasharray: 0,140;
+}
+
+g[data-mml-node="mtable"] > svg {
+  overflow: visible;
+}
+
+[jax="SVG"] mjx-tool {
+  display: inline-block;
+  position: relative;
+  width: 0;
+  height: 0;
+}
+
+[jax="SVG"] mjx-tool > mjx-tip {
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+mjx-tool > mjx-tip {
+  display: inline-block;
+  padding: .2em;
+  border: 1px solid #888;
+  font-size: 70%;
+  background-color: #F8F8F8;
+  color: black;
+  box-shadow: 2px 2px 5px #AAAAAA;
+}
+
+g[data-mml-node="maction"][data-toggle] {
+  cursor: pointer;
+}
+
+mjx-status {
+  display: block;
+  position: fixed;
+  left: 1em;
+  bottom: 1em;
+  min-width: 25%;
+  padding: .2em .4em;
+  border: 1px solid #888;
+  font-size: 90%;
+  background-color: #F8F8F8;
+  color: black;
+}
+
+foreignObject[data-mjx-xml] {
+  font-family: initial;
+  line-height: normal;
+  overflow: visible;
+}
+
+.MathJax path {
+  stroke-width: 3;
+}
+
+mjx-container[display="true"] {
+  overflow: auto hidden;
+}
+
+mjx-container[display="true"] + br {
+  display: none;
+}
+</style></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>Staskaer</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/">
+                <i class="iconfont icon-home-fill"></i>
+                Home
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/">
+                <i class="iconfont icon-archive-fill"></i>
+                Archives
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/">
+                <i class="iconfont icon-category-fill"></i>
+                Categories
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/">
+                <i class="iconfont icon-tags-fill"></i>
+                Tags
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/">
+                <i class="iconfont icon-user-fill"></i>
+                About
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/links/">
+                <i class="iconfont icon-link-fill"></i>
+                Links
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              &nbsp;<i class="iconfont icon-search"></i>&nbsp;
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">&nbsp;<i
+                class="iconfont icon-dark" id="color-toggle-icon"></i>&nbsp;</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/imgs/post_index_img/ucore4.jpg') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="从ucore来总结操作系统(4)----内核线程"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2023-01-20 22:14" pubdate>
+          January 20, 2023 pm
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          15k words
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          63 mins
+        
+      </span>
+    
+
+    
+    
+      
+        <span id="leancloud-page-views-container" class="post-meta" style="display: none">
+          <i class="iconfont icon-eye" aria-hidden="true"></i>
+          <span id="leancloud-page-views"></span> views
+        </span>
+        
+      
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <!-- SEO header -->
+            <h1 style="display: none">从ucore来总结操作系统(4)----内核线程</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <h2 id="内核线程">内核线程</h2>
+<span id="more"></span>
+<p>这篇是lab4的内容，主要就是实现一下创建内核线程，摆脱单线程运行。</p>
+<h3 id="x00-环境准备">0X00 环境准备</h3>
+<p>本lab基于之前所有实现的lab。</p>
+<p>lab2和lab3完成了对内存的虚拟化，但整个控制流还是一条线串行执行。lab4将在此基础上进行CPU的虚拟化，即让ucore实现分时共享CPU，<strong>实现多条控制流能够并发执行</strong>。从某种程度上，我们可以把控制流看作是一个内核线程。本次实验将首先接触的是内核线程的管理。内核线程是一种特殊的进程，内核线程与用户进程的区别有两个：内核线程只运行在内核态而用户进程会在在用户态和内核态交替运行；所有内核线程直接使用共同的ucore内核内存空间，不需为每个内核线程维护单独的内存空间而用户进程需要维护各自的用户内存空间。从内存空间占用情况这个角度上看，我们可以把线程看作是一种共享内存空间的轻量级进程。</p>
+<p>为了实现内核线程，需要设计管理线程的数据结构，即<strong>进程控制块</strong>（在这里也可叫做线程控制块）。如果要让内核线程运行，我们首先要创建内核线程对应的进程控制块，还需把这些进程控制块通过链表连在一起，便于随时进行插入，删除和查找操作等进程管理事务。<strong>这个链表就是进程控制块链表</strong>。然后在通过<strong>调度器（scheduler）来让不同的内核线程在不同的时间段占用CPU执行</strong>，实现对CPU的分时共享。这就是整个lab4做的工作。</p>
+<p>由于进程(此处是线程)是通过进程描述块来描述的，所以切换进程的运行本质上也就是更换进程描述块。下面是进程描述块的结构:</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><code class="hljs c"><br><span class="hljs-class"><span class="hljs-keyword">struct</span> <span class="hljs-title">proc_struct</span></span><br><span class="hljs-class">{</span><br>    <span class="hljs-class"><span class="hljs-keyword">enum</span> <span class="hljs-title">proc_state</span> <span class="hljs-title">state</span>;</span>        <span class="hljs-comment">// 当前进程的状态</span><br>    <span class="hljs-type">int</span> pid;                      <span class="hljs-comment">// 进程ID</span><br>    <span class="hljs-type">int</span> runs;                     <span class="hljs-comment">// 当前进程被调度的次数</span><br>    <span class="hljs-type">uintptr_t</span> kstack;             <span class="hljs-comment">// 内核栈</span><br>    <span class="hljs-keyword">volatile</span> <span class="hljs-type">bool</span> need_resched;   <span class="hljs-comment">// 是否需要被调度</span><br>    <span class="hljs-class"><span class="hljs-keyword">struct</span> <span class="hljs-title">proc_struct</span> *<span class="hljs-title">parent</span>;</span>   <span class="hljs-comment">// 父进程ID</span><br>    <span class="hljs-class"><span class="hljs-keyword">struct</span> <span class="hljs-title">mm_struct</span> *<span class="hljs-title">mm</span>;</span>         <span class="hljs-comment">// 当前进程所管理的虚拟内存页，包括其所属的页目录项PDT</span><br>    <span class="hljs-class"><span class="hljs-keyword">struct</span> <span class="hljs-title">context</span> <span class="hljs-title">context</span>;</span>       <span class="hljs-comment">// 保存的上下文</span><br>    <span class="hljs-class"><span class="hljs-keyword">struct</span> <span class="hljs-title">trapframe</span> *<span class="hljs-title">tf</span>;</span>         <span class="hljs-comment">// 中断所保存的上下文</span><br>    <span class="hljs-type">uintptr_t</span> cr3;                <span class="hljs-comment">// 页目录表的地址</span><br>    <span class="hljs-type">uint32_t</span> flags;               <span class="hljs-comment">// 当前进程的相关标志</span><br>    <span class="hljs-type">char</span> name[PROC_NAME_LEN + <span class="hljs-number">1</span>]; <span class="hljs-comment">// 进程名称（可执行文件名）</span><br>    <span class="hljs-type">list_entry_t</span> list_link;       <span class="hljs-comment">// 用于连接list</span><br>    <span class="hljs-type">list_entry_t</span> hash_link;       <span class="hljs-comment">// 用于连接hash list</span><br>};<br><br></code></pre></td></tr></table></figure>
+<div class="note note-info">
+            <p><strong>下面内容来自指导书，解释更加详细</strong></p><ul><li>mm：内存管理的信息，包括内存映射列表、页表指针等。mm成员变量在lab3中用于虚存管理。<strong>但在实际OS中，内核线程常驻内存，不需要考虑swappage问题，在lab5中涉及到了用户进程，才考虑进程用户内存空间的swappage问题，mm才会发挥作用</strong>。所以在lab4中mm对于内核线程就没有用了，这样内核线程的proc_struct的成员变量*mm=0是合理的。mm里有个很重要的项pgdir，记录的是该进程使用的一级页表的物理地址。由于*mm=NULL，所以在proc_struct数据结构中需要有一个代替pgdir项来记录页表起始地址，这就是proc_struct数据结构中的cr3成员变量。</li><li>state：进程所处的状态。</li><li>parent：用户进程的父进程（创建它的进程）。在所有进程中，只有一个进程没有父进程，就是内核创建的第一个内核线程idleproc。内核根据这个父子关系建立一个树形结构，用于维护一些特殊的操作，例如确定某个进程是否可以对另外一个进程进行某种操作等等。</li><li>context：进程的上下文，用于进程切换（参见switch.S）。在uCore中，所有的进程在内核中也是相对独立的（例如独立的内核堆栈以及上下文等等）。使用context保存寄存器的目的就在于在内核态中能够进行上下文之间的切换。实际利用context进行上下文切换的函数是在kern/process/switch.S中定义switch_to。</li><li>tf：中断帧的指针，总是指向内核栈的某个位置：当进程从用户空间跳到内核空间时，中断帧记录了进程在被中断前的状态。当内核需要跳回用户空间时，需要调整中断帧以恢复让进程继续执行的各寄存器值。除此之外，uCore内核允许嵌套中断。因此为了保证嵌套中断发生时tf总是能够指向当前的trapframe，uCore 在内核栈上维护了 tf的链，可以参考trap.c::trap函数做进一步的了解。</li><li>cr3: cr3 保存页表的物理地址，目的就是进程切换的时候方便直接使用lcr3实现页表切换，避免每次都根据 mm 来计算cr3。mm数据结构是用来实现用户空间的虚存管理的，但是内核线程没有用户空间，它执行的只是内核中的一小段代码（通常是一小段函数），所以它没有mm结构，也就是NULL。当某个进程是一个普通用户态进程的时候，PCB 中的 cr3就是 mm 中页表（pgdir）的物理地址；而当它是内核线程的时候，cr3等于boot_cr3。而boot_cr3指向了uCore启动时建立好的内核虚拟空间的页目录表首地址。</li><li>kstack:每个线程都有一个内核栈，并且位于内核地址空间的不同位置。对于内核线程，该栈就是运行时的程序使用的栈；而对于普通进程，该栈是发生特权级改变的时候使保存被打断的硬件信息用的栈。uCore在创建进程时分配了2个连续的物理页（参见memlayout.h中KSTACKSIZE的定义）作为内核栈的空间。这个栈很小，所以内核中的代码应该尽可能的紧凑，并且避免在栈上分配大的数据结构，以免栈溢出，导致系统崩溃。kstack记录了分配给该进程/线程的内核栈的位置。主要作用有以下几点。首先，当内核准备从一个进程切换到另一个的时候，需要根据kstack的值正确的设置好 tss （可以回顾一下在实验一中讲述的 tss在中断处理过程中的作用），以便在进程切换以后再发生中断时能够使用正确的栈。其次，内核栈位于内核地址空间，并且是不共享的（每个线程都拥有自己的内核栈），因此不受到mm 的管理，当进程退出的时候，内核能够根据 kstack的值快速定位栈的位置并进行回收。uCore 的这种内核栈的设计借鉴的是 linux的方法（但由于内存管理实现的差异，它实现的远不如 linux的灵活），它使得每个线程的内核栈在不同的位置，这样从某种程度上方便调试，但同时也使得内核对栈溢出变得十分不敏感，因为一旦发生溢出，它极可能污染内核中其它的数据使得内核崩溃。如果能够通过页表，将所有进程的内核栈映射到固定的地址上去，能够避免这种问题，但又会使得进程切换过程中对栈的修改变得相当繁琐。感兴趣的同学可以参考linux kernel 的代码对此进行尝试。</li></ul><p>为了管理系统中所有的进程控制块，uCore维护了如下全局变量（位于kern/process/proc.c）：</p><ul><li>static struct proc*current：当前占用CPU且处于“运行”状态进程控制块指针。通常这个变量是只读的，只有在进程切换的时候才进行修改，并且整个切换和修改过程需要保证操作的原子性，目前至少需要屏蔽中断。可以参考switch_to 的实现。</li><li>static struct proc*initproc：本实验中，指向一个内核线程。本实验以后，此指针将指向第一个用户态进程。</li><li>static list_entry_thash_list[HASH_LIST_SIZE]：所有进程控制块的哈希表，proc_struct中的成员变量hash_link将基于pid链接入这个哈希表中。</li><li>list_entry_tproc_list：所有进程控制块的双向线性列表，proc_struct中的成员变量list_link将链接入这个链表中。</li></ul>
+          </div>
+<h3 id="x01-分配并初始化一个进程控制块">0X01
+分配并初始化一个进程控制块</h3>
+<p>在ucore中，当创建进程的时候，需要先申请一个进程控制块(空块，后续填入线程的内容)，在<code>init.c::kern_init</code>函数调用了<code>proc.c::proc_init</code>函数。proc_init函数启动了创建内核线程的步骤。首先当前的执行上下文（从kern_init
+启动至今）就可以看成是uCore内核（也可看做是内核进程）中的一个内核线程的上下文。为此，uCore通过给当前执行的上下文分配一个进程控制块以及对它进行相应初始化，将其打造成第0个内核线程
+--
+idleproc。即调用alloc_proc函数来通过kmalloc函数获得proc_struct结构的一块内存块-，作为第0个进程控制块。并把proc进行初步初始化（即把proc_struct中的各个成员变量清零）</p>
+<p>我们的任务就是实现这个alloc_proc函数</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br></pre></td><td class="code"><pre><code class="hljs c"><br><span class="hljs-comment">// alloc_proc - alloc a proc_struct and init all fields of proc_struct</span><br><span class="hljs-type">static</span> <span class="hljs-keyword">struct</span> proc_struct *<br><span class="hljs-title function_">alloc_proc</span><span class="hljs-params">(<span class="hljs-type">void</span>)</span><br>{<br>    <span class="hljs-class"><span class="hljs-keyword">struct</span> <span class="hljs-title">proc_struct</span> *<span class="hljs-title">proc</span> =</span> kmalloc(<span class="hljs-keyword">sizeof</span>(<span class="hljs-keyword">struct</span> proc_struct));<br>    <span class="hljs-keyword">if</span> (proc != <span class="hljs-literal">NULL</span>)<br>    {<br>        <span class="hljs-comment">// LAB4:EXERCISE1 YOUR CODE</span><br>        <span class="hljs-comment">/*</span><br><span class="hljs-comment">         * below fields in proc_struct need to be initialized</span><br><span class="hljs-comment">         *       enum proc_state state;                      // Process state</span><br><span class="hljs-comment">         *       int pid;                                    // Process ID</span><br><span class="hljs-comment">         *       int runs;                                   // the running times of Proces</span><br><span class="hljs-comment">         *       uintptr_t kstack;                           // Process kernel stack</span><br><span class="hljs-comment">         *       volatile bool need_resched;                 // bool value: need to be rescheduled to release CPU?</span><br><span class="hljs-comment">         *       struct proc_struct *parent;                 // the parent process</span><br><span class="hljs-comment">         *       struct mm_struct *mm;                       // Process's memory management field</span><br><span class="hljs-comment">         *       struct context context;                     // Switch here to run process</span><br><span class="hljs-comment">         *       struct trapframe *tf;                       // Trap frame for current interrupt</span><br><span class="hljs-comment">         *       uintptr_t cr3;                              // CR3 register: the base addr of Page Directroy Table(PDT)</span><br><span class="hljs-comment">         *       uint32_t flags;                             // Process flag</span><br><span class="hljs-comment">         *       char name[PROC_NAME_LEN + 1];               // Process name</span><br><span class="hljs-comment">         */</span><br>        proc-&gt;state = PROC_UNINIT;                           <span class="hljs-comment">// 设置进程为“初始”态</span><br>        proc-&gt;pid = <span class="hljs-number">-1</span>;                                      <span class="hljs-comment">// 设置进程pid的未初始化值</span><br>        proc-&gt;runs = <span class="hljs-number">0</span>;                                      <span class="hljs-comment">// 进程运行时间为0</span><br>        proc-&gt;kstack = <span class="hljs-number">0</span>;                                    <span class="hljs-comment">// 进程的内核栈为0，即没有内核栈</span><br>        proc-&gt;need_resched = <span class="hljs-number">0</span>;                              <span class="hljs-comment">// 1为进程占据CPU，0为进程释放CPU</span><br>        proc-&gt;parent = <span class="hljs-literal">NULL</span>;                                 <span class="hljs-comment">// 进程的父进程</span><br>        proc-&gt;mm = <span class="hljs-literal">NULL</span>;                                     <span class="hljs-comment">// lab4中mm对于内核线程就没有用</span><br>        <span class="hljs-built_in">memset</span>(&amp;(proc-&gt;context), <span class="hljs-number">0</span>, <span class="hljs-keyword">sizeof</span>(<span class="hljs-keyword">struct</span> context)); <span class="hljs-comment">// 初始化进程上下文</span><br>        proc-&gt;tf = <span class="hljs-literal">NULL</span>;                                     <span class="hljs-comment">// 中断帧的指针为NULL</span><br>        proc-&gt;cr3 = boot_cr3;                                <span class="hljs-comment">// 使用内核页目录表的基址</span><br>        proc-&gt;flags = <span class="hljs-number">0</span>;                                     <span class="hljs-comment">// 进程标志为0</span><br>        <span class="hljs-built_in">memset</span>(proc-&gt;name, <span class="hljs-number">0</span>, PROC_NAME_LEN);                <span class="hljs-comment">// 初始化进程名称</span><br>    }<br>    <span class="hljs-keyword">return</span> proc;<br>}<br><br></code></pre></td></tr></table></figure>
+<div class="note note-info">
+            <p><strong>几个参数含义</strong></p><ul><li><strong>state</strong> 设置了进程的状态为“初始”态，这表示进程已经“出生”了，正在获取资源茁壮成长中</li><li><strong>pid</strong>设置了进程的pid为-1，这表示进程的“身份证号”还没有办好</li><li><strong>cr3</strong>表明由于该内核线程在内核中运行，故采用为uCore内核已经建立的页表，即设置为在uCore内核页表的起始地址boot_cr3。<em>后续实验中可进一步看出所有内核线程的内核虚地址空间（也包括物理地址空间）是相同的。既然内核线程共用一个映射内核空间的页表，这表示内核空间对所有内核线程都是“可见”的，所以更精确地说，这些内核线程都应该是从属于同一个唯一的“大内核进程”—uCore内核。</em></li></ul>
+          </div>
+<div class="note note-primary">
+            <p><strong>关于context和trapframe</strong></p><p>proc_struct存在以上两个字段，分别保存了进程的上下文和中断帧。</p><ul><li><strong>context</strong>保存了进程的上下文，其实就是当前程序执行到的汇编的位置和相关寄存器，这样从进程A切换到进程B的时候就能恢复进程B执行到的位置。</li><li><strong>trapframe</strong>这个保存了中断帧，主要是实现进程A在中断过程中被切换至进程B，再切换到进程A后能从中断正确返回(中断函数好多都是公用的，需要中断帧来准确记录到底是哪个进程进入到当前的中断函数中)</li></ul><p>另外，我们还能体会到<strong>为什么子进程要继承父进程的资源</strong></p><p>比如，当进程A fork出子进程A1时，由于<strong>子进程A1继承了父进程A的上下文和中断帧(当然还有其他资源)</strong>(此时子进程A1和父进程A可以看作是两个进程，分别被调度)，所以子进程能够通过中断帧在创建的时候就进行中断返回(fork是系统调用，需要进入内核态的中断函数里)</p>
+          </div>
+<h3 id="x02-为新创建的内核线程分配资源">0X02
+为新创建的内核线程分配资源</h3>
+<p>创建一个内核线程需要分配和设置好很多资源。kernel_thread函数通过调用do_fork函数完成具体内核线程的创建工作。do_kernel函数会调用alloc_proc函数来分配并初始化一个进程控制块，<strong>但alloc_proc只是找到了一小块内存用以记录进程的必要信息，并没有实际分配这些资源</strong>。ucore一般通过do_fork实际创建新的内核线程。<strong>do_fork的作用是，创建当前内核线程的一个副本，它们的执行上下文、代码、数据都一样，但是存储位置不同。</strong>在这个过程中，需要给新内核线程分配资源，并且复制原进程的状态。需要完成在<code>kern/process/proc.c</code>中的do_fork函数中的处理过程。它的大致执行步骤包括：</p>
+<ul>
+<li>调用alloc_proc，首先获得一块用户信息块。</li>
+<li>为进程分配一个内核栈。</li>
+<li>复制原进程的内存管理信息到新进程（但内核线程不必做此事）</li>
+<li>复制原进程上下文到新进程</li>
+<li>将新进程添加到进程列表</li>
+<li>唤醒新进程</li>
+<li>返回新进程号</li>
+</ul>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br></pre></td><td class="code"><pre><code class="hljs c"><br><span class="hljs-comment">/* do_fork -     parent process for a new child process</span><br><span class="hljs-comment"> * @clone_flags: used to guide how to clone the child process</span><br><span class="hljs-comment"> * @stack:       the parent's user stack pointer. if stack==0, It means to fork a kernel thread.</span><br><span class="hljs-comment"> * @tf:          the trapframe info, which will be copied to child process's proc-&gt;tf</span><br><span class="hljs-comment"> */</span><br><span class="hljs-type">int</span> <span class="hljs-title function_">do_fork</span><span class="hljs-params">(<span class="hljs-type">uint32_t</span> clone_flags, <span class="hljs-type">uintptr_t</span> <span class="hljs-built_in">stack</span>, <span class="hljs-keyword">struct</span> trapframe *tf)</span><br>{<br>    <span class="hljs-type">int</span> ret = -E_NO_FREE_PROC;<br>    <span class="hljs-class"><span class="hljs-keyword">struct</span> <span class="hljs-title">proc_struct</span> *<span class="hljs-title">proc</span>;</span><br>    <span class="hljs-comment">// 进程数目太多</span><br>    <span class="hljs-keyword">if</span> (nr_process &gt;= MAX_PROCESS)<br>    {<br>        <span class="hljs-keyword">goto</span> fork_out;<br>    }<br>    ret = -E_NO_MEM;<br>    <span class="hljs-comment">// LAB4:EXERCISE2 YOUR CODE</span><br>    <span class="hljs-comment">/*</span><br><span class="hljs-comment">     * Some Useful MACROs, Functions and DEFINEs, you can use them in below implementation.</span><br><span class="hljs-comment">     * MACROs or Functions:</span><br><span class="hljs-comment">     *   alloc_proc:   create a proc struct and init fields (lab4:exercise1)</span><br><span class="hljs-comment">     *   setup_kstack: alloc pages with size KSTACKPAGE as process kernel stack</span><br><span class="hljs-comment">     *   copy_mm:      process "proc" duplicate OR share process "current"'s mm according clone_flags</span><br><span class="hljs-comment">     *                 if clone_flags &amp; CLONE_VM, then "share" ; else "duplicate"</span><br><span class="hljs-comment">     *   copy_thread:  setup the trapframe on the  process's kernel stack top and</span><br><span class="hljs-comment">     *                 setup the kernel entry point and stack of process</span><br><span class="hljs-comment">     *   hash_proc:    add proc into proc hash_list</span><br><span class="hljs-comment">     *   get_pid:      alloc a unique pid for process</span><br><span class="hljs-comment">     *   wakeup_proc:  set proc-&gt;state = PROC_RUNNABLE</span><br><span class="hljs-comment">     * VARIABLES:</span><br><span class="hljs-comment">     *   proc_list:    the process set's list</span><br><span class="hljs-comment">     *   nr_process:   the number of process set</span><br><span class="hljs-comment">     */</span><br>    <span class="hljs-comment">// 1. 分配程序结构体</span><br>    proc = alloc_proc();<br>    <span class="hljs-keyword">if</span> (proc == <span class="hljs-literal">NULL</span>)<br>        <span class="hljs-keyword">goto</span> fork_out;<br>    <span class="hljs-comment">// alloc_proc默认是没有父进程的</span><br>    <span class="hljs-comment">// 但是fork本身就是父进程调用的，所以这里要设置父进程</span><br>    proc-&gt;parent = current;<br><br>    <span class="hljs-comment">// 2. 分配内核栈</span><br>    <span class="hljs-keyword">if</span> (setup_kstack(proc) != <span class="hljs-number">0</span>)<br>        <span class="hljs-keyword">goto</span> bad_fork_cleanup_proc;<br><br>    <span class="hljs-comment">// 3. 复制内存空间，把所有虚拟页数据复制过去</span><br>    <span class="hljs-keyword">if</span> (copy_mm(clone_flags, proc) != <span class="hljs-number">0</span>)<br>        <span class="hljs-keyword">goto</span> bad_fork_cleanup_kstack;<br><br>    <span class="hljs-comment">// 4. 复制线程</span><br>    copy_thread(proc, <span class="hljs-built_in">stack</span>, tf);<br><br>    <span class="hljs-comment">// 5. 插入进程哈希表和进程链表</span><br>    <span class="hljs-comment">// 这一步需要阻止中断防止竞争</span><br>    <span class="hljs-type">bool</span> intr_flag;<br>    local_intr_save(intr_flag);<br>    {<br>        proc-&gt;pid = get_pid();<br>        hash_proc(proc);<br>        list_add(&amp;proc_list, &amp;(proc-&gt;list_link));<br>        nr_process++;<br>    }<br>    local_intr_restore(intr_flag);<br><br>    <span class="hljs-comment">// 6. 唤醒进程</span><br>    wakeup_proc(proc);<br><br>    <span class="hljs-comment">// 7. 设置返回值</span><br>    ret = proc-&gt;pid;<br><br><span class="hljs-comment">//    1. call alloc_proc to allocate a proc_struct</span><br><span class="hljs-comment">//    2. call setup_kstack to allocate a kernel stack for child process</span><br><span class="hljs-comment">//    3. call copy_mm to dup OR share mm according clone_flag</span><br><span class="hljs-comment">//    4. call copy_thread to setup tf &amp; context in proc_struct</span><br><span class="hljs-comment">//    5. insert proc_struct into hash_list &amp;&amp; proc_list</span><br><span class="hljs-comment">//    6. call wakeup_proc to make the new child process RUNNABLE</span><br><span class="hljs-comment">//    7. set ret vaule using child proc's pid</span><br>fork_out:<br>    <span class="hljs-keyword">return</span> ret;<br><br>bad_fork_cleanup_kstack:<br>    put_kstack(proc);<br>bad_fork_cleanup_proc:<br>    kfree(proc);<br>    <span class="hljs-keyword">goto</span> fork_out;<br>}<br><br></code></pre></td></tr></table></figure>
+<p>接下来看一下do_fork函数中调用的几个函数。</p>
+<ul>
+<li>setup_kstack ：
+分配2个页面，然后将其的虚拟地址作为进程内核态页面</li>
+<li>copy_mm ：
+复制内存空间，但是由于是写时复制，所以这个函数什么都不做</li>
+<li>copy_thread ：
+会把父进程的trapframe复制到子进程的内核栈中，然后设置子进程的内核栈指针和内核入口地址</li>
+</ul>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><code class="hljs c"><br><span class="hljs-comment">// copy_thread - setup the trapframe on the  process's kernel stack top and</span><br><span class="hljs-comment">//             - setup the kernel entry point and stack of process</span><br><span class="hljs-type">static</span> <span class="hljs-type">void</span> <span class="hljs-title function_">copy_thread</span><span class="hljs-params">(<span class="hljs-keyword">struct</span> proc_struct *proc, <span class="hljs-type">uintptr_t</span> esp, <span class="hljs-keyword">struct</span> trapframe *tf)</span><br>{<br>    <span class="hljs-comment">// 设置子进程的中断帧，并把中断帧放在子进程的内核栈顶</span><br>    <span class="hljs-comment">// 由于子进程的创建是系统调用产生，所以必须通过中断帧返回</span><br>    <span class="hljs-comment">// 为了保证子进程的中断帧与父进程的中断帧一致，所以需要复制父进程的中断帧(即系统调用位置)</span><br>    <span class="hljs-comment">// 为了便于区分子进程和父进程，把子进程的中断帧中的eax置为0</span><br>    <span class="hljs-comment">// 这样子进程被调度返回的时候，就会返回0</span><br>    proc-&gt;tf = (<span class="hljs-keyword">struct</span> trapframe *)(proc-&gt;kstack + KSTACKSIZE) - <span class="hljs-number">1</span>;<br>    *(proc-&gt;tf) = *tf;<br><br>    <span class="hljs-comment">// 子进程返回值</span><br>    proc-&gt;tf-&gt;tf_regs.reg_eax = <span class="hljs-number">0</span>;<br><br>    <span class="hljs-comment">// 设置中断时的栈为当前栈，并加上中断标志</span><br>    proc-&gt;tf-&gt;tf_esp = esp;<br>    proc-&gt;tf-&gt;tf_eflags |= FL_IF;<br><br>    <span class="hljs-comment">// 设置子进程的下一条指令执行forkret</span><br>    proc-&gt;context.eip = (<span class="hljs-type">uintptr_t</span>)forkret;<br><br>    <span class="hljs-comment">// 把中断帧放在子进程的的栈顶</span><br>    proc-&gt;context.esp = (<span class="hljs-type">uintptr_t</span>)(proc-&gt;tf);<br>}<br><br></code></pre></td></tr></table></figure>
+<div class="note note-info">
+            <p><strong>fork函数与copy_thread</strong></p><p>从copy_thread中，我们能看出，子进程和父进程的返回值不同的原因是因为修改了返回值寄存器，子进程返回值就变成了0</p><p>同时，还要设置子进程的下一条指令为执行forkret函数，这个函数的传入参数是中断帧，目的是中断返回</p><p>当子进程被调度的时候，就会从这个函数中完成中断返回。</p><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><code class="hljs c"><br><span class="hljs-comment">// forkret -- the first kernel entry point of a new thread/process</span><br><span class="hljs-comment">// <span class="hljs-doctag">NOTE:</span> the addr of forkret is setted in copy_thread function</span><br><span class="hljs-comment">//       after switch_to, the current proc will execute here.</span><br><span class="hljs-type">static</span> <span class="hljs-type">void</span><br><span class="hljs-title function_">forkret</span><span class="hljs-params">(<span class="hljs-type">void</span>)</span><br>{<br>    forkrets(current-&gt;tf);<br>}<br><br></code></pre></td></tr></table></figure><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><code class="hljs s"><br>.globl __trapret<br>__trapret:<br>    # restore registers from stack<br>    popal<br><br>    # restore %ds, %es, %fs and %gs<br>    popl %gs<br>    popl %fs<br>    popl %es<br>    popl %ds<br><br>    # get rid of the trap number and error code<br>    addl $0x8, %esp<br>    iret<br><br>.globl forkrets<br>forkrets:<br>    # set stack to this new process's trapframe<br>    movl 4(%esp), %esp<br>    jmp __trapret<br><br></code></pre></td></tr></table></figure><p><strong>但是中断返回到哪里？</strong></p><p>这个返回的位置其实在kernel_thread中被设置，我们来看一下这个函数</p><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><code class="hljs c"><br><span class="hljs-comment">// kernel_thread - create a kernel thread using "fn" function</span><br><span class="hljs-comment">// <span class="hljs-doctag">NOTE:</span> the contents of temp trapframe tf will be copied to</span><br><span class="hljs-comment">//       proc-&gt;tf in do_fork--&gt;copy_thread function</span><br><span class="hljs-comment">// 创建一个内核线程，执行的函数是fn，参数是arg</span><br><span class="hljs-type">int</span> <span class="hljs-title function_">kernel_thread</span><span class="hljs-params">(<span class="hljs-type">int</span> (*fn)(<span class="hljs-type">void</span> *), <span class="hljs-type">void</span> *arg, <span class="hljs-type">uint32_t</span> clone_flags)</span><br>{<br>    <span class="hljs-comment">// 创建临时中断帧</span><br>    <span class="hljs-class"><span class="hljs-keyword">struct</span> <span class="hljs-title">trapframe</span> <span class="hljs-title">tf</span>;</span><br>    <span class="hljs-built_in">memset</span>(&amp;tf, <span class="hljs-number">0</span>, <span class="hljs-keyword">sizeof</span>(<span class="hljs-keyword">struct</span> trapframe));<br>    <span class="hljs-comment">// 设置中断帧的段寄存器</span><br>    tf.tf_cs = KERNEL_CS;<br>    tf.tf_ds = tf.tf_es = tf.tf_ss = KERNEL_DS;<br>    <span class="hljs-comment">// 设置参数</span><br>    tf.tf_regs.reg_ebx = (<span class="hljs-type">uint32_t</span>)fn;<br>    tf.tf_regs.reg_edx = (<span class="hljs-type">uint32_t</span>)arg;<br>    <span class="hljs-comment">// 设置中断帧的中断返回地址</span><br>    tf.tf_eip = (<span class="hljs-type">uint32_t</span>)kernel_thread_entry;<br>    <span class="hljs-comment">// 使用do_fork创建一个内核线程</span><br>    <span class="hljs-keyword">return</span> do_fork(clone_flags | CLONE_VM, <span class="hljs-number">0</span>, &amp;tf);<br>}<br><br></code></pre></td></tr></table></figure><p>可以看到中断返回到kernel_thread_entry，这个函数的作用先是调用fn函数，然后调用do_exit退出</p><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><code class="hljs s"><br>kernel_thread_entry:        # void kernel_thread(void)<br><br>    pushl %edx              # push arg<br>    call *%ebx              # call fn<br><br>    pushl %eax              # save the return value of fn(arg)<br>    call do_exit            # call do_exit to terminate current thread<br><br><br></code></pre></td></tr></table></figure><p><strong>因此，内核线程调度是这样的：</strong></p><ul><li>调用<strong>kernel_thread</strong>函数，创建一个内核线程，需要执行的函数是fn，对应的参数是arg。kernel_thread函数会先创建中断帧，中断帧的返回函数是kernel_thread_entry</li><li>然后kernel_thread函数会调用<strong>do_fork</strong>函数，创建一个内核线程，这个函数会把中断帧复制到子进程的内核栈中，然后设置子进程的内核栈指针和上下文的入口地址为forkret(这是由copy_thread函数完成的)</li><li>调度发生时，会先通过上下文入口地址进入<strong>forkret</strong>函数，这个函数(实际上这个是包装函数)会完成中断返回，返回到kernel_thread_entry函数</li><li><strong>kernel_thread_entry</strong>函数会调用fn函数，然后调用do_exit函数退出</li></ul>
+          </div>
+<ul>
+<li>get_proc_id ：
+分配一个进程id，这个提供一个比较高性能的快速分配唯一pid的算法</li>
+</ul>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br></pre></td><td class="code"><pre><code class="hljs c"><br><span class="hljs-comment">// get_pid - alloc a unique pid for process</span><br><span class="hljs-type">static</span> <span class="hljs-type">int</span> <span class="hljs-title function_">get_pid</span><span class="hljs-params">(<span class="hljs-type">void</span>)</span><br>{<br>    <span class="hljs-comment">// last_pid是上一次分配的</span><br>    <span class="hljs-comment">// next_safe是下一次可以安全分配的界限</span><br>    <span class="hljs-comment">// 如果last_pid已经超过了next_safe</span><br>    <span class="hljs-comment">// 那么就需要重新遍历一遍proc_list，找到next_safe</span><br>    <span class="hljs-comment">// 否则就直接对last_pid进行加1操作得到的pid就一定是安全的</span><br>    <span class="hljs-keyword">static_assert</span>(MAX_PID &gt; MAX_PROCESS);<br>    <span class="hljs-class"><span class="hljs-keyword">struct</span> <span class="hljs-title">proc_struct</span> *<span class="hljs-title">proc</span>;</span><br>    <span class="hljs-type">list_entry_t</span> *<span class="hljs-built_in">list</span> = &amp;proc_list, *le;<br><br>    <span class="hljs-comment">// 这两个变量是内部的静态变量，生命期跟函数无关</span><br>    <span class="hljs-type">static</span> <span class="hljs-type">int</span> next_safe = MAX_PID, last_pid = MAX_PID;<br><br>    <span class="hljs-comment">// 这个if判断是第一次调用get_pid的时候</span><br>    <span class="hljs-comment">// 第一次调用的时候必须要遍历一遍</span><br>    <span class="hljs-keyword">if</span> (++last_pid &gt;= MAX_PID)<br>    {<br>        last_pid = <span class="hljs-number">1</span>;<br>        <span class="hljs-keyword">goto</span> inside;<br>    }<br><br>    <span class="hljs-comment">// 如果last_pid已经超过了next_safe</span><br>    <span class="hljs-keyword">if</span> (last_pid &gt;= next_safe)<br>    {<br>    inside:<br>        <span class="hljs-comment">// next_safe从MAX_PID开始</span><br>        next_safe = MAX_PID;<br>    repeat:<br>        <span class="hljs-comment">// 遍历proc_list，以找到next_safe</span><br>        le = <span class="hljs-built_in">list</span>;<br>        <span class="hljs-keyword">while</span> ((le = list_next(le)) != <span class="hljs-built_in">list</span>)<br>        {<br>            <span class="hljs-comment">// 找到进程</span><br>            proc = le2proc(le, list_link);<br>            <span class="hljs-comment">// 如果进程的pid等于last_pid(这个pid已经被分配过了)</span><br>            <span class="hljs-keyword">if</span> (proc-&gt;pid == last_pid)<br>            {<br>                <span class="hljs-comment">// 对last_pid进行加1操作</span><br>                <span class="hljs-comment">// 如果last_pid已经超过了next_safe</span><br>                <span class="hljs-comment">// 且last_pid已经超过了MAX_PID</span><br>                <span class="hljs-comment">// 那么就需要重新遍历一遍proc_list，找到next_safe</span><br>                <span class="hljs-comment">// 且last_pid没有超过MAX_PID，其实就是对last_pid+1</span><br>                <span class="hljs-keyword">if</span> (++last_pid &gt;= next_safe)<br>                {<br>                    <span class="hljs-keyword">if</span> (last_pid &gt;= MAX_PID)<br>                    {<br>                        last_pid = <span class="hljs-number">1</span>;<br>                    }<br>                    next_safe = MAX_PID;<br>                    <span class="hljs-keyword">goto</span> repeat;<br>                }<br>            }<br>            <span class="hljs-comment">// 如果进程的pid大于last_pid，且小于next_safe</span><br>            <span class="hljs-comment">// 那么就更新next_safe为当前进程的pid</span><br>            <span class="hljs-comment">// 因为last_pid是一个一个遍历的，所以next_safe一定是可用的最大值+1</span><br>            <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (proc-&gt;pid &gt; last_pid &amp;&amp; next_safe &gt; proc-&gt;pid)<br>            {<br>                next_safe = proc-&gt;pid;<br>            }<br>        }<br>    }<br>    <span class="hljs-keyword">return</span> last_pid;<br>}<br><br></code></pre></td></tr></table></figure>
+<img src="/2023/01/20/%E4%BB%8Eucore%E6%9D%A5%E6%80%BB%E7%BB%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-4/pic1.png" srcset="/img/loading.gif" lazyload class="">
+<ul>
+<li>wakeup_proc ： 把进程的状态设置为就绪</li>
+<li>hash_proc ： 把进程加入到hash表中</li>
+</ul>
+<h3 id="x02-进程切换">0X02 进程切换</h3>
+<p>首先，schedule函数会遍历proc_list，找到一个就绪的进程，然后调用proc_run函数进行进程切换</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br></pre></td><td class="code"><pre><code class="hljs c"><br><span class="hljs-type">void</span> <span class="hljs-title function_">schedule</span><span class="hljs-params">(<span class="hljs-type">void</span>)</span><br>{<br>    <span class="hljs-type">bool</span> intr_flag;<br>    <span class="hljs-type">list_entry_t</span> *le, *last;<br>    <span class="hljs-class"><span class="hljs-keyword">struct</span> <span class="hljs-title">proc_struct</span> *<span class="hljs-title">next</span> =</span> <span class="hljs-literal">NULL</span>;<br><br>    <span class="hljs-comment">// 原子操作</span><br>    local_intr_save(intr_flag);<br>    {<br>        <span class="hljs-comment">// 先把当前线程的需要调度标志清除</span><br>        current-&gt;need_resched = <span class="hljs-number">0</span>;<br>        last = (current == idleproc) ? &amp;proc_list : &amp;(current-&gt;list_link);<br>        le = last;<br><br>        <span class="hljs-comment">// 找到下一个需要调度的线程(为就绪状态)</span><br>        <span class="hljs-keyword">do</span><br>        {<br>            <span class="hljs-keyword">if</span> ((le = list_next(le)) != &amp;proc_list)<br>            {<br>                next = le2proc(le, list_link);<br>                <span class="hljs-keyword">if</span> (next-&gt;state == PROC_RUNNABLE)<br>                {<br>                    <span class="hljs-keyword">break</span>;<br>                }<br>            }<br>        } <span class="hljs-keyword">while</span> (le != last);<br><br>        <span class="hljs-comment">// 如果没有找到就绪状态的线程，就调度idleproc</span><br>        <span class="hljs-keyword">if</span> (next == <span class="hljs-literal">NULL</span> || next-&gt;state != PROC_RUNNABLE)<br>        {<br>            next = idleproc;<br>        }<br>        <span class="hljs-comment">// 否则运行新的就绪状态线程</span><br>        next-&gt;runs++;<br>        <span class="hljs-keyword">if</span> (next != current)<br>        {<br>            proc_run(next);<br>        }<br>    }<br>    local_intr_restore(intr_flag);<br>}<br><br></code></pre></td></tr></table></figure>
+<p>在proc_run函数中，会调用switch_to函数进行进程切换</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><code class="hljs c"><br><span class="hljs-comment">// proc_run - make process "proc" running on cpu</span><br><span class="hljs-comment">// <span class="hljs-doctag">NOTE:</span> before call switch_to, should load  base addr of "proc"'s new PDT</span><br><span class="hljs-type">void</span> <span class="hljs-title function_">proc_run</span><span class="hljs-params">(<span class="hljs-keyword">struct</span> proc_struct *proc)</span><br>{<br>    <span class="hljs-keyword">if</span> (proc != current)<br>    {<br>        <span class="hljs-type">bool</span> intr_flag;<br>        <span class="hljs-class"><span class="hljs-keyword">struct</span> <span class="hljs-title">proc_struct</span> *<span class="hljs-title">prev</span> =</span> current, *next = proc;<br>        <span class="hljs-comment">// 原子操作</span><br>        local_intr_save(intr_flag);<br>        {<br>            current = proc;<br>            <span class="hljs-comment">// 设置ring0的内核栈地址</span><br>            load_esp0(next-&gt;kstack + KSTACKSIZE);<br>            <span class="hljs-comment">// 加载页目录表</span><br>            lcr3(next-&gt;cr3);<br>            <span class="hljs-comment">// 切换上下文</span><br>            switch_to(&amp;(prev-&gt;context), &amp;(next-&gt;context));<br>        }<br>        local_intr_restore(intr_flag);<br>    }<br>}<br><br><br></code></pre></td></tr></table></figure>
+<p>在switch_to函数中，会调用汇编函数__switch_to进行进程切换，主要是切换到对应的上下文中</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><code class="hljs s"><br>.text<br>.globl switch_to<br>switch_to:                      # switch_to(from, to)<br>    # save from's registers<br>    movl 4(%esp), %eax          # 获取当前进程的context结构地址<br>    popl 0(%eax)                # 将eip保存至当前进程的context结构<br>    movl %esp, 4(%eax)          # 将esp保存至当前进程的context结构<br>    movl %ebx, 8(%eax)          # 将ebx保存至当前进程的context结构<br>    movl %ecx, 12(%eax)         # 将ecx保存至当前进程的context结构<br>    movl %edx, 16(%eax)         # 将edx保存至当前进程的context结构<br>    movl %esi, 20(%eax)         # 将esi保存至当前进程的context结构<br>    movl %edi, 24(%eax)         # 将edi保存至当前进程的context结构<br>    movl %ebp, 28(%eax)         # 将ebp保存至当前进程的context结构<br><br>    # restore to's registers<br>    movl 4(%esp), %eax          # 获取下一个进程的context结构地址<br>                                # 需要注意的是，其地址不是8(%esp)，因为之前已经pop过一次栈。<br>    movl 28(%eax), %ebp         # 恢复ebp至下一个进程的context结构<br>    movl 24(%eax), %edi         # 恢复edi至下一个进程的context结构<br>    movl 20(%eax), %esi         # 恢复esi至下一个进程的context结构<br>    movl 16(%eax), %edx         # 恢复edx至下一个进程的context结构<br>    movl 12(%eax), %ecx         # 恢复ecx至下一个进程的context结构<br>    movl 8(%eax), %ebx          # 恢复ebx至下一个进程的context结构<br>    movl 4(%eax), %esp          # 恢复esp至下一个进程的context结构<br>    pushl 0(%eax)               # 插入下一个进程的eip，以便于ret到下个进程的代码位置。<br>    ret<br><br></code></pre></td></tr></table></figure>
+<p>至此，目标程序的上下文已经切换完成，可以开始执行对应的进程了。</p>
+<h3 id="x03-总结">0X03 总结</h3>
+<p>通过这个lab4，我们学习了以下内容:</p>
+<ul>
+<li>使用进程描述符来对进程的上下文和其他信息进行描述，方便调度</li>
+<li>在fork系统调用时，通过创建中断帧和上下文信息来实现中断返回，并分析了为什么子进程和父进程返回值不同</li>
+<li>get_pid算法，快速分配不重数</li>
+<li>进程切换的方法</li>
+</ul>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/" class="category-chain-item">操作系统</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/ucore%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/">#ucore操作系统</a>
+      
+    </div>
+  
+</div>
+
+
+              
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2023/01/22/%E4%BB%8Eucore%E6%9D%A5%E6%80%BB%E7%BB%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-5/" title="从ucore来总结操作系统(5)----用户线程">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">从ucore来总结操作系统(5)----用户线程</span>
+                        <span class="visible-mobile">Previous</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2023/01/18/%E4%BB%8Eucore%E6%9D%A5%E6%80%BB%E7%BB%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-3/" title="从ucore来总结操作系统(3)----页面置换与Page Fault">
+                        <span class="hidden-mobile">从ucore来总结操作系统(3)----页面置换与Page Fault</span>
+                        <span class="visible-mobile">Next</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+  <article id="comments" lazyload>
+    
+  <div id="waline"></div>
+  <script type="text/javascript">
+    Fluid.utils.loadComments('#waline', function() {
+      Fluid.utils.createCssLink('https://lib.baomitu.com/waline/2.5.1/waline.min.css')
+      Fluid.utils.createScript('https://lib.baomitu.com/waline/2.5.1/waline.min.js', function() {
+        var options = Object.assign(
+          {"serverURL":"https://waline-tau.vercel.app/","path":"window.location.pathname","meta":["nick","mail","link"],"requiredMeta":["nick"],"lang":"zh-CN","emoji":["https://emoji.shojo.cn/bili/src/大航海嘉然","https://emoji.shojo.cn/bili/src/永雏塔菲","https://emoji.shojo.cn/bili/src/東雪蓮","https://unpkg.com/@waline/emojis@1.1.0/tieba","https://emoji.shojo.cn/bili/src/嘉然今天吃什么","https://emoji.shojo.cn/bili/src/小黄脸"],"dark":"html[data-user-color-scheme=\"dark\"]","wordLimit":0,"pageSize":10},
+          {
+            el: '#waline',
+            path: window.location.pathname
+          }
+        )
+        Waline.init(options);
+        Fluid.utils.waitElementVisible('#waline .vcontent', () => {
+          var imgSelector = '#waline .vcontent img:not(.vemoji)';
+          Fluid.plugins.imageCaption(imgSelector);
+          Fluid.plugins.fancyBox(imgSelector);
+        })
+      });
+    });
+  </script>
+  <noscript>Please enable JavaScript to view the comments</noscript>
+
+
+  </article>
+
+
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header"><i class="iconfont icon-list"></i>&nbsp;Table of Contents</p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">Search</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">Keyword</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://github.com/staskaer" target="_blank" rel="nofollow noopener"><span>Staskaer</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.0/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.18.2/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      headingSelector : CONFIG.toc.headingSelector || 'h1,h2,h3,h4,h5,h6',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      collapseDepth   : CONFIG.toc.collapseDepth || 0,
+      scrollSmooth    : true,
+      headingsOffset  : -boardTop
+    });
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.10/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/4.3.1/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script defer src="/js/leancloud.js" ></script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">Blog works best with JavaScript enabled</div>
+  </noscript>
+</body>
+</html>
