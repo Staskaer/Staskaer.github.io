@@ -16,26 +16,25 @@
   <meta name="author" content="Staskaer">
   <meta name="keywords" content="">
   
-    <meta name="description" content="使用一个装饰器来将python中的同步函数转化成多线程函数">
+    <meta name="description" content="Python中的协程使用">
 <meta property="og:type" content="article">
-<meta property="og:title" content="将python中同步函数转换成多线程非阻塞函数">
-<meta property="og:url" content="http://example.com/2022/10/14/%E5%B0%86python%E4%B8%AD%E5%90%8C%E6%AD%A5%E5%87%BD%E6%95%B0%E8%BD%AC%E6%8D%A2%E6%88%90%E5%A4%9A%E7%BA%BF%E7%A8%8B%E9%9D%9E%E9%98%BB%E5%A1%9E%E5%87%BD%E6%95%B0/index.html">
+<meta property="og:title" content="python协程与asyncio">
+<meta property="og:url" content="http://example.com/2023/02/17/python%E5%8D%8F%E7%A8%8B%E4%B8%8Easyncio/index.html">
 <meta property="og:site_name" content="Staskaer">
-<meta property="og:description" content="使用一个装饰器来将python中的同步函数转化成多线程函数">
+<meta property="og:description" content="Python中的协程使用">
 <meta property="og:locale" content="en_US">
-<meta property="og:image" content="http://example.com/imgs/post_index_img/async.jpg">
-<meta property="article:published_time" content="2022-10-14T12:36:34.000Z">
-<meta property="article:modified_time" content="2023-02-17T04:17:08.358Z">
+<meta property="og:image" content="http://example.com/imgs/post_index_img/asyncio.jpg">
+<meta property="article:published_time" content="2023-02-17T04:14:15.000Z">
+<meta property="article:modified_time" content="2023-02-18T15:10:47.486Z">
 <meta property="article:author" content="Staskaer">
 <meta property="article:tag" content="Python">
-<meta property="article:tag" content="爬虫">
-<meta property="article:tag" content="Python异步">
+<meta property="article:tag" content="Python协程">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:image" content="http://example.com/imgs/post_index_img/async.jpg">
+<meta name="twitter:image" content="http://example.com/imgs/post_index_img/asyncio.jpg">
   
   
   
-  <title>将python中同步函数转换成多线程非阻塞函数 - Staskaer</title>
+  <title>python协程与asyncio - Staskaer</title>
 
   <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
 
@@ -335,13 +334,13 @@ mjx-container[display="true"] + br {
   
 
 <div id="banner" class="banner" parallax=true
-     style="background: url('/imgs/post_index_img/async.jpg') no-repeat center center; background-size: cover;">
+     style="background: url('/imgs/post_index_img/asyncio.jpg') no-repeat center center; background-size: cover;">
   <div class="full-bg-img">
     <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
       <div class="banner-text text-center fade-in-up">
         <div class="h2">
           
-            <span id="subtitle" data-typed-text="使用一个装饰器来将python中的同步函数转化成多线程函数"></span>
+            <span id="subtitle" data-typed-text="python中协程使用"></span>
           
         </div>
 
@@ -352,8 +351,8 @@ mjx-container[display="true"] + br {
     
       <span class="post-meta">
         <i class="iconfont icon-date-fill" aria-hidden="true"></i>
-        <time datetime="2022-10-14 20:36" pubdate>
-          October 14, 2022 pm
+        <time datetime="2023-02-17 12:14" pubdate>
+          February 17, 2023 pm
         </time>
       </span>
     
@@ -364,7 +363,7 @@ mjx-container[display="true"] + br {
       <span class="post-meta mr-2">
         <i class="iconfont icon-chart"></i>
         
-          2.1k words
+          3.3k words
         
       </span>
     
@@ -375,7 +374,7 @@ mjx-container[display="true"] + br {
         
         
         
-          9 mins
+          14 mins
         
       </span>
     
@@ -421,35 +420,67 @@ mjx-container[display="true"] + br {
         <div id="board">
           <article class="post-content mx-auto">
             <!-- SEO header -->
-            <h1 style="display: none">使用一个装饰器来将python中的同步函数转化成多线程函数</h1>
+            <h1 style="display: none">python中协程使用</h1>
             
             
               <div class="markdown-body">
                 
-                <h2 id="使用一个装饰器来将python中的同步函数转化成多线程函数">使用一个装饰器来将python中的同步函数转化成多线程函数</h2>
+                <p><strong>Python中的协程使用</strong></p>
 <span id="more"></span>
+<h2 id="协程">协程</h2>
+<h3 id="yield与线程">yield与线程</h3>
+<p>Python中的线程是系统级线程，会被操作系统调度；而协程则可以理解成用户级线程，不会被系统调度。</p>
+<p>由于协程(用户级线程)需要用户自己去管理线程的状态(就绪、等待、阻塞)，并执行就绪线程，这需要线程能实现主动挂起的机制(不然就变成线程顺序执行了)。python中的<strong>协程其实是通过yield关键字</strong>来实现的。</p>
+<p>当执行到yield处程序会主动交出控制权，然后等待下一次调用时再继续执行。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><code class="hljs python"><br><span class="hljs-keyword">import</span> time<br><br><span class="hljs-keyword">def</span> <span class="hljs-title function_">work1</span>():<br>    <span class="hljs-keyword">while</span> <span class="hljs-number">1</span>:<br>        <span class="hljs-built_in">print</span>(<span class="hljs-string">"hello"</span>)<br>        <span class="hljs-keyword">yield</span><br>        time.sleep(<span class="hljs-number">0.5</span>)<br><br><span class="hljs-keyword">def</span> <span class="hljs-title function_">work2</span>():<br>    <span class="hljs-keyword">while</span> <span class="hljs-number">1</span>:<br>        <span class="hljs-built_in">print</span>(<span class="hljs-string">"world"</span>)<br>        <span class="hljs-keyword">yield</span><br>        time.sleep(<span class="hljs-number">0.5</span>)<br><br>task1 = work1()<br>task2 = work2()<br><br><span class="hljs-keyword">while</span> <span class="hljs-number">1</span>:<br>    <span class="hljs-built_in">next</span>(task1)<br>    <span class="hljs-built_in">next</span>(task2)<br><br></code></pre></td></tr></table></figure>
+<p>这样就形成了简单的<strong>循环</strong>，每次next都会执行到yield处，然后交出控制权，等待下一次调用。而循环则依次执行两个任务。</p>
+<p><strong>但是上述代码只体现了yield放权，没有体现出异步</strong>，异步需要通过<code>send()</code>函数配合使用</p>
 <div class="note note-info">
-            <p>python由于GIL锁的原因，不支持真正的多线程，但是可以利用多线程来利用由于IO引起的阻塞问题，也算是曲线多线程了。</p>
+            <p>一般都是<code>n = yield m</code>这种形式，m是协程传出去的值，n是协程被唤醒时接受到的值。</p><p>如果协程<strong>处理计算任务</strong>，比如m是需要计算的东西，n是计算完成的东西，那么这个过程就类似函数调用</p><p>如果协程是<strong>事件驱动</strong>的，那么m就是请求事件的信息，n是响应事件</p>
           </div>
-<h3 id="缘由">缘由</h3>
-<p>目前我正在写一个基于<code>Requests</code>的多线程图像下载库框架，<a target="_blank" rel="noopener" href="https://github.com/staskaer/anime_crawler">可以查看这里，目前已经基本写完</a>。爬虫可以异步来实现高并发以充分利用网络IO的等待，但是众所周知，<code>Requests</code>库是不支持异步的，但是可以通过多线程的方式来为其实现异步，不过使用线程的开销会稍微大一些。</p>
-<h3 id="实现方式">实现方式</h3>
-<p>实现方式很简单，只需要一个装饰器即可。</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><code class="hljs python"><br><span class="hljs-keyword">import</span> asyncio<br><span class="hljs-keyword">import</span> requests<br><br><br><span class="hljs-keyword">def</span> <span class="hljs-title function_">run_async</span>(<span class="hljs-params">callback</span>):<br>    <span class="hljs-keyword">def</span> <span class="hljs-title function_">inner</span>(<span class="hljs-params">func</span>):<br>        <span class="hljs-keyword">def</span> <span class="hljs-title function_">wrapper</span>(<span class="hljs-params">*args, **kwargs</span>):<br>            <span class="hljs-keyword">def</span> <span class="hljs-title function_">__exec</span>():<br>                out = func(*args, **kwargs)<br>                callback(out)<br>                <span class="hljs-keyword">return</span> out<br>            <span class="hljs-keyword">return</span> asyncio.get_event_loop().run_in_executor(<span class="hljs-literal">None</span>, __<span class="hljs-built_in">exec</span>)<br>        <span class="hljs-keyword">return</span> wrapper<br>    <span class="hljs-keyword">return</span> inner<br><br><br><span class="hljs-keyword">def</span> <span class="hljs-title function_">_callback</span>(<span class="hljs-params">*args</span>):<br>    <span class="hljs-built_in">print</span>(args)<br><br><span class="hljs-meta">@run_async(<span class="hljs-params">_callback</span>)</span><br><span class="hljs-keyword">def</span> <span class="hljs-title function_">get</span>(<span class="hljs-params">url</span>):<br>    <span class="hljs-keyword">return</span> requests.get(url)<br><br><br>get(<span class="hljs-string">"https://baidu.com"</span>)<br><span class="hljs-built_in">print</span>(<span class="hljs-string">"done!"</span>) <span class="hljs-comment"># 注意这里是无阻塞的</span><br><br></code></pre></td></tr></table></figure>
-<p>只需要这样实现一个装饰器就能实现<code>requests.get()</code>函数的并发。</p>
-<h3 id="使用线程池来进行改进">使用线程池来进行改进</h3>
-<p>但是在时间过程中，上述代码不能长时间运行，否则内存占用会不断飙升。</p>
-<p>原因是每次都创建出一个开销比较高的线程，但是没有进行回收，所以不断驻留在内存中导致占用过高。</p>
-<p>不过我们可以使用线程池来修改它，将其资源限制在一定范围内。</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><code class="hljs python"><br><span class="hljs-keyword">from</span> concurrent.futures <span class="hljs-keyword">import</span> ThreadPoolExecutor<br><br>pool = ThreadPoolExecutor(<span class="hljs-number">16</span>)<br><br><span class="hljs-keyword">def</span> <span class="hljs-title function_">run_async</span>(<span class="hljs-params">callback</span>):<br>    <span class="hljs-keyword">def</span> <span class="hljs-title function_">inner</span>(<span class="hljs-params">func</span>):<br>        <span class="hljs-keyword">def</span> <span class="hljs-title function_">wrapper</span>(<span class="hljs-params">*args, **kwargs</span>):<br>            <span class="hljs-keyword">def</span> <span class="hljs-title function_">__exec</span>():<br>                out = func(*args, **kwargs)<br>                callback(out) <br>                <span class="hljs-keyword">return</span> out<br>            <span class="hljs-keyword">return</span> pool.submit(__<span class="hljs-built_in">exec</span>)<br>        <span class="hljs-keyword">return</span> wrapper<br>    <span class="hljs-keyword">return</span> inner<br><br></code></pre></td></tr></table></figure>
-<p>这样每次都会从线程池拿一个线程出来进行处理。</p>
-<h3 id="使其能用于类方法">使其能用于类方法</h3>
-<p>上述代码虽然解决了内存占用问题，但是还有一个问题没有解决。</p>
-<p>比如我定义了一个<code>Downloader</code>类，里面有<code>callback(self, *args)</code>和<code>download(self, *args)</code>函数。其中<code>download(self, *args)</code>函数负责下载任务，然后返回下载结果并交给<code>callback(self, *args)</code>处理，由于下载是并发的，所以装饰器会在<code>download(self, *args)</code>头上，如下所示。</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><code class="hljs python"><br><span class="hljs-keyword">class</span> <span class="hljs-title class_">Donwloader</span>:<br>    <span class="hljs-keyword">def</span> <span class="hljs-title function_">__init__</span>(<span class="hljs-params">self,**kwargs</span>):<br>        ...<br><br><span class="hljs-meta">    @run_async(<span class="hljs-params">callback</span>)</span><br>    <span class="hljs-keyword">def</span> <span class="hljs-title function_">download</span>(<span class="hljs-params">self, *args</span>):<br>        <span class="hljs-comment"># 下载一些东西</span><br>        ...<br><br>    <span class="hljs-keyword">def</span> <span class="hljs-title function_">callback</span>(<span class="hljs-params">self, *args</span>):<br>        <span class="hljs-comment"># 回调函数</span><br>        ...<br><br></code></pre></td></tr></table></figure>
-<p>但这样是不能正常工作的，因为self没有被正常传递</p>
-<p>改成下面这样就可以了</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br></pre></td><td class="code"><pre><code class="hljs python"><br><span class="hljs-keyword">from</span> concurrent.futures <span class="hljs-keyword">import</span> ThreadPoolExecutor<br><span class="hljs-keyword">from</span> anime_crawler.settings <span class="hljs-keyword">import</span> MAX_CONCURRENT_REQUESTS<br><br>pool = ThreadPoolExecutor(MAX_CONCURRENT_REQUESTS)<br><br><br><span class="hljs-keyword">def</span> <span class="hljs-title function_">run_async_c</span>(<span class="hljs-params">callback</span>):<br>    <span class="hljs-keyword">def</span> <span class="hljs-title function_">inner</span>(<span class="hljs-params">func</span>):<br>        <span class="hljs-keyword">def</span> <span class="hljs-title function_">wrapper</span>(<span class="hljs-params">*args, **kwargs</span>):<br>            <span class="hljs-keyword">def</span> <span class="hljs-title function_">__exec</span>():<br>                out = func(*args, **kwargs)<br>                callback(args[<span class="hljs-number">0</span>], out)  <span class="hljs-comment"># args[0]是self</span><br>                <span class="hljs-keyword">return</span> out<br>            <span class="hljs-keyword">return</span> pool.submit(__<span class="hljs-built_in">exec</span>)<br>        <span class="hljs-keyword">return</span> wrapper<br>    <span class="hljs-keyword">return</span> inner<br><br><br><span class="hljs-keyword">class</span> <span class="hljs-title class_">Donwloader</span>:<br>    <span class="hljs-keyword">def</span> <span class="hljs-title function_">__init__</span>(<span class="hljs-params">self,**kwargs</span>):<br>        ...<br><br><span class="hljs-meta">    @run_async_c(<span class="hljs-params">callback</span>)</span><br>    <span class="hljs-keyword">def</span> <span class="hljs-title function_">download</span>(<span class="hljs-params">self, *args</span>):<br>        <span class="hljs-comment"># 下载一些东西</span><br>        ...<br><br>    <span class="hljs-keyword">def</span> <span class="hljs-title function_">callback</span>(<span class="hljs-params">self, *args</span>):<br>        <span class="hljs-comment"># 回调函数</span><br>        ...<br><br></code></pre></td></tr></table></figure>
+<p>因为yield想必已经很熟了，上面就简单提一下不再赘述。</p>
+<h3 id="asyncio库">asyncio库</h3>
+<p>Python对于协程后续引入了asyncio库，这个库提供了对协程的支持，本着学新不学旧的原则，所以后续主要是针对此库来学习下协程。</p>
+<p>先来一个简单的例子</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><code class="hljs python"><br><span class="hljs-keyword">import</span> asyncio<br><br><span class="hljs-comment"># 定义一个协程函数</span><br><span class="hljs-keyword">async</span> <span class="hljs-keyword">def</span> <span class="hljs-title function_">work1</span>():<br>    <span class="hljs-keyword">while</span> <span class="hljs-number">1</span>:<br>        <span class="hljs-built_in">print</span>(<span class="hljs-string">"hello"</span>)<br>        <span class="hljs-keyword">await</span> asyncio.sleep(<span class="hljs-number">0.5</span>)<br><br><span class="hljs-comment"># 协程函数返回协程协程对象</span><br>task = work1()<br><br><span class="hljs-comment"># 运行协程，需要在一个循环里运行</span><br>asyncio.run(task)<br><br></code></pre></td></tr></table></figure>
+<p>需要说明几点：</p>
+<ul>
+<li><code>async def</code>定义的函数是协程函数，可以使用<code>await</code>关键字。<strong>所有async函数返回的都是协程对象，就像所有的yield函数返回的都是迭代器对象一样</strong>。</li>
+<li><code>asyncio.run()</code>其实建立了一个<strong>循环</strong>，这个循环会不断寻找哪个协程可以运行，知道所有协程运行完毕。(协程在运行时会主动挂起放权)</li>
+<li><code>await</code>后只能接<code>async def</code>定义的函数，这个await会做这几件事情：
+<ul>
+<li>运行<code>async def</code>定义的函数(<strong>不加await的运行时会返回协程对象，不会真正进入协程中</strong>)，直到运行不下去为止(比如yield主动放权、新建了一个task然后本函数运行完了)</li>
+<li>yield出控制权</li>
+<li>再次被唤醒的时候，会把<code>async def</code>定义的函数的返回值返回</li>
+</ul></li>
+</ul>
+<p><strong>await之于asyncio类似与yield from之于生成器</strong></p>
+<div class="note note-primary">
+            <p><strong>Task和futures</strong></p><ul><li>循环最小的调度单位是Task，Task是对协程的封装，因此循环每次只能调度一个Task</li><li>futures其实是更加底层的东西(Task其实是Future的子类)，futures主要用于接受异步执行的结果</li></ul><p><strong>两者都是可以直接放在await后面</strong></p>
+          </div>
+<div class="note note-info">
+            <p>对于如下两种形式的代码，结果是一样的，但是过程不一样</p><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><code class="hljs python"><br><span class="hljs-keyword">import</span> asyncio<br><br><span class="hljs-keyword">async</span> <span class="hljs-keyword">def</span> <span class="hljs-title function_">f1</span>():<br>    <span class="hljs-keyword">await</span> asyncio.sleep(<span class="hljs-number">1</span>)<br><br><span class="hljs-keyword">async</span> <span class="hljs-keyword">def</span> <span class="hljs-title function_">f2</span>():<br>    <span class="hljs-keyword">await</span> asyncio.creat_task(asyncio.sleep(<span class="hljs-number">1</span>))<br><br></code></pre></td></tr></table></figure><p>其中，<code>f1()</code>函数会直接进入<code>asyncio.sleep()</code>函数，不会为其创建任务，在这个函数内某个地方放权。</p><p>而<code>f2()</code>函数会为<code>asyncio.sleep()</code>创建一个任务，然后<code>f2()</code>函数等待这个任务完成自己阻塞，<strong>在下一次task调度的时候，会去调度就绪的延时任务</strong>，直到该延时任务完成才回过头来执行<code>f2()</code></p>
+          </div>
+<p>由于await的时候不会新建一个task，所以可能无法很好的利用协程异步，就拿python官方文档这个例子来说：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><code class="hljs python"><br><span class="hljs-keyword">import</span> asyncio<br><span class="hljs-keyword">import</span> time<br><br><span class="hljs-keyword">async</span> <span class="hljs-keyword">def</span> <span class="hljs-title function_">say_after</span>(<span class="hljs-params">delay, what</span>):<br>    <span class="hljs-keyword">await</span> asyncio.sleep(delay)<br>    <span class="hljs-built_in">print</span>(what)<br><br><span class="hljs-keyword">async</span> <span class="hljs-keyword">def</span> <span class="hljs-title function_">main</span>():<br>    <span class="hljs-built_in">print</span>(<span class="hljs-string">f"started at <span class="hljs-subst">{time.strftime(<span class="hljs-string">'%X'</span>)}</span>"</span>)<br><br>    <span class="hljs-comment"># 两个任务顺序执行，都被阻塞了</span><br>    <span class="hljs-keyword">await</span> say_after(<span class="hljs-number">1</span>, <span class="hljs-string">'hello'</span>)<br>    <span class="hljs-keyword">await</span> say_after(<span class="hljs-number">2</span>, <span class="hljs-string">'world'</span>)<br><br>    <span class="hljs-built_in">print</span>(<span class="hljs-string">f"finished at <span class="hljs-subst">{time.strftime(<span class="hljs-string">'%X'</span>)}</span>"</span>)<br><br>asyncio.run(main())<br><br></code></pre></td></tr></table></figure>
+<p>这个例子中，<code>await say_after(1, 'hello')</code>时，需要阻塞当前协程，进入到<code>asyncio.sleep(1)</code>里，此时没有其他协程可以运行，故空等；同样，<code>await say_after(2, 'world')</code>时也是空等。<strong>故两个任务顺序执行，总共耗时3s</strong></p>
+<img src="/2023/02/17/python%E5%8D%8F%E7%A8%8B%E4%B8%8Easyncio/pic1.png" srcset="/img/loading.gif" lazyload class="">
+<p>上述问题的原因就是在执行第一个<code>await</code>的时候，不知道后面还有一个可以同时等待的任务，所以就阻塞了。</p>
+<p>解决的方法也很简单，就是提前在循环里注册所有需要等待的任务，这样就可以同时等待，从而实现异步。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><code class="hljs python"><br><span class="hljs-keyword">import</span> asyncio<br><span class="hljs-keyword">import</span> time<br><br><span class="hljs-keyword">async</span> <span class="hljs-keyword">def</span> <span class="hljs-title function_">say_after</span>(<span class="hljs-params">delay, what</span>):<br>    <span class="hljs-keyword">await</span> asyncio.sleep(delay)<br>    <span class="hljs-built_in">print</span>(what)<br><br><span class="hljs-keyword">async</span> <span class="hljs-keyword">def</span> <span class="hljs-title function_">main</span>():<br>    <span class="hljs-comment"># 先创建task</span><br>    task1 = asyncio.create_task(<br>        say_after(<span class="hljs-number">1</span>, <span class="hljs-string">'hello'</span>))<br><br>    task2 = asyncio.create_task(<br>        say_after(<span class="hljs-number">2</span>, <span class="hljs-string">'world'</span>))<br><br>    <span class="hljs-built_in">print</span>(<span class="hljs-string">f"started at <span class="hljs-subst">{time.strftime(<span class="hljs-string">'%X'</span>)}</span>"</span>)<br><br>    <span class="hljs-comment"># Wait until both tasks are completed (should take</span><br>    <span class="hljs-comment"># around 2 seconds.)</span><br>    <span class="hljs-comment"># 然后等待task完成</span><br>    <span class="hljs-keyword">await</span> task1<br>    <span class="hljs-keyword">await</span> task2<br><br>    <span class="hljs-built_in">print</span>(<span class="hljs-string">f"finished at <span class="hljs-subst">{time.strftime(<span class="hljs-string">'%X'</span>)}</span>"</span>)<br><br>asyncio.run(main())<br><br></code></pre></td></tr></table></figure>
+<p>上述代码事先创建了任务，从而实现了异步，总共耗时2s</p>
+<img src="/2023/02/17/python%E5%8D%8F%E7%A8%8B%E4%B8%8Easyncio/pic2.png" srcset="/img/loading.gif" lazyload class="">
+<h3 id="协程与多线程">协程与多线程</h3>
+<p>由于Python中GIL的存在，python的多线程其实比较假，而协程本质上也是单线程异步，所以很容易将两者比较起来。我来浅浅说一下两者区别和应用。</p>
+<p>由于线程是系统调度的，不同线程的任务都能运行，因此不同的任务不会产生饥饿。但是协程需要手动放权，所以如果写不好就容易出现只有一个任务一直在运行，其他任务得不到运行的结果。</p>
+<p>但是呢，协程相比于线程，更加轻量级，所以性能上有优势，协程在网络上优势大。且协程是单线程，没有竞争冒险。</p>
+<p>另外，假设一个这个场景：</p>
+<ul>
+<li>有一个计算密集型任务，需要占用大量CPU资源</li>
+<li>不时会出现临时借用小量CPU资源的任务</li>
+</ul>
+<p>这个时候使用协程就很麻烦，因为对大任务做拆分需要设置很多放权点，而且放权点位置和数目都要根据大任务而改变。且大任务如果调用了第三方函数计算，那么就很难控制放权点。</p>
+<p>这个时候使用多线程就比较好。</p>
 
                 
               </div>
@@ -485,9 +516,7 @@ mjx-container[display="true"] + br {
       
         <a href="/tags/Python/">#Python</a>
       
-        <a href="/tags/%E7%88%AC%E8%99%AB/">#爬虫</a>
-      
-        <a href="/tags/Python%E5%BC%82%E6%AD%A5/">#Python异步</a>
+        <a href="/tags/Python%E5%8D%8F%E7%A8%8B/">#Python协程</a>
       
     </div>
   
@@ -501,18 +530,12 @@ mjx-container[display="true"] + br {
                   <article class="post-prev col-6">
                     
                     
-                      <a href="/2022/10/19/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-12/" title="levelDB源码剖析(12)--迭代器的实现">
-                        <i class="iconfont icon-arrowleft"></i>
-                        <span class="hidden-mobile">levelDB源码剖析(12)--迭代器的实现</span>
-                        <span class="visible-mobile">Previous</span>
-                      </a>
-                    
                   </article>
                   <article class="post-next col-6">
                     
                     
-                      <a href="/2022/10/01/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-11/" title="levelDB源码剖析(11)--内部的key结构">
-                        <span class="hidden-mobile">levelDB源码剖析(11)--内部的key结构</span>
+                      <a href="/2023/02/17/python%E4%B8%AD%E8%A3%85%E9%A5%B0%E5%99%A8%E4%B8%8E%E7%B1%BB/" title="python中装饰器与类">
+                        <span class="hidden-mobile">python中装饰器与类</span>
                         <span class="visible-mobile">Next</span>
                         <i class="iconfont icon-arrowright"></i>
                       </a>
