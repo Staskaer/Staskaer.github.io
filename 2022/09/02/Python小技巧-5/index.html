@@ -16,25 +16,25 @@
   <meta name="author" content="Staskaer">
   <meta name="keywords" content="">
   
-    <meta name="description" content="字符串与文本----来源于cookbook第二章">
+    <meta name="description" content="文件和IO----来源于cookbook第五章">
 <meta property="og:type" content="article">
-<meta property="og:title" content="Python奇技淫巧(2)--字符串与文本">
-<meta property="og:url" content="http://example.com/2022/08/30/Python%E5%A5%87%E6%8A%80%E6%B7%AB%E5%B7%A7-2/index.html">
+<meta property="og:title" content="Python小技巧(5)--文件和IO">
+<meta property="og:url" content="http://example.com/2022/09/02/Python%E5%B0%8F%E6%8A%80%E5%B7%A7-5/index.html">
 <meta property="og:site_name" content="Staskaer">
-<meta property="og:description" content="字符串与文本----来源于cookbook第二章">
+<meta property="og:description" content="文件和IO----来源于cookbook第五章">
 <meta property="og:locale" content="en_US">
-<meta property="og:image" content="http://example.com/imgs/post_index_img/pycook2.jpg">
-<meta property="article:published_time" content="2022-08-30T12:37:53.000Z">
-<meta property="article:modified_time" content="2022-09-09T12:02:59.351Z">
+<meta property="og:image" content="http://example.com/imgs/post_index_img/pycook5.jpg">
+<meta property="article:published_time" content="2022-09-02T13:52:52.000Z">
+<meta property="article:modified_time" content="2023-02-26T13:56:16.382Z">
 <meta property="article:author" content="Staskaer">
 <meta property="article:tag" content="Python">
 <meta property="article:tag" content="PythonCookbook">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:image" content="http://example.com/imgs/post_index_img/pycook2.jpg">
+<meta name="twitter:image" content="http://example.com/imgs/post_index_img/pycook5.jpg">
   
   
   
-  <title>Python奇技淫巧(2)--字符串与文本 - Staskaer</title>
+  <title>Python小技巧(5)--文件和IO - Staskaer</title>
 
   <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
 
@@ -334,13 +334,13 @@ mjx-container[display="true"] + br {
   
 
 <div id="banner" class="banner" parallax=true
-     style="background: url('/imgs/post_index_img/pycook2.jpg') no-repeat center center; background-size: cover;">
+     style="background: url('/imgs/post_index_img/pycook5.jpg') no-repeat center center; background-size: cover;">
   <div class="full-bg-img">
     <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
       <div class="banner-text text-center fade-in-up">
         <div class="h2">
           
-            <span id="subtitle" data-typed-text="Python的奇技淫巧，让代码更Pythonic"></span>
+            <span id="subtitle" data-typed-text="Python的小技巧，让代码更Pythonic"></span>
           
         </div>
 
@@ -351,8 +351,8 @@ mjx-container[display="true"] + br {
     
       <span class="post-meta">
         <i class="iconfont icon-date-fill" aria-hidden="true"></i>
-        <time datetime="2022-08-30 20:37" pubdate>
-          August 30, 2022 pm
+        <time datetime="2022-09-02 21:52" pubdate>
+          September 2, 2022 pm
         </time>
       </span>
     
@@ -363,7 +363,7 @@ mjx-container[display="true"] + br {
       <span class="post-meta mr-2">
         <i class="iconfont icon-chart"></i>
         
-          944 words
+          1.8k words
         
       </span>
     
@@ -374,7 +374,7 @@ mjx-container[display="true"] + br {
         
         
         
-          4 mins
+          8 mins
         
       </span>
     
@@ -420,38 +420,56 @@ mjx-container[display="true"] + br {
         <div id="board">
           <article class="post-content mx-auto">
             <!-- SEO header -->
-            <h1 style="display: none">Python的奇技淫巧，让代码更Pythonic</h1>
+            <h1 style="display: none">Python的小技巧，让代码更Pythonic</h1>
             
             
               <div class="markdown-body">
                 
-                <h2 id="字符串与文本----来源于cookbook第二章">字符串与文本----来源于cookbook第二章</h2>
+                <h2 id="文件和io----来源于cookbook第五章">文件和IO----来源于cookbook第五章</h2>
 <span id="more"></span>
-<p><font color="#a0dda0">记录第二章中比较有意思的部分</font></p>
+<p><font color="#a0add0">记录第五章中比较有意思的部分</font></p>
 <hr>
-<div class="note note-info">
-            <p>其实这一章讲的方法挺多挺杂的，但是日常使用基本就正则和python自带的字符串方法，其他的感觉用不到的样子。</p><p>正则的话平时写多了自然就会了，这里就不记录了</p>
-          </div>
-<h3 id="字符串开头结尾文本匹配">字符串开头结尾文本匹配</h3>
+<h3 id="open函数打开文件的小技巧">open函数打开文件的小技巧</h3>
 <div class="note note-primary">
-            <p>使用<code>str.startswith()</code>和<code>str.endwith()</code>即可。在写文件批处理脚本的时候用得到。</p>
+            <p>由于有些文件中会出现编码错误或与当前主机不匹配，使用<code>open</code>函数时可以增加<code>errors='ignore'</code>来忽略掉错误的编码。</p>
           </div>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs python"><br>files = [<span class="hljs-string">'a.h'</span>,<span class="hljs-string">'a.c'</span>,<span class="hljs-string">'a.exe'</span>]<br>selected = [file <span class="hljs-keyword">for</span> file <span class="hljs-keyword">in</span> files <span class="hljs-keyword">if</span> file.endswith((<span class="hljs-string">".h"</span>,<span class="hljs-string">".c"</span>))]<br><span class="hljs-built_in">print</span>(selected) <span class="hljs-comment"># ['a.h', 'a.c']</span><br><br></code></pre></td></tr></table></figure>
-<h3 id="字符串去除首尾不需要的字符">字符串去除首尾不需要的字符</h3>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs python"><br>g = <span class="hljs-built_in">open</span>(<span class="hljs-string">"somefile.txt"</span>, <span class="hljs-string">'rt'</span>, encoding = <span class="hljs-string">'utf-8'</span>, errors = <span class="hljs-string">'ignore'</span>)<br><br></code></pre></td></tr></table></figure>
+<h3 id="使用print函数重定向到文件">使用print函数重定向到文件</h3>
 <div class="note note-primary">
-            <p>使用<code>str.lstrip()</code>和<code>str.rstrip()</code>即可</p>
+            <p>使用<code>print</code>函数的<code>file = handler</code>参数即可</p>
           </div>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs python"><br>s = <span class="hljs-string">'-=-=hellp-=-world-=-=-='</span><br>s = s.lstrip(<span class="hljs-string">"-="</span>)<br><span class="hljs-built_in">print</span>(s) <span class="hljs-comment"># 'hellp-=-world-=-=-='</span><br>s = s.rstrip(<span class="hljs-string">"-="</span>)<br><span class="hljs-built_in">print</span>(s) <span class="hljs-comment"># 'hellp-=-world'</span><br><br></code></pre></td></tr></table></figure>
-<h3 id="字符串拼接">字符串拼接</h3>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs python"><br>l = [<span class="hljs-number">1</span>,<span class="hljs-number">2</span>,<span class="hljs-string">'3'</span>,(<span class="hljs-number">4</span>,<span class="hljs-number">5</span>)]<br><br><span class="hljs-keyword">with</span> <span class="hljs-built_in">open</span>(<span class="hljs-string">"file"</span>,<span class="hljs-string">"w"</span>) <span class="hljs-keyword">as</span> f:<br>    <span class="hljs-built_in">print</span>(*l, sep = <span class="hljs-string">','</span>, file = f)<br><br></code></pre></td></tr></table></figure>
+<h3 id="对不存在的文件进行写入操作">对不存在的文件进行写入操作</h3>
 <div class="note note-primary">
-            <p><code>+</code>：效率最低，但是简单</p><p><code>join</code>：效率高，支持列表等</p><p><code>print(*args,sep=",")</code>：容易被遗忘的一种方法</p>
+            <p>直接使用<code>xt</code>模式来操作文件即可</p>
           </div>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs python"><br>a = <span class="hljs-number">1</span><br>b = <span class="hljs-number">2</span><br>c = <span class="hljs-number">3</span><br><br><span class="hljs-built_in">print</span>(<span class="hljs-string">','</span>.join(<span class="hljs-built_in">str</span>(i) <span class="hljs-keyword">for</span> i <span class="hljs-keyword">in</span> [a,b,c])) <span class="hljs-comment"># 1,2,3</span><br><span class="hljs-built_in">print</span>(a,b,c,sep=<span class="hljs-string">","</span>) <span class="hljs-comment"># 1,2,3</span><br><br></code></pre></td></tr></table></figure>
-<h3 id="给字符串中变量名做插值">给字符串中变量名做插值</h3>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs python"><br><span class="hljs-keyword">with</span> <span class="hljs-built_in">open</span>(<span class="hljs-string">"somefile"</span>, <span class="hljs-string">'wt'</span>) <span class="hljs-keyword">as</span> f: <span class="hljs-comment"># 当somefile不存在时会报错</span><br>    ...<br><br><span class="hljs-keyword">with</span> <span class="hljs-built_in">open</span>(<span class="hljs-string">"somefile"</span>, <span class="hljs-string">'xt'</span>) <span class="hljs-keyword">as</span> f: <span class="hljs-comment"># 当somefile不存在时会创建，存在时不影响</span><br>    ...<br><br></code></pre></td></tr></table></figure>
+<h3 id="将二进制文件做内存映射">将二进制文件做内存映射</h3>
 <div class="note note-primary">
-            <p>作者在书中提到python没法直接处理字符串插值，并实现了一些复杂的方法，<br>幸运的是，新版本的python已经直接支持插值了，不需手动去实现了</p>
+            <p>使用<code>mmap</code>模块来创建映射，这样可以直接访问，而不需要频繁的seek、read等操作。</p><p>另外，由于虚拟内存的存在，多个python解释器可以映射到同一个文件上从而实现共享数据。</p>
           </div>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs python"><br>name = <span class="hljs-string">'book'</span><br>price = <span class="hljs-number">10</span><br><span class="hljs-built_in">print</span>(<span class="hljs-string">f"<span class="hljs-subst">{name}</span>' price is <span class="hljs-subst">{price}</span>"</span>) <span class="hljs-comment"># book' price is 10</span><br><br><br></code></pre></td></tr></table></figure>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><code class="hljs python"><br><span class="hljs-keyword">import</span> os<br><span class="hljs-keyword">import</span> mmap<br><br><span class="hljs-keyword">def</span> <span class="hljs-title function_">memory_map</span>(<span class="hljs-params">filename, access = mmap.ACCESS_WRITE</span>):<br>    size = os.path.getsize(filename)<br>    fd = os.<span class="hljs-built_in">open</span>(filename, os.O_RDWR)<br>    <span class="hljs-keyword">return</span> mmap.mmap(fd, size, access = access)<br><br>m = memory_map(<span class="hljs-string">"data"</span>)<br><br><span class="hljs-comment"># 此时就可以像操作数组那样操作m</span><br><br><span class="hljs-built_in">print</span>(<span class="hljs-built_in">len</span>(m))<br><span class="hljs-built_in">print</span>(m[:<span class="hljs-number">34</span>])<br>m[:<span class="hljs-number">11</span>] = <span class="hljs-string">b'hello world'</span><br>m.close()<br><br></code></pre></td></tr></table></figure>
+<h3 id="将字节数据写入文本文件">将字节数据写入文本文件</h3>
+<div class="note note-primary">
+            <p>只需要简答的将字节数据写入到文件底层buffer中就可以了。</p>
+          </div>
+<div class="note note-warning">
+            <p>在python中调用print时，事实上调用了sys.stdout.write(obj+'\n')</p><p>而stdout就像是一个类文件对象，因为你可以将他赋值给任意的一个文件对象，重定向输出</p><p>原始的sys.stdout指向控制台，如果把文件的对象引用赋给sys.stdout，那么print调用的就是文件对象的write方法</p><p>而buffer是缓冲区，所以此操作就是不调用上层的write方法而直接写入底层的缓冲区</p>
+          </div>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><code class="hljs python"><br><span class="hljs-comment"># 示例一</span><br><br><span class="hljs-keyword">import</span> sys<br><br>sys.stdout.buffer.write(<span class="hljs-string">b'hello\n'</span>)<br><br><br><span class="hljs-comment"># 示例二</span><br><br><span class="hljs-keyword">import</span> sys<br><br>sys.stdout = <span class="hljs-built_in">open</span>(<span class="hljs-string">"filename"</span>,<span class="hljs-string">"xt"</span>)<br><br>sys.stdout.buffer.write(<span class="hljs-string">b'hello\n'</span>)<br><br></code></pre></td></tr></table></figure>
+<h3 id="创建临时文件与文件夹">创建临时文件与文件夹</h3>
+<div class="note note-primary">
+            <p><code>tempfile</code>模块中有各种实现了上下文管理协议的函数来处理临时文件</p>
+          </div>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs python"><br><span class="hljs-keyword">from</span> tempfile <span class="hljs-keyword">import</span> TemporaryFile<br><br><span class="hljs-keyword">with</span> TemporaryFile(<span class="hljs-string">'w+t'</span>, encoding = <span class="hljs-string">'utf-8'</span>, errors = <span class="hljs-string">'ignore'</span>, delete = <span class="hljs-literal">True</span>):<br>    ...<br><br></code></pre></td></tr></table></figure>
+<h3 id="序列化python对象">序列化python对象</h3>
+<div class="note note-primary">
+            <p><code>pickle</code>模块的dump和load函数就足以处理这些</p>
+          </div>
+<div class="note note-warning">
+            <p>注意不要对来源不明的对象进行load，因为这会产生副作用，严重甚至可能导致计算机被入侵。</p>
+          </div>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><code class="hljs python"><br><span class="hljs-keyword">import</span> pickle<br><br>a = [<span class="hljs-number">1</span>,<span class="hljs-number">2</span>,<span class="hljs-number">3</span>]<br><br><span class="hljs-keyword">with</span> <span class="hljs-built_in">open</span>(<span class="hljs-string">"filename"</span>,<span class="hljs-string">'wb'</span>) <span class="hljs-keyword">as</span> f:<br>    pickle.dump(a,f)<br>    ...<br>    pickle.load(a,f)<br><br></code></pre></td></tr></table></figure>
 
                 
               </div>
@@ -501,9 +519,9 @@ mjx-container[display="true"] + br {
                   <article class="post-prev col-6">
                     
                     
-                      <a href="/2022/08/30/Python%E5%A5%87%E6%8A%80%E6%B7%AB%E5%B7%A7-3/" title="Python奇技淫巧(3)--处理数字、时间和日期">
+                      <a href="/2022/09/04/CUDA%E9%AB%98%E6%80%A7%E8%83%BD%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-1/" title="CUDA高性能并行计算(1)--CUDA初步探究">
                         <i class="iconfont icon-arrowleft"></i>
-                        <span class="hidden-mobile">Python奇技淫巧(3)--处理数字、时间和日期</span>
+                        <span class="hidden-mobile">CUDA高性能并行计算(1)--CUDA初步探究</span>
                         <span class="visible-mobile">Previous</span>
                       </a>
                     
@@ -511,8 +529,8 @@ mjx-container[display="true"] + br {
                   <article class="post-next col-6">
                     
                     
-                      <a href="/2022/08/30/Python%E5%A5%87%E6%8A%80%E6%B7%AB%E5%B7%A7-1/" title="Python奇技淫巧(1)--基本数据结构与算法">
-                        <span class="hidden-mobile">Python奇技淫巧(1)--基本数据结构与算法</span>
+                      <a href="/2022/09/01/Webbench%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/" title="Webbench源码剖析">
+                        <span class="hidden-mobile">Webbench源码剖析</span>
                         <span class="visible-mobile">Next</span>
                         <i class="iconfont icon-arrowright"></i>
                       </a>
