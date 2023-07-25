@@ -1,107 +1,93 @@
-
-
 <!DOCTYPE html>
-<html lang="en" data-default-color-scheme=auto>
-
-
-
+<html lang="en">
 <head>
   <meta charset="UTF-8">
-  <link rel="apple-touch-icon" sizes="76x76" href="/imgs/theme_pic/staskaer.png">
-  <link rel="icon" href="/imgs/theme_pic/staskaer.png">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
-  <meta http-equiv="x-ua-compatible" content="ie=edge">
-  
-  <meta name="theme-color" content="#2f4154">
-  <meta name="author" content="Staskaer">
-  <meta name="keywords" content="">
-  
-    <meta name="description" content="基本块布局、热点代码对齐，内存预取，循环优化">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 6.2.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/imgs/theme_pic/staskaer.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/imgs/theme_pic/staskaer.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/imgs/theme_pic/staskaer.png">
+  <link rel="mask-icon" href="/imgs/theme_pic/staskaer.png" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Gemini","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"flat"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"valine","storage":true,"lazyload":false,"nav":null,"activeClass":"valine"},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="基本块布局、热点代码对齐，内存预取，循环优化">
 <meta property="og:type" content="article">
 <meta property="og:title" content="CPU级的性能优化">
 <meta property="og:url" content="http://example.com/2023/03/18/CPU%E7%BA%A7%E7%9A%84%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96/index.html">
 <meta property="og:site_name" content="Staskaer">
 <meta property="og:description" content="基本块布局、热点代码对齐，内存预取，循环优化">
 <meta property="og:locale" content="en_US">
-<meta property="og:image" content="http://example.com/imgs/post_index_img/CPU.jpg">
+<meta property="og:image" content="http://example.com/2023/03/18/CPU%E7%BA%A7%E7%9A%84%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96/pic1.png">
+<meta property="og:image" content="http://example.com/2023/03/18/CPU%E7%BA%A7%E7%9A%84%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96/pic2.png">
+<meta property="og:image" content="http://example.com/2023/03/18/CPU%E7%BA%A7%E7%9A%84%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96/pic3.png">
+<meta property="og:image" content="http://example.com/2023/03/18/CPU%E7%BA%A7%E7%9A%84%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96/pic4.png">
+<meta property="og:image" content="http://example.com/2023/03/18/CPU%E7%BA%A7%E7%9A%84%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96/pic5.png">
+<meta property="og:image" content="http://example.com/2023/03/18/CPU%E7%BA%A7%E7%9A%84%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96/pic6.png">
+<meta property="og:image" content="http://example.com/2023/03/18/CPU%E7%BA%A7%E7%9A%84%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96/pic7.png">
+<meta property="og:image" content="http://example.com/2023/03/18/CPU%E7%BA%A7%E7%9A%84%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96/pic8.png">
+<meta property="og:image" content="http://example.com/2023/03/18/CPU%E7%BA%A7%E7%9A%84%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96/pic9.png">
 <meta property="article:published_time" content="2023-03-18T09:12:10.000Z">
-<meta property="article:modified_time" content="2023-03-18T13:54:34.891Z">
+<meta property="article:modified_time" content="2023-07-25T06:38:57.929Z">
 <meta property="article:author" content="Staskaer">
 <meta property="article:tag" content="CPU级性能优化">
-<meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:image" content="http://example.com/imgs/post_index_img/CPU.jpg">
-  
-  
-  
-  <title>CPU级的性能优化 - Staskaer</title>
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://example.com/2023/03/18/CPU%E7%BA%A7%E7%9A%84%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96/pic1.png">
 
-  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+<link rel="canonical" href="http://example.com/2023/03/18/CPU%E7%BA%A7%E7%9A%84%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96/">
 
 
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'en'
+  };
+</script>
 
-  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
-
-  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
-
-  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
-
-
-
-<!-- 主题依赖的图标库，不要自行修改 -->
-<!-- Do not modify the link that theme dependent icons -->
-
-<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_hj8rtnfg7um.css">
-
-
-
-<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_lbnruvf0jn.css">
-
-
-<link  rel="stylesheet" href="/css/main.css" />
-
-
-  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
-  
-    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  <title>CPU级的性能优化 | Staskaer</title>
   
 
 
 
 
-  <script id="fluid-configs">
-    var Fluid = window.Fluid || {};
-    Fluid.ctx = Object.assign({}, Fluid.ctx)
-    var CONFIG = {"hostname":"example.com","root":"/","version":"1.9.2","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":true,"follow_dnt":false,"baidu":null,"google":null,"gtag":null,"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":"xH8NDrh9u4SQrUpQOd0lICnX-MdYXbMMI","app_key":"jl3JjPS4jsosZG29Zv24Y7LE","server_url":null,"path":"window.location.pathname","ignore_local":false}},"search_path":"/local-search.xml"};
-
-    if (CONFIG.web_analytics.follow_dnt) {
-      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
-      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
-    }
-  </script>
-  <script  src="/js/utils.js" ></script>
-  <script  src="/js/color-schema.js" ></script>
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-    
-  
 
 
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
 
-  
-<meta name="generator" content="Hexo 6.2.0"><style>mjx-container[jax="SVG"] {
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+<style>mjx-container[jax="SVG"] {
   direction: ltr;
 }
 
@@ -215,216 +201,190 @@ mjx-container[display="true"] + br {
 }
 </style></head>
 
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
 
-<body>
-  
-
-  <header>
-    
-
-<div class="header-inner" style="height: 70vh;">
-  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
-  <div class="container">
-    <a class="navbar-brand" href="/">
-      <strong>Staskaer</strong>
-    </a>
-
-    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
-            data-target="#navbarSupportedContent"
-            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
-      <div class="animated-icon"><span></span><span></span><span></span></div>
-    </button>
-
-    <!-- Collapsible content -->
-    <div class="collapse navbar-collapse" id="navbarSupportedContent">
-      <ul class="navbar-nav ml-auto text-center">
-        
-          
-          
-          
-          
-            <li class="nav-item">
-              <a class="nav-link" href="/">
-                <i class="iconfont icon-home-fill"></i>
-                Home
-              </a>
-            </li>
-          
-        
-          
-          
-          
-          
-            <li class="nav-item">
-              <a class="nav-link" href="/archives/">
-                <i class="iconfont icon-archive-fill"></i>
-                Archives
-              </a>
-            </li>
-          
-        
-          
-          
-          
-          
-            <li class="nav-item">
-              <a class="nav-link" href="/categories/">
-                <i class="iconfont icon-category-fill"></i>
-                Categories
-              </a>
-            </li>
-          
-        
-          
-          
-          
-          
-            <li class="nav-item">
-              <a class="nav-link" href="/tags/">
-                <i class="iconfont icon-tags-fill"></i>
-                Tags
-              </a>
-            </li>
-          
-        
-          
-          
-          
-          
-            <li class="nav-item">
-              <a class="nav-link" href="/about/">
-                <i class="iconfont icon-user-fill"></i>
-                About
-              </a>
-            </li>
-          
-        
-          
-          
-          
-          
-            <li class="nav-item">
-              <a class="nav-link" href="/links/">
-                <i class="iconfont icon-link-fill"></i>
-                Links
-              </a>
-            </li>
-          
-        
-        
-          <li class="nav-item" id="search-btn">
-            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
-              &nbsp;<i class="iconfont icon-search"></i>&nbsp;
-            </a>
-          </li>
-          
-        
-        
-          <li class="nav-item" id="color-toggle-btn">
-            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">&nbsp;<i
-                class="iconfont icon-dark" id="color-toggle-icon"></i>&nbsp;</a>
-          </li>
-        
-      </ul>
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
     </div>
   </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Staskaer</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">Hi, this is Staskaer</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
 </nav>
 
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="Searching..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2023/03/18/CPU%E7%BA%A7%E7%9A%84%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/imgs/theme_pic/head_img.png">
+      <meta itemprop="name" content="Staskaer">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Staskaer">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          CPU级的性能优化
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2023-03-18 17:12:10" itemprop="dateCreated datePublished" datetime="2023-03-18T17:12:10+08:00">2023-03-18</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2023-07-25 14:38:57" itemprop="dateModified" datetime="2023-07-25T14:38:57+08:00">2023-07-25</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96/" itemprop="url" rel="index"><span itemprop="name">性能优化</span></a>
+                </span>
+            </span>
+
+          
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Valine: </span>
+    
+    <a title="valine" href="/2023/03/18/CPU%E7%BA%A7%E7%9A%84%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96/#valine-comments" itemprop="discussionUrl">
+      <span class="post-comments-count valine-comment-count" data-xid="/2023/03/18/CPU%E7%BA%A7%E7%9A%84%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
   
 
-<div id="banner" class="banner" parallax=true
-     style="background: url('/imgs/post_index_img/CPU.jpg') no-repeat center center; background-size: cover;">
-  <div class="full-bg-img">
-    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
-      <div class="banner-text text-center fade-in-up">
-        <div class="h2">
-          
-            <span id="subtitle" data-typed-text="优化？劣化！"></span>
-          
         </div>
-
-        
-          
-  <div class="mt-3">
-    
-    
-      <span class="post-meta">
-        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
-        <time datetime="2023-03-18 17:12" pubdate>
-          March 18, 2023 pm
-        </time>
-      </span>
-    
-  </div>
-
-  <div class="mt-1">
-    
-      <span class="post-meta mr-2">
-        <i class="iconfont icon-chart"></i>
-        
-          4.7k words
-        
-      </span>
-    
-
-    
-      <span class="post-meta mr-2">
-        <i class="iconfont icon-clock-fill"></i>
-        
-        
-        
-          20 mins
-        
-      </span>
-    
+      </header>
 
     
     
-      
-        <span id="leancloud-page-views-container" class="post-meta" style="display: none">
-          <i class="iconfont icon-eye" aria-hidden="true"></i>
-          <span id="leancloud-page-views"></span> views
-        </span>
-        
-      
     
-  </div>
-
-
-        
-      </div>
+    <div class="post-body" itemprop="articleBody">
 
       
-    </div>
-  </div>
-</div>
-
-</div>
-
-  </header>
-
-  <main>
-    
-      
-
-<div class="container-fluid nopadding-x">
-  <div class="row nomargin-x">
-    <div class="side-col d-none d-lg-block col-lg-2">
-      
-
-    </div>
-
-    <div class="col-lg-8 nopadding-x-md">
-      <div class="container nopadding-x-md" id="board-ctn">
-        <div id="board">
-          <article class="post-content mx-auto">
-            <!-- SEO header -->
-            <h1 style="display: none">优化？劣化！</h1>
-            
-            
-              <div class="markdown-body">
-                
-                <p><strong>基本块布局、热点代码对齐，内存预取，循环优化</strong></p>
+        <p><strong>基本块布局、热点代码对齐，内存预取，循环优化</strong></p>
 <span id="more"></span>
 <p>之前给阳关电源做项目的时候，他们提出要对代码进行优化，所以学习了一些优化方法，现在正好来记录一下。<del>虽然最后并没用到多少下述方法...</del></p>
 <h1 id="性能分析工具">性能分析工具</h1>
@@ -439,15 +399,21 @@ mjx-container[display="true"] + br {
 <li><code>perf record</code>：记录一段时间内系统/进程的性能时间</li>
 <li><code>perf report</code>：读取<code>perf record</code>生成的数据文件，并显示分析数据</li>
 </ul>
-<img src="/2023/03/18/CPU%E7%BA%A7%E7%9A%84%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96/pic1.png" srcset="/img/loading.gif" lazyload class="">
+<img src="/2023/03/18/CPU%E7%BA%A7%E7%9A%84%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96/pic1.png" class="">
 <h2 id="python代码分析">python代码分析</h2>
 <h3 id="memory_profiler">memory_profiler</h3>
 <p><a target="_blank" rel="noopener" href="https://github.com/pythonprofilers/memory_profiler">memory_profiler文档</a></p>
 <p>这个工具可以用于分析代码的内存开销，使用方法也很简单</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs python"><br><span class="hljs-keyword">from</span> memory_profiler <span class="hljs-keyword">import</span> profile<br><br><span class="hljs-meta">@profile</span><br><span class="hljs-keyword">def</span> <span class="hljs-title function_">func</span>():<br>    <span class="hljs-keyword">pass</span><br><br></code></pre></td></tr></table></figure>
+<pre class="line-numbers language-python" data-language="python"><code class="language-python">
+<span class="token keyword">from</span> memory_profiler <span class="token keyword">import</span> profile
+
+<span class="token decorator annotation punctuation">@profile</span>
+<span class="token keyword">def</span> <span class="token function">func</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">:</span>
+    <span class="token keyword">pass</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <p>把装饰器挂在待分析的函数上，直接执行就可以了。</p>
 <p>每一行代码执行前后的开销都会被记录下来</p>
-<img src="/2023/03/18/CPU%E7%BA%A7%E7%9A%84%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96/pic2.png" srcset="/img/loading.gif" lazyload class="">
+<img src="/2023/03/18/CPU%E7%BA%A7%E7%9A%84%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96/pic2.png" class="">
 <h3 id="viztracer">viztracer</h3>
 <p>这个工具可以用于记录函数的调用栈和时间，不过目前发现它对<code>numpy</code>这类库支持效果不是很好，有些调用过程无法记录到。</p>
 <p><em>看了一下issue，是因为numpy的函数都被优化成了纯C函数，而不是PYCFunction，所以没法触发hook导致无法被记录。不过这种基本运算也不是很需要被追踪...</em></p>
@@ -455,7 +421,7 @@ mjx-container[display="true"] + br {
 <p><del>viztracer的作者就是前一段时间锤wjk假唱的那位大佬(清华毕业，加州微软工作，年收入七位数，实在是太牛了)</del></p>
 <p>还有一个小小的问题，如果windows下用户名是中文的话，需要修改Temp目录才行。</p>
 <p><del>这个工具当时画出来的图我看的不是很明白，所以没敢往PPT上放</del></p>
-<img src="/2023/03/18/CPU%E7%BA%A7%E7%9A%84%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96/pic3.png" srcset="/img/loading.gif" lazyload class="">
+<img src="/2023/03/18/CPU%E7%BA%A7%E7%9A%84%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96/pic3.png" class="">
 <h1 id="代码布局优化">代码布局优化</h1>
 <p>代码中经常被执行到的区域定义为<strong>热路径</strong>，剩余的区域定义为<strong>冷路径</strong>。</p>
 <p>由于<strong>指令本身也参与缓存</strong>，所以热路径的代码执行效率会比冷路径高很多。</p>
@@ -463,31 +429,95 @@ mjx-container[display="true"] + br {
 <p>因此，代码布局优化的目的就是<strong>将热路径的代码放在一起，并让其尽可能小</strong>，这样可以<strong>提升缓存利用率</strong>，提高代码的执行效率。</p>
 <h2 id="基本块布局">基本块布局</h2>
 <p>考虑以下代码布局</p>
-<img src="/2023/03/18/CPU%E7%BA%A7%E7%9A%84%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96/pic4.png" srcset="/img/loading.gif" lazyload class="">
+<img src="/2023/03/18/CPU%E7%BA%A7%E7%9A%84%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96/pic4.png" class="">
 <p>由于两个热路径之间插入了冷路径，其表现为<strong>热路径和冷路径代码位于相同的页表缓存项中</strong>，增大了缓存空间，不利于缓存。</p>
 <p>这种代码布局常见于错误处理，如</p>
-<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><code class="hljs c"><br><span class="hljs-comment">// 热代码</span><br>fp = fopen(<span class="hljs-string">"hello.txt"</span>, <span class="hljs-string">"w"</span>);<br><span class="hljs-comment">// 打开文件失败比较少见，冷代码</span><br><span class="hljs-keyword">if</span> (fp == <span class="hljs-literal">NULL</span>) <br>{<br>    <span class="hljs-comment">// 处理错误</span><br>    <span class="hljs-comment">// 做了一些工作</span><br>}<br><span class="hljs-comment">// 正常处理，热代码</span><br><br></code></pre></td></tr></table></figure>
+<pre class="line-numbers language-c" data-language="c"><code class="language-c">
+<span class="token comment">// 热代码</span>
+fp <span class="token operator">=</span> <span class="token function">fopen</span><span class="token punctuation">(</span><span class="token string">"hello.txt"</span><span class="token punctuation">,</span> <span class="token string">"w"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token comment">// 打开文件失败比较少见，冷代码</span>
+<span class="token keyword">if</span> <span class="token punctuation">(</span>fp <span class="token operator">==</span> <span class="token constant">NULL</span><span class="token punctuation">)</span> 
+<span class="token punctuation">{</span>
+    <span class="token comment">// 处理错误</span>
+    <span class="token comment">// 做了一些工作</span>
+<span class="token punctuation">}</span>
+<span class="token comment">// 正常处理，热代码</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <p>如果不做优化，那么产生的汇编的布局应该是这样的</p>
-<img src="/2023/03/18/CPU%E7%BA%A7%E7%9A%84%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96/pic5.png" srcset="/img/loading.gif" lazyload class="">
+<img src="/2023/03/18/CPU%E7%BA%A7%E7%9A%84%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96/pic5.png" class="">
 <p>可以使用__builtin_expect函数来优化这种代码布局</p>
-<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><code class="hljs c"><br><span class="hljs-comment">// 热代码</span><br>fp = fopen(<span class="hljs-string">"hello.txt"</span>, <span class="hljs-string">"w"</span>);<br><br><span class="hljs-comment">// 此处表示该if项的条件为假的概率更大</span><br><span class="hljs-keyword">if</span> (__builtin_expect(fp == <span class="hljs-literal">NULL</span>, <span class="hljs-number">0</span>)) <br>{<br>    <span class="hljs-comment">// 处理错误</span><br>    <span class="hljs-comment">// 做了一些工作</span><br>}<br><span class="hljs-comment">// 正常处理，热代码</span><br><br></code></pre></td></tr></table></figure>
+<pre class="line-numbers language-c" data-language="c"><code class="language-c">
+<span class="token comment">// 热代码</span>
+fp <span class="token operator">=</span> <span class="token function">fopen</span><span class="token punctuation">(</span><span class="token string">"hello.txt"</span><span class="token punctuation">,</span> <span class="token string">"w"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+<span class="token comment">// 此处表示该if项的条件为假的概率更大</span>
+<span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token function">__builtin_expect</span><span class="token punctuation">(</span>fp <span class="token operator">==</span> <span class="token constant">NULL</span><span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">)</span> 
+<span class="token punctuation">{</span>
+    <span class="token comment">// 处理错误</span>
+    <span class="token comment">// 做了一些工作</span>
+<span class="token punctuation">}</span>
+<span class="token comment">// 正常处理，热代码</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <p><code>__builtin_expect(cond, value)</code>即表示<code>cond</code>的值为<code>value</code>的概率更大。<br>
 这样会有利于编译器生成更好的布局，如</p>
-<img src="/2023/03/18/CPU%E7%BA%A7%E7%9A%84%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96/pic6.png" srcset="/img/loading.gif" lazyload class="">
+<img src="/2023/03/18/CPU%E7%BA%A7%E7%9A%84%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96/pic6.png" class="">
 <p>可以定义成宏使用，更加方便</p>
-<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><code class="hljs c"><br><span class="hljs-meta">#<span class="hljs-keyword">define</span> likely(x) __builtin_expect(!!(x), 1)</span><br><span class="hljs-meta">#<span class="hljs-keyword">define</span> unlikely(x) __builtin_expect(!!(x), 0)</span><br><br><span class="hljs-comment">// 热代码</span><br>fp = fopen(<span class="hljs-string">"hello.txt"</span>, <span class="hljs-string">"w"</span>);<br><br><span class="hljs-comment">// 此处表示该if项的条件为假的概率更大</span><br><span class="hljs-keyword">if</span> (unlikely(fp == <span class="hljs-literal">NULL</span>)) <br>{<br>    <span class="hljs-comment">// 处理错误</span><br>    <span class="hljs-comment">// 做了一些工作</span><br>}<br><span class="hljs-comment">// 正常处理，热代码</span><br><br></code></pre></td></tr></table></figure>
+<pre class="line-numbers language-c" data-language="c"><code class="language-c">
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">define</span> <span class="token macro-name function">likely</span><span class="token expression"><span class="token punctuation">(</span>x<span class="token punctuation">)</span> <span class="token function">__builtin_expect</span><span class="token punctuation">(</span><span class="token operator">!</span><span class="token operator">!</span><span class="token punctuation">(</span>x<span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token number">1</span><span class="token punctuation">)</span></span></span>
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">define</span> <span class="token macro-name function">unlikely</span><span class="token expression"><span class="token punctuation">(</span>x<span class="token punctuation">)</span> <span class="token function">__builtin_expect</span><span class="token punctuation">(</span><span class="token operator">!</span><span class="token operator">!</span><span class="token punctuation">(</span>x<span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">)</span></span></span>
+
+<span class="token comment">// 热代码</span>
+fp <span class="token operator">=</span> <span class="token function">fopen</span><span class="token punctuation">(</span><span class="token string">"hello.txt"</span><span class="token punctuation">,</span> <span class="token string">"w"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+<span class="token comment">// 此处表示该if项的条件为假的概率更大</span>
+<span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token function">unlikely</span><span class="token punctuation">(</span>fp <span class="token operator">==</span> <span class="token constant">NULL</span><span class="token punctuation">)</span><span class="token punctuation">)</span> 
+<span class="token punctuation">{</span>
+    <span class="token comment">// 处理错误</span>
+    <span class="token comment">// 做了一些工作</span>
+<span class="token punctuation">}</span>
+<span class="token comment">// 正常处理，热代码</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <p>也可以用于<code>switch</code></p>
-<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><code class="hljs c"><br><span class="hljs-keyword">switch</span> (__builtin_expect(x, <span class="hljs-number">3</span>))<br>{<br>    <span class="hljs-keyword">case</span> <span class="hljs-number">1</span>:<br>        <span class="hljs-comment">// 冷代码</span><br>        <span class="hljs-keyword">break</span>;<br>    <span class="hljs-keyword">case</span> <span class="hljs-number">2</span>:<br>        <span class="hljs-comment">// 冷代码</span><br>        <span class="hljs-keyword">break</span>;<br>    <span class="hljs-keyword">case</span> <span class="hljs-number">3</span>:<br>        <span class="hljs-comment">// 热代码</span><br>        <span class="hljs-keyword">break</span>;<br>    <span class="hljs-keyword">default</span>:<br>        <span class="hljs-comment">// 冷代码</span><br>        <span class="hljs-keyword">break</span>;<br>}<br><br></code></pre></td></tr></table></figure>
+<pre class="line-numbers language-c" data-language="c"><code class="language-c">
+<span class="token keyword">switch</span> <span class="token punctuation">(</span><span class="token function">__builtin_expect</span><span class="token punctuation">(</span>x<span class="token punctuation">,</span> <span class="token number">3</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+<span class="token punctuation">{</span>
+    <span class="token keyword">case</span> <span class="token number">1</span><span class="token operator">:</span>
+        <span class="token comment">// 冷代码</span>
+        <span class="token keyword">break</span><span class="token punctuation">;</span>
+    <span class="token keyword">case</span> <span class="token number">2</span><span class="token operator">:</span>
+        <span class="token comment">// 冷代码</span>
+        <span class="token keyword">break</span><span class="token punctuation">;</span>
+    <span class="token keyword">case</span> <span class="token number">3</span><span class="token operator">:</span>
+        <span class="token comment">// 热代码</span>
+        <span class="token keyword">break</span><span class="token punctuation">;</span>
+    <span class="token keyword">default</span><span class="token operator">:</span>
+        <span class="token comment">// 冷代码</span>
+        <span class="token keyword">break</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <p>利用该注解，编译器可以微调代码，从而提高性能。</p>
 <h2 id="冷代码拆分">冷代码拆分</h2>
 <p>冷代码拆分和基本块布局类似，都是为了减少冷路径代码占用的缓存空间。</p>
 <p>上述代码布局中，是将冷代码移到热代码后面，这样可以减少冷路径代码占用的缓存空间。<strong>但是如果有些时候，热路径贯穿始终，而冷路径基本都是些错误处理函数，这样移动到最后就有些不合适了(因为某个热路径可能需要保证错误被正确处理)</strong></p>
-<img src="/2023/03/18/CPU%E7%BA%A7%E7%9A%84%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96/pic7.png" srcset="/img/loading.gif" lazyload class="">
+<img src="/2023/03/18/CPU%E7%BA%A7%E7%9A%84%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96/pic7.png" class="">
 <p>由于冷代码可能会被内联，这时候缓存页就会变大导致效率低下。</p>
 <p>为了提升利用率，<strong>需要静止内联冷代码</strong>，这时候可以使用<code>noinline</code>属性来告知编译器不要内联该冷函数。</p>
-<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><code class="hljs c"><br><span class="hljs-type">void</span> <span class="hljs-title function_">cold1</span><span class="hljs-params">()</span> __<span class="hljs-title function_">attribute__</span><span class="hljs-params">((noinline))</span> <br>{ <br>    <span class="hljs-comment">// 冷代码</span><br>}<br><br><span class="hljs-comment">// 热代码</span><br><br><span class="hljs-comment">// 冷代码区域，避免内联且优化布局</span><br><span class="hljs-keyword">if</span>( __builtin_expect(cond, <span class="hljs-number">0</span>) )<br>    cold1()<br><br><span class="hljs-comment">// 热代码</span><br><br></code></pre></td></tr></table></figure>
+<pre class="line-numbers language-c" data-language="c"><code class="language-c">
+<span class="token keyword">void</span> <span class="token function">cold1</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token keyword">__attribute__</span><span class="token punctuation">(</span><span class="token punctuation">(</span>noinline<span class="token punctuation">)</span><span class="token punctuation">)</span> 
+<span class="token punctuation">{</span> 
+    <span class="token comment">// 冷代码</span>
+<span class="token punctuation">}</span>
+
+<span class="token comment">// 热代码</span>
+
+<span class="token comment">// 冷代码区域，避免内联且优化布局</span>
+<span class="token keyword">if</span><span class="token punctuation">(</span> <span class="token function">__builtin_expect</span><span class="token punctuation">(</span>cond<span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">)</span> <span class="token punctuation">)</span>
+    <span class="token function">cold1</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+
+<span class="token comment">// 热代码</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <p>这个时候，<code>cold1</code>函数将被置于<code>.text</code>段以外，而原<code>.text</code>段将被一条<code>call</code>指令替代，这样就保证了缓存利用率。</p>
-<img src="/2023/03/18/CPU%E7%BA%A7%E7%9A%84%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96/pic8.png" srcset="/img/loading.gif" lazyload class="">
+<img src="/2023/03/18/CPU%E7%BA%A7%E7%9A%84%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96/pic8.png" class="">
 <h1 id="数据优化">数据优化</h1>
 <p>数据优化一方面是要写出<strong>数据友好型的程序</strong>，另一方面也要保证<strong>CPU流水线尽可能少停摆</strong>。</p>
 <p>数据友好型程序还是针对缓存而言的，主要就是对齐和预取。</p>
@@ -499,14 +529,48 @@ mjx-container[display="true"] + br {
 <li>N B的数据对齐于能被N整除的地址 if N &lt;= 8</li>
 <li>对齐于能被16整除的地址 else</li>
 </ul>
-<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs cpp"><br><span class="hljs-built_in">alignas</span>(<span class="hljs-number">16</span>) <span class="hljs-type">int16_t</span> a[<span class="hljs-number">20</span>]<br><br><span class="hljs-keyword">struct</span> <span class="hljs-title class_">alignas</span>(<span class="hljs-number">64</span>) S<br>{<br>    <span class="hljs-comment">// 数据</span><br>}<br><br></code></pre></td></tr></table></figure>
+<pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp">
+<span class="token keyword">alignas</span><span class="token punctuation">(</span><span class="token number">16</span><span class="token punctuation">)</span> <span class="token keyword">int16_t</span> a<span class="token punctuation">[</span><span class="token number">20</span><span class="token punctuation">]</span>
+
+<span class="token keyword">struct</span> <span class="token keyword">alignas</span><span class="token punctuation">(</span><span class="token number">64</span><span class="token punctuation">)</span> S
+<span class="token punctuation">{</span>
+    <span class="token comment">// 数据</span>
+<span class="token punctuation">}</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <h2 id="内存预取至缓存">内存预取至缓存</h2>
 <p>缓存预取是为了解决循环处理数据时的缓存性能下降</p>
 <p>类似这种情况</p>
-<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><code class="hljs c"><br><span class="hljs-keyword">for</span> (<span class="hljs-type">int</span> i = <span class="hljs-number">0</span>; i &lt; N; i++)<br>{<br>    x[i] = dosth();<br>    <br>    <span class="hljs-comment">// cond 为 1 的可能性为50%左右</span><br>    <span class="hljs-keyword">if</span>( cond )<br>    {<br>        <span class="hljs-comment">// i 和 j之间相差很大</span><br>        j = index();<br>        x[j] = dosth();<br>    }<br>}<br><br></code></pre></td></tr></table></figure>
+<pre class="line-numbers language-c" data-language="c"><code class="language-c">
+<span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token keyword">int</span> i <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span> i <span class="token operator">&lt;</span> N<span class="token punctuation">;</span> i<span class="token operator">++</span><span class="token punctuation">)</span>
+<span class="token punctuation">{</span>
+    x<span class="token punctuation">[</span>i<span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token function">dosth</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    
+    <span class="token comment">// cond 为 1 的可能性为50%左右</span>
+    <span class="token keyword">if</span><span class="token punctuation">(</span> cond <span class="token punctuation">)</span>
+    <span class="token punctuation">{</span>
+        <span class="token comment">// i 和 j之间相差很大</span>
+        j <span class="token operator">=</span> <span class="token function">index</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        x<span class="token punctuation">[</span>j<span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token function">dosth</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <p>上述情况中，由于<code>i</code>和<code>j</code>相差很大，缓存很可能不会预先保存<code>x[j]</code>的缓存项，但是<code>cond</code>发生概率又很大，就会导致性能下降。</p>
 <p>这个时候，<strong>需要对<code>x[j]</code>进行预取，提前将其缓存</strong>。可以使用<code>__builtin_prefetch</code>来完成。</p>
-<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><code class="hljs c"><br><span class="hljs-keyword">for</span> (<span class="hljs-type">int</span> i = <span class="hljs-number">0</span>; i &lt; N; i++)<br>{<br>    x[i] = dosth();<br>    <br>    __builtin_prefetch(x+j, <span class="hljs-number">1</span>, <span class="hljs-number">3</span>);<br>    <span class="hljs-comment">// cond 为 1 的可能性为50%左右</span><br>    <span class="hljs-keyword">if</span>( cond )<br>    {<br>        <span class="hljs-comment">// i 和 j之间相差很大</span><br>        j = index();<br>        x[j] = dosth();<br>    }<br>}<br><br></code></pre></td></tr></table></figure>
+<pre class="line-numbers language-c" data-language="c"><code class="language-c">
+<span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token keyword">int</span> i <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span> i <span class="token operator">&lt;</span> N<span class="token punctuation">;</span> i<span class="token operator">++</span><span class="token punctuation">)</span>
+<span class="token punctuation">{</span>
+    x<span class="token punctuation">[</span>i<span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token function">dosth</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    
+    <span class="token function">__builtin_prefetch</span><span class="token punctuation">(</span>x<span class="token operator">+</span>j<span class="token punctuation">,</span> <span class="token number">1</span><span class="token punctuation">,</span> <span class="token number">3</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token comment">// cond 为 1 的可能性为50%左右</span>
+    <span class="token keyword">if</span><span class="token punctuation">(</span> cond <span class="token punctuation">)</span>
+    <span class="token punctuation">{</span>
+        <span class="token comment">// i 和 j之间相差很大</span>
+        j <span class="token operator">=</span> <span class="token function">index</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        x<span class="token punctuation">[</span>j<span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token function">dosth</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <p>该内置函数原型为<code>void __builtin_prefetch (const void *addr, ...)</code>。还有两个可选参数:</p>
 <ul>
 <li><code>rw</code> ： 是个编译时的常数，或 1 或 0 。1 时表示写(w)，0
@@ -528,11 +592,20 @@ mjx-container[display="true"] + br {
 <p><strong>大部分循环优化都会被编译器自动完成，感觉除非万不得已，不需要手动优化循环。</strong></p>
 <h3 id="常值外提">常值外提</h3>
 <p>很简单，下面给出示例：</p>
-<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs cpp"><br><span class="hljs-keyword">for</span>(<span class="hljs-type">int</span> j = <span class="hljs-number">0</span>; j &lt; N; j++)<br>    <span class="hljs-keyword">for</span>(<span class="hljs-type">int</span> i = <span class="hljs-number">0</span>; i &lt; j; i++)<br>        a[i] = b[i] * c[j];<br><br></code></pre></td></tr></table></figure>
+<pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp">
+<span class="token keyword">for</span><span class="token punctuation">(</span><span class="token keyword">int</span> j <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span> j <span class="token operator">&lt;</span> N<span class="token punctuation">;</span> j<span class="token operator">++</span><span class="token punctuation">)</span>
+    <span class="token keyword">for</span><span class="token punctuation">(</span><span class="token keyword">int</span> i <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span> i <span class="token operator">&lt;</span> j<span class="token punctuation">;</span> i<span class="token operator">++</span><span class="token punctuation">)</span>
+        a<span class="token punctuation">[</span>i<span class="token punctuation">]</span> <span class="token operator">=</span> b<span class="token punctuation">[</span>i<span class="token punctuation">]</span> <span class="token operator">*</span> c<span class="token punctuation">[</span>j<span class="token punctuation">]</span><span class="token punctuation">;</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
 <p>劣于</p>
-<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs cpp"><br><span class="hljs-keyword">for</span>(<span class="hljs-type">int</span> j = <span class="hljs-number">0</span>; j &lt; N; j++)<br>    temp = c[j];<br>    <span class="hljs-keyword">for</span>(<span class="hljs-type">int</span> i = <span class="hljs-number">0</span>; i &lt; j; i++)<br>        a[i] = b[i] * temp;<br><br></code></pre></td></tr></table></figure>
+<pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp">
+<span class="token keyword">for</span><span class="token punctuation">(</span><span class="token keyword">int</span> j <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span> j <span class="token operator">&lt;</span> N<span class="token punctuation">;</span> j<span class="token operator">++</span><span class="token punctuation">)</span>
+    temp <span class="token operator">=</span> c<span class="token punctuation">[</span>j<span class="token punctuation">]</span><span class="token punctuation">;</span>
+    <span class="token keyword">for</span><span class="token punctuation">(</span><span class="token keyword">int</span> i <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span> i <span class="token operator">&lt;</span> j<span class="token punctuation">;</span> i<span class="token operator">++</span><span class="token punctuation">)</span>
+        a<span class="token punctuation">[</span>i<span class="token punctuation">]</span> <span class="token operator">=</span> b<span class="token punctuation">[</span>i<span class="token punctuation">]</span> <span class="token operator">*</span> temp<span class="token punctuation">;</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <p>当然，这些其实不需要手动来优化，编译器优化等级开高会自动完成。</p>
-<img src="/2023/03/18/CPU%E7%BA%A7%E7%9A%84%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96/pic9.png" srcset="/img/loading.gif" lazyload class="">
+<img src="/2023/03/18/CPU%E7%BA%A7%E7%9A%84%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96/pic9.png" class="">
 <h3 id="循环展开">循环展开</h3>
 <p>循环展开也是经常提到的，它有利于流水线，但是编译器非常擅长循环展开，所以不需要手动展开(除非刷题时不给开优化，不过一般都是给开的吧)</p>
 <p>而且处理器都是乱序执行+分支预测，肯定比盲目手动展开效果好。</p>
@@ -540,16 +613,46 @@ mjx-container[display="true"] + br {
 <h3 id="减弱循环内开销">减弱循环内开销</h3>
 <p>可以在循环中利用更多开销小的指令来取缔一个开销大的指令。</p>
 <p>比如CPU有4个加法运算单元，但是只有1个乘法运算单元，这个时候就要减少循环中的乘法运算。</p>
-<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs c"><br><span class="hljs-keyword">for</span>(<span class="hljs-type">int</span> i = <span class="hljs-number">0</span>; i &lt; N; ++i)<br>    a[i] = b[i*<span class="hljs-number">10</span>] * c[i];<br><br></code></pre></td></tr></table></figure>
+<pre class="line-numbers language-c" data-language="c"><code class="language-c">
+<span class="token keyword">for</span><span class="token punctuation">(</span><span class="token keyword">int</span> i <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span> i <span class="token operator">&lt;</span> N<span class="token punctuation">;</span> <span class="token operator">++</span>i<span class="token punctuation">)</span>
+    a<span class="token punctuation">[</span>i<span class="token punctuation">]</span> <span class="token operator">=</span> b<span class="token punctuation">[</span>i<span class="token operator">*</span><span class="token number">10</span><span class="token punctuation">]</span> <span class="token operator">*</span> c<span class="token punctuation">[</span>i<span class="token punctuation">]</span><span class="token punctuation">;</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
 <p>更改为</p>
-<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><code class="hljs c"><br>j = <span class="hljs-number">0</span>;<br><br><span class="hljs-keyword">for</span>(<span class="hljs-type">int</span> i = <span class="hljs-number">0</span>; i &lt; N; ++i)<br>{<br>    a[i] = b[j] * c[i];<br>    j += <span class="hljs-number">10</span>;<br>}<br><br></code></pre></td></tr></table></figure>
+<pre class="line-numbers language-c" data-language="c"><code class="language-c">
+j <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span>
+
+<span class="token keyword">for</span><span class="token punctuation">(</span><span class="token keyword">int</span> i <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span> i <span class="token operator">&lt;</span> N<span class="token punctuation">;</span> <span class="token operator">++</span>i<span class="token punctuation">)</span>
+<span class="token punctuation">{</span>
+    a<span class="token punctuation">[</span>i<span class="token punctuation">]</span> <span class="token operator">=</span> b<span class="token punctuation">[</span>j<span class="token punctuation">]</span> <span class="token operator">*</span> c<span class="token punctuation">[</span>i<span class="token punctuation">]</span><span class="token punctuation">;</span>
+    j <span class="token operator">+=</span> <span class="token number">10</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <p>实际测试中，编译器会自动执行优化。</p>
 <p>但是如果是函数操作的话，那么手动优化还是必要的。</p>
 <h3 id="循环判断分离">循环判断分离</h3>
 <p>如果循环内的分支判断是固定的，可以移动到循环外。</p>
-<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs c"><br><span class="hljs-keyword">for</span>(<span class="hljs-type">int</span> i = <span class="hljs-number">0</span>; i &lt; N; ++i)<br>{<br>    a[i] += b[i];<br>    <span class="hljs-keyword">if</span> ( cond_const )<br>        b[i] = <span class="hljs-number">0</span>;<br>}<br><br></code></pre></td></tr></table></figure>
+<pre class="line-numbers language-c" data-language="c"><code class="language-c">
+<span class="token keyword">for</span><span class="token punctuation">(</span><span class="token keyword">int</span> i <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span> i <span class="token operator">&lt;</span> N<span class="token punctuation">;</span> <span class="token operator">++</span>i<span class="token punctuation">)</span>
+<span class="token punctuation">{</span>
+    a<span class="token punctuation">[</span>i<span class="token punctuation">]</span> <span class="token operator">+=</span> b<span class="token punctuation">[</span>i<span class="token punctuation">]</span><span class="token punctuation">;</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span> cond_const <span class="token punctuation">)</span>
+        b<span class="token punctuation">[</span>i<span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <p>可以优化成</p>
-<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><code class="hljs c"><br><span class="hljs-keyword">if</span> (cond_const)<br>    <span class="hljs-keyword">for</span>(<span class="hljs-type">int</span> i = <span class="hljs-number">0</span>; i &lt; N; ++i)<br>    {<br>        a[i] += b[i];<br>        b[i] = <span class="hljs-number">0</span>;<br>    }<br><span class="hljs-keyword">else</span><br>    <span class="hljs-keyword">for</span>(<span class="hljs-type">int</span> i = <span class="hljs-number">0</span>; i &lt; N; ++i)<br>    {<br>        a[i] += b[i];<br>    }<br><br></code></pre></td></tr></table></figure>
+<pre class="line-numbers language-c" data-language="c"><code class="language-c">
+<span class="token keyword">if</span> <span class="token punctuation">(</span>cond_const<span class="token punctuation">)</span>
+    <span class="token keyword">for</span><span class="token punctuation">(</span><span class="token keyword">int</span> i <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span> i <span class="token operator">&lt;</span> N<span class="token punctuation">;</span> <span class="token operator">++</span>i<span class="token punctuation">)</span>
+    <span class="token punctuation">{</span>
+        a<span class="token punctuation">[</span>i<span class="token punctuation">]</span> <span class="token operator">+=</span> b<span class="token punctuation">[</span>i<span class="token punctuation">]</span><span class="token punctuation">;</span>
+        b<span class="token punctuation">[</span>i<span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+<span class="token keyword">else</span>
+    <span class="token keyword">for</span><span class="token punctuation">(</span><span class="token keyword">int</span> i <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span> i <span class="token operator">&lt;</span> N<span class="token punctuation">;</span> <span class="token operator">++</span>i<span class="token punctuation">)</span>
+    <span class="token punctuation">{</span>
+        a<span class="token punctuation">[</span>i<span class="token punctuation">]</span> <span class="token operator">+=</span> b<span class="token punctuation">[</span>i<span class="token punctuation">]</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <p>这样，虽然代码翻倍，但是每个循环都可以被单独优化。</p>
 <p>实际测试，编译器还是会自动优化。但是如果条件复杂，处理的内容较多时，优化能力下降。</p>
 <h3 id="循环分块">循环分块</h3>
@@ -560,324 +663,241 @@ mjx-container[display="true"] + br {
 <p>不得不说，编译器还是太牛了，我做代码优化的时候，上面提到的这些优化很少有实际有用的，最后还是对算法架构动刀，重构了关键代码才勉强有了提升。</p>
 <p>在我单独测试的时候，很多循环的优化和缓存上的优化都被自动完成了，根本不需要手动来完成。</p>
 
-                
-              </div>
-            
-            <hr/>
-            <div>
-              <div class="post-metas my-3">
-  
-    <div class="post-meta mr-3 d-flex align-items-center">
-      <i class="iconfont icon-category"></i>
-      
+    </div>
 
-<span class="category-chains">
-  
-  
     
-      <span class="category-chain">
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/CPU%E7%BA%A7%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96/" rel="tag"># CPU级性能优化</a>
+          </div>
+
         
-  <a href="/categories/%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96/" class="category-chain-item">性能优化</a>
-  
-  
 
-      </span>
-    
-  
-</span>
 
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2023/03/05/%E9%80%9A%E8%BF%87python%E7%9A%84%E5%8F%8D%E5%B0%84%E6%9C%BA%E5%88%B6%E6%9D%A5%E5%8A%A8%E6%80%81%E5%88%9B%E5%BB%BA%E5%90%AB%E5%8F%82%E6%95%B0%E7%9A%84%E5%AF%B9%E8%B1%A1/" rel="prev" title="通过python的反射机制来动态创建含参数的对象">
+      <i class="fa fa-chevron-left"></i> 通过python的反射机制来动态创建含参数的对象
+    </a></div>
+      <div class="post-nav-item"></div>
     </div>
-  
-  
-    <div class="post-meta">
-      <i class="iconfont icon-tags"></i>
-      
-        <a href="/tags/CPU%E7%BA%A7%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96/">#CPU级性能优化</a>
-      
-    </div>
-  
-</div>
-
-
-              
-
-              
-                <div class="post-prevnext my-3">
-                  <article class="post-prev col-6">
-                    
-                    
-                  </article>
-                  <article class="post-next col-6">
-                    
-                    
-                      <a href="/2023/03/05/%E9%80%9A%E8%BF%87python%E7%9A%84%E5%8F%8D%E5%B0%84%E6%9C%BA%E5%88%B6%E6%9D%A5%E5%8A%A8%E6%80%81%E5%88%9B%E5%BB%BA%E5%90%AB%E5%8F%82%E6%95%B0%E7%9A%84%E5%AF%B9%E8%B1%A1/" title="通过python的反射机制来动态创建含参数的对象">
-                        <span class="hidden-mobile">通过python的反射机制来动态创建含参数的对象</span>
-                        <span class="visible-mobile">Next</span>
-                        <i class="iconfont icon-arrowright"></i>
-                      </a>
-                    
-                  </article>
-                </div>
-              
-            </div>
-
-            
-  <article id="comments" lazyload>
+      </footer>
     
-  <div id="waline"></div>
-  <script type="text/javascript">
-    Fluid.utils.loadComments('#waline', function() {
-      Fluid.utils.createCssLink('https://lib.baomitu.com/waline/2.5.1/waline.min.css')
-      Fluid.utils.createScript('https://lib.baomitu.com/waline/2.5.1/waline.min.js', function() {
-        var options = Object.assign(
-          {"serverURL":"https://waline-tau.vercel.app/","path":"window.location.pathname","meta":["nick","mail","link"],"requiredMeta":["nick"],"lang":"zh-CN","emoji":["https://emoji.shojo.cn/bili/src/大航海嘉然","https://emoji.shojo.cn/bili/src/永雏塔菲","https://emoji.shojo.cn/bili/src/東雪蓮","https://unpkg.com/@waline/emojis@1.1.0/tieba","https://emoji.shojo.cn/bili/src/嘉然今天吃什么","https://emoji.shojo.cn/bili/src/小黄脸"],"dark":"html[data-user-color-scheme=\"dark\"]","wordLimit":0,"pageSize":10},
-          {
-            el: '#waline',
-            path: window.location.pathname
-          }
-        )
-        Waline.init(options);
-        Fluid.utils.waitElementVisible('#waline .vcontent', () => {
-          var imgSelector = '#waline .vcontent img:not(.vemoji)';
-          Fluid.plugins.imageCaption(imgSelector);
-          Fluid.plugins.fancyBox(imgSelector);
-        })
-      });
-    });
-  </script>
-  <noscript>Please enable JavaScript to view the comments</noscript>
-
-
   </article>
-
-
-          </article>
-        </div>
-      </div>
-    </div>
-
-    <div class="side-col d-none d-lg-block col-lg-2">
-      
-  <aside class="sidebar" style="margin-left: -1rem">
-    <div id="toc">
-  <p class="toc-header"><i class="iconfont icon-list"></i>&nbsp;Table of Contents</p>
-  <div class="toc-body" id="toc-body"></div>
-</div>
-
-
-
-  </aside>
-
-
-    </div>
-  </div>
-</div>
-
-
-
-
-
-  
-
-
-
-  
-
-
-
-  
-
-
-
-  
-
-
-
-  
-
-
-
-
-
-
-
-    
-
-    
-      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
-        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
-      </a>
-    
-
-    
-      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
-     aria-hidden="true">
-  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
-    <div class="modal-content">
-      <div class="modal-header text-center">
-        <h4 class="modal-title w-100 font-weight-bold">Search</h4>
-        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
-          <span aria-hidden="true">&times;</span>
-        </button>
-      </div>
-      <div class="modal-body mx-3">
-        <div class="md-form mb-5">
-          <input type="text" id="local-search-input" class="form-control validate">
-          <label data-error="x" data-success="v" for="local-search-input">Keyword</label>
-        </div>
-        <div class="list-group" id="local-search-result"></div>
-      </div>
-    </div>
-  </div>
-</div>
-
-    
-
-    
-  </main>
-
-  <footer>
-    <div class="footer-inner">
-  
-    <div class="footer-content">
-       <a href="https://github.com/staskaer" target="_blank" rel="nofollow noopener"><span>Staskaer</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
-    </div>
   
   
   
-  
-</div>
-
-  </footer>
-
-  <!-- Scripts -->
-  
-  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
-  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
-
-  <script>
-    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
-    NProgress.start()
-    window.addEventListener('load', function() {
-      NProgress.done();
-    })
-  </script>
 
 
-<script  src="https://lib.baomitu.com/jquery/3.6.0/jquery.min.js" ></script>
-<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
-<script  src="/js/events.js" ></script>
-<script  src="/js/plugins.js" ></script>
 
+          </div>
+          
+    <div class="comments" id="valine-comments"></div>
 
-  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
-  <script>
-    (function (window, document) {
-      var typing = Fluid.plugins.typing;
-      var subtitle = document.getElementById('subtitle');
-      if (!subtitle || !typing) {
-        return;
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
       }
-      var text = subtitle.getAttribute('data-typed-text');
-      
-        typing(text);
-      
-    })(window, document);
-  </script>
-
-
-
-
-  
-    <script  src="/js/img-lazyload.js" ></script>
-  
-
-
-
-
-  
-<script>
-  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.18.2/tocbot.min.js', function() {
-    var toc = jQuery('#toc');
-    if (toc.length === 0 || !window.tocbot) { return; }
-    var boardCtn = jQuery('#board-ctn');
-    var boardTop = boardCtn.offset().top;
-
-    window.tocbot.init({
-      tocSelector     : '#toc-body',
-      contentSelector : '.markdown-body',
-      headingSelector : CONFIG.toc.headingSelector || 'h1,h2,h3,h4,h5,h6',
-      linkClass       : 'tocbot-link',
-      activeLinkClass : 'tocbot-active-link',
-      listClass       : 'tocbot-list',
-      isCollapsedClass: 'tocbot-is-collapsed',
-      collapsibleClass: 'tocbot-is-collapsible',
-      collapseDepth   : CONFIG.toc.collapseDepth || 0,
-      scrollSmooth    : true,
-      headingsOffset  : -boardTop
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
     });
-    if (toc.find('.toc-list-item').length > 0) {
-      toc.css('visibility', 'visible');
-    }
-  });
+  }
 </script>
 
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
 
-  <script src=https://lib.baomitu.com/clipboard.js/2.0.10/clipboard.min.js></script>
+  <aside class="sidebar">
+    <div class="sidebar-inner">
 
-  <script>Fluid.plugins.codeWidget();</script>
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E6%80%A7%E8%83%BD%E5%88%86%E6%9E%90%E5%B7%A5%E5%85%B7"><span class="nav-number">1.</span> <span class="nav-text">性能分析工具</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#cc%E4%BB%A3%E7%A0%81%E5%88%86%E6%9E%90"><span class="nav-number">1.1.</span> <span class="nav-text">C&#x2F;C++代码分析</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#python%E4%BB%A3%E7%A0%81%E5%88%86%E6%9E%90"><span class="nav-number">1.2.</span> <span class="nav-text">python代码分析</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#memory_profiler"><span class="nav-number">1.2.1.</span> <span class="nav-text">memory_profiler</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#viztracer"><span class="nav-number">1.2.2.</span> <span class="nav-text">viztracer</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E4%BB%A3%E7%A0%81%E5%B8%83%E5%B1%80%E4%BC%98%E5%8C%96"><span class="nav-number">2.</span> <span class="nav-text">代码布局优化</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%9F%BA%E6%9C%AC%E5%9D%97%E5%B8%83%E5%B1%80"><span class="nav-number">2.1.</span> <span class="nav-text">基本块布局</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%86%B7%E4%BB%A3%E7%A0%81%E6%8B%86%E5%88%86"><span class="nav-number">2.2.</span> <span class="nav-text">冷代码拆分</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E6%95%B0%E6%8D%AE%E4%BC%98%E5%8C%96"><span class="nav-number">3.</span> <span class="nav-text">数据优化</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%86%85%E5%AD%98%E5%AF%B9%E9%BD%90"><span class="nav-number">3.1.</span> <span class="nav-text">内存对齐</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%86%85%E5%AD%98%E9%A2%84%E5%8F%96%E8%87%B3%E7%BC%93%E5%AD%98"><span class="nav-number">3.2.</span> <span class="nav-text">内存预取至缓存</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%BE%AA%E7%8E%AF%E4%BC%98%E5%8C%96"><span class="nav-number">3.3.</span> <span class="nav-text">循环优化</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%B8%B8%E5%80%BC%E5%A4%96%E6%8F%90"><span class="nav-number">3.3.1.</span> <span class="nav-text">常值外提</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%BE%AA%E7%8E%AF%E5%B1%95%E5%BC%80"><span class="nav-number">3.3.2.</span> <span class="nav-text">循环展开</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%87%8F%E5%BC%B1%E5%BE%AA%E7%8E%AF%E5%86%85%E5%BC%80%E9%94%80"><span class="nav-number">3.3.3.</span> <span class="nav-text">减弱循环内开销</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%BE%AA%E7%8E%AF%E5%88%A4%E6%96%AD%E5%88%86%E7%A6%BB"><span class="nav-number">3.3.4.</span> <span class="nav-text">循环判断分离</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%BE%AA%E7%8E%AF%E5%88%86%E5%9D%97"><span class="nav-number">3.3.5.</span> <span class="nav-text">循环分块</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%90%91%E9%87%8F%E5%8C%96%E6%8C%87%E4%BB%A4"><span class="nav-number">3.3.6.</span> <span class="nav-text">向量化指令</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E6%80%BB%E7%BB%93"><span class="nav-number">4.</span> <span class="nav-text">总结</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Staskaer"
+      src="/imgs/theme_pic/head_img.png">
+  <p class="site-author-name" itemprop="name">Staskaer</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">63</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">10</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">18</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/Staskaer" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;Staskaer" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:liujiaxin011121@gmail.com" title="E-Mail → mailto:liujiaxin011121@gmail.com" rel="noopener" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2023</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Staskaer</span>
+</div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
 
 
   
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+
 <script>
-  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/4.3.1/anchor.min.js', function() {
-    window.anchors.options = {
-      placement: CONFIG.anchorjs.placement,
-      visible  : CONFIG.anchorjs.visible
-    };
-    if (CONFIG.anchorjs.icon) {
-      window.anchors.options.icon = CONFIG.anchorjs.icon;
-    }
-    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
-    var res = [];
-    for (var item of el) {
-      res.push('.markdown-body > ' + item.trim());
-    }
-    if (CONFIG.anchorjs.placement === 'left') {
-      window.anchors.options.class = 'anchorjs-link-left';
-    }
-    window.anchors.add(res.join(', '));
-  });
+NexT.utils.loadComments(document.querySelector('#valine-comments'), () => {
+  NexT.utils.getScript('https://cdn.jsdelivr.net/npm/valine@1.5.1/dist/Valine.min.js', () => {
+    var GUEST = ['nick', 'mail', 'link'];
+    var guest = 'nick,mail,link';
+    guest = guest.split(',').filter(item => {
+      return GUEST.includes(item);
+    });
+    new Valine({
+      el         : '#valine-comments',
+      verify     : false,
+      notify     : false,
+      appId      : 'xH8NDrh9u4SQrUpQOd0lICnX-MdYXbMMI',
+      appKey     : 'jl3JjPS4jsosZG29Zv24Y7LE',
+      placeholder: "Just go go",
+      avatar     : 'mm',
+      meta       : guest,
+      pageSize   : '10' || 10,
+      visitor    : false,
+      lang       : 'zh-Hans' || 'zh-cn',
+      path       : location.pathname,
+      recordIP   : false,
+      serverURLs : ''
+    });
+  }, window.Valine);
+});
 </script>
 
-
-  
-<script>
-  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
-    Fluid.plugins.fancyBox();
-  });
-</script>
-
-
-  <script>Fluid.plugins.imageCaption();</script>
-
-  <script defer src="/js/leancloud.js" ></script>
-
-  <script  src="/js/local-search.js" ></script>
-
-
-
-
-
-<!-- 主题的启动项，将它保持在最底部 -->
-<!-- the boot of the theme, keep it at the bottom -->
-<script  src="/js/boot.js" ></script>
-
-
-  
-
-  <noscript>
-    <div class="noscript-warning">Blog works best with JavaScript enabled</div>
-  </noscript>
 </body>
 </html>
+

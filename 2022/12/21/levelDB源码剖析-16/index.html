@@ -1,108 +1,87 @@
-
-
 <!DOCTYPE html>
-<html lang="en" data-default-color-scheme=auto>
-
-
-
+<html lang="en">
 <head>
   <meta charset="UTF-8">
-  <link rel="apple-touch-icon" sizes="76x76" href="/imgs/theme_pic/staskaer.png">
-  <link rel="icon" href="/imgs/theme_pic/staskaer.png">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
-  <meta http-equiv="x-ua-compatible" content="ie=edge">
-  
-  <meta name="theme-color" content="#2f4154">
-  <meta name="author" content="Staskaer">
-  <meta name="keywords" content="">
-  
-    <meta name="description" content="Compaction">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 6.2.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/imgs/theme_pic/staskaer.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/imgs/theme_pic/staskaer.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/imgs/theme_pic/staskaer.png">
+  <link rel="mask-icon" href="/imgs/theme_pic/staskaer.png" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Gemini","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"flat"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"valine","storage":true,"lazyload":false,"nav":null,"activeClass":"valine"},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="Compaction">
 <meta property="og:type" content="article">
 <meta property="og:title" content="levelDB源码剖析(16)--Compaction">
 <meta property="og:url" content="http://example.com/2022/12/21/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-16/index.html">
 <meta property="og:site_name" content="Staskaer">
 <meta property="og:description" content="Compaction">
 <meta property="og:locale" content="en_US">
-<meta property="og:image" content="http://example.com/imgs/post_index_img/leveldb16.jpg">
+<meta property="og:image" content="http://example.com/2022/12/21/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-16/pic1.jpg">
+<meta property="og:image" content="http://example.com/2022/12/21/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-16/pic2.jpg">
 <meta property="article:published_time" content="2022-12-21T13:39:10.000Z">
 <meta property="article:modified_time" content="2022-12-23T03:18:19.616Z">
 <meta property="article:author" content="Staskaer">
 <meta property="article:tag" content="C++">
 <meta property="article:tag" content="levelDB">
-<meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:image" content="http://example.com/imgs/post_index_img/leveldb16.jpg">
-  
-  
-  
-  <title>levelDB源码剖析(16)--Compaction - Staskaer</title>
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://example.com/2022/12/21/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-16/pic1.jpg">
 
-  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+<link rel="canonical" href="http://example.com/2022/12/21/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-16/">
 
 
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'en'
+  };
+</script>
 
-  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
-
-  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
-
-  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
-
-
-
-<!-- 主题依赖的图标库，不要自行修改 -->
-<!-- Do not modify the link that theme dependent icons -->
-
-<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_hj8rtnfg7um.css">
-
-
-
-<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_lbnruvf0jn.css">
-
-
-<link  rel="stylesheet" href="/css/main.css" />
-
-
-  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
-  
-    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  <title>levelDB源码剖析(16)--Compaction | Staskaer</title>
   
 
 
 
 
-  <script id="fluid-configs">
-    var Fluid = window.Fluid || {};
-    Fluid.ctx = Object.assign({}, Fluid.ctx)
-    var CONFIG = {"hostname":"example.com","root":"/","version":"1.9.2","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":true,"follow_dnt":false,"baidu":null,"google":null,"gtag":null,"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":"xH8NDrh9u4SQrUpQOd0lICnX-MdYXbMMI","app_key":"jl3JjPS4jsosZG29Zv24Y7LE","server_url":null,"path":"window.location.pathname","ignore_local":false}},"search_path":"/local-search.xml"};
-
-    if (CONFIG.web_analytics.follow_dnt) {
-      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
-      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
-    }
-  </script>
-  <script  src="/js/utils.js" ></script>
-  <script  src="/js/color-schema.js" ></script>
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-    
-  
 
 
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
 
-  
-<meta name="generator" content="Hexo 6.2.0"><style>mjx-container[jax="SVG"] {
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+<style>mjx-container[jax="SVG"] {
   direction: ltr;
 }
 
@@ -216,216 +195,190 @@ mjx-container[display="true"] + br {
 }
 </style></head>
 
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
 
-<body>
-  
-
-  <header>
-    
-
-<div class="header-inner" style="height: 70vh;">
-  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
-  <div class="container">
-    <a class="navbar-brand" href="/">
-      <strong>Staskaer</strong>
-    </a>
-
-    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
-            data-target="#navbarSupportedContent"
-            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
-      <div class="animated-icon"><span></span><span></span><span></span></div>
-    </button>
-
-    <!-- Collapsible content -->
-    <div class="collapse navbar-collapse" id="navbarSupportedContent">
-      <ul class="navbar-nav ml-auto text-center">
-        
-          
-          
-          
-          
-            <li class="nav-item">
-              <a class="nav-link" href="/">
-                <i class="iconfont icon-home-fill"></i>
-                Home
-              </a>
-            </li>
-          
-        
-          
-          
-          
-          
-            <li class="nav-item">
-              <a class="nav-link" href="/archives/">
-                <i class="iconfont icon-archive-fill"></i>
-                Archives
-              </a>
-            </li>
-          
-        
-          
-          
-          
-          
-            <li class="nav-item">
-              <a class="nav-link" href="/categories/">
-                <i class="iconfont icon-category-fill"></i>
-                Categories
-              </a>
-            </li>
-          
-        
-          
-          
-          
-          
-            <li class="nav-item">
-              <a class="nav-link" href="/tags/">
-                <i class="iconfont icon-tags-fill"></i>
-                Tags
-              </a>
-            </li>
-          
-        
-          
-          
-          
-          
-            <li class="nav-item">
-              <a class="nav-link" href="/about/">
-                <i class="iconfont icon-user-fill"></i>
-                About
-              </a>
-            </li>
-          
-        
-          
-          
-          
-          
-            <li class="nav-item">
-              <a class="nav-link" href="/links/">
-                <i class="iconfont icon-link-fill"></i>
-                Links
-              </a>
-            </li>
-          
-        
-        
-          <li class="nav-item" id="search-btn">
-            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
-              &nbsp;<i class="iconfont icon-search"></i>&nbsp;
-            </a>
-          </li>
-          
-        
-        
-          <li class="nav-item" id="color-toggle-btn">
-            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">&nbsp;<i
-                class="iconfont icon-dark" id="color-toggle-icon"></i>&nbsp;</a>
-          </li>
-        
-      </ul>
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
     </div>
   </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Staskaer</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">Hi, this is Staskaer</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
 </nav>
 
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="Searching..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2022/12/21/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-16/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/imgs/theme_pic/head_img.png">
+      <meta itemprop="name" content="Staskaer">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Staskaer">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          levelDB源码剖析(16)--Compaction
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2022-12-21 21:39:10" itemprop="dateCreated datePublished" datetime="2022-12-21T21:39:10+08:00">2022-12-21</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2022-12-23 11:18:19" itemprop="dateModified" datetime="2022-12-23T11:18:19+08:00">2022-12-23</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/" itemprop="url" rel="index"><span itemprop="name">levelDB源码剖析</span></a>
+                </span>
+            </span>
+
+          
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Valine: </span>
+    
+    <a title="valine" href="/2022/12/21/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-16/#valine-comments" itemprop="discussionUrl">
+      <span class="post-comments-count valine-comment-count" data-xid="/2022/12/21/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-16/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
   
 
-<div id="banner" class="banner" parallax=true
-     style="background: url('/imgs/post_index_img/leveldb16.jpg') no-repeat center center; background-size: cover;">
-  <div class="full-bg-img">
-    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
-      <div class="banner-text text-center fade-in-up">
-        <div class="h2">
-          
-            <span id="subtitle" data-typed-text="levelDB源码剖析，剖析源码，掌握技术"></span>
-          
         </div>
-
-        
-          
-  <div class="mt-3">
-    
-    
-      <span class="post-meta">
-        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
-        <time datetime="2022-12-21 21:39" pubdate>
-          December 21, 2022 pm
-        </time>
-      </span>
-    
-  </div>
-
-  <div class="mt-1">
-    
-      <span class="post-meta mr-2">
-        <i class="iconfont icon-chart"></i>
-        
-          11k words
-        
-      </span>
-    
-
-    
-      <span class="post-meta mr-2">
-        <i class="iconfont icon-clock-fill"></i>
-        
-        
-        
-          45 mins
-        
-      </span>
-    
+      </header>
 
     
     
-      
-        <span id="leancloud-page-views-container" class="post-meta" style="display: none">
-          <i class="iconfont icon-eye" aria-hidden="true"></i>
-          <span id="leancloud-page-views"></span> views
-        </span>
-        
-      
     
-  </div>
-
-
-        
-      </div>
+    <div class="post-body" itemprop="articleBody">
 
       
-    </div>
-  </div>
-</div>
-
-</div>
-
-  </header>
-
-  <main>
-    
-      
-
-<div class="container-fluid nopadding-x">
-  <div class="row nomargin-x">
-    <div class="side-col d-none d-lg-block col-lg-2">
-      
-
-    </div>
-
-    <div class="col-lg-8 nopadding-x-md">
-      <div class="container nopadding-x-md" id="board-ctn">
-        <div id="board">
-          <article class="post-content mx-auto">
-            <!-- SEO header -->
-            <h1 style="display: none">levelDB源码剖析，剖析源码，掌握技术</h1>
-            
-            
-              <div class="markdown-body">
-                
-                <h2 id="compaction">Compaction</h2>
+        <h2 id="compaction">Compaction</h2>
 <span id="more"></span>
 <p>Compaction的功能无非是删除冗余的数据，精简SSTable文件的数量，再就是给Key排序，新生成的SSTable文件中的key是有序排列的。<strong>又因为等待Compaction的数据量和文件必然是庞大的，不可能通过一次Compaction就能搞定</strong>，这不现实，而且还会有不断地写操作进来，因此Compaction的时机也很有讲究。这些都是需要考虑的点。<br>
 Compaction其实就是一个归并排序的过程，对多个输入的SSTable，多路归并，输出多个连续的SSTable，代替原来的文件。根据Level
@@ -436,10 +389,10 @@ Compaction其实就是一个归并排序的过程，对多个输入的SSTable，
 </ul>
 <p>其中level0 -&gt;
 level1相对比较复杂，因为第0层存在不少key范围重叠的sstable，因此如果需要压缩时，先从第0层选择出几个重叠的sstable，然后从第1层选择一些同样重叠的sstable，然后多路归并即可。</p>
-<img src="/2022/12/21/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-16/pic1.jpg" srcset="/img/loading.gif" lazyload class="">
+<img src="/2022/12/21/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-16/pic1.jpg" class="">
 <p>而level(n) -&gt;
 level(n+1)就比较简单，只需要在level(n)层选择一个块，然后再在level(n+1)层选择与上述块重叠的块一起参与多路归并即可。</p>
-<img src="/2022/12/21/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-16/pic2.jpg" srcset="/img/loading.gif" lazyload class="">
+<img src="/2022/12/21/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-16/pic2.jpg" class="">
 <p>LevelDB里有三种方式选择Compaction，分别是：</p>
 <ul>
 <li>Manual Compaction</li>
@@ -485,7 +438,92 @@ Compaction考虑进去，采用了抽样的方式，每读取2MB的数据，会�
 所以25次Seek的开销和Compaction
 1MB数据的开销一样，也就是1次Seek和40KB数据Compaction的开销一样，我们比较保守，假设1次Seek和16KB的数据的开销一样。那么设置为上面的值后，Seek的操作和Compaction操作的开销相同，那么Compaction不会过于频繁，影响性能。</p>
 <h3 id="compaction实现">Compaction实现</h3>
-<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br></pre></td><td class="code"><pre><code class="hljs cpp"><br><span class="hljs-comment">// A Compaction encapsulates information about a compaction.</span><br><span class="hljs-keyword">class</span> <span class="hljs-title class_">Compaction</span><br>{<br><span class="hljs-keyword">private</span>:<br>    <span class="hljs-keyword">friend</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">Version</span>; <span class="hljs-comment">// 友元类和私有的构造函数</span><br>    <span class="hljs-keyword">friend</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">VersionSet</span>;<br>    <span class="hljs-built_in">Compaction</span>(<span class="hljs-type">const</span> Options *options, <span class="hljs-type">int</span> level);<br><br>    <span class="hljs-type">int</span> level_;                     <span class="hljs-comment">// Compaction文件所在的Level</span><br>    <span class="hljs-type">uint64_t</span> max_output_file_size_; <span class="hljs-comment">// 生成文件最大值</span><br>    Version *input_version_;        <span class="hljs-comment">// 输入的版本号</span><br>    VersionEdit edit_;              <span class="hljs-comment">// Compaction结果保存的VersionEdit</span><br><br>    <span class="hljs-comment">// Each compaction reads inputs from "level_" and "level_+1"</span><br>    <span class="hljs-comment">// 两个元素分别对应两层的sstable</span><br>    std::vector&lt;FileMetaData *&gt; inputs_[<span class="hljs-number">2</span>]; <span class="hljs-comment">// The two sets of inputs</span><br><br>    <span class="hljs-comment">// State used to check for number of overlapping grandparent files</span><br>    <span class="hljs-comment">// (parent == level_ + 1, grandparent == level_ + 2)</span><br>    <span class="hljs-comment">// 一些状态，用来检查是否存在重叠现象</span><br>    std::vector&lt;FileMetaData *&gt; grandparents_;<br>    <span class="hljs-type">size_t</span> grandparent_index_; <span class="hljs-comment">// Index in grandparent_starts_</span><br>    <span class="hljs-type">bool</span> seen_key_;            <span class="hljs-comment">// Some output key has been seen</span><br>    <span class="hljs-type">int64_t</span> overlapped_bytes_; <span class="hljs-comment">// Bytes of overlap between current output</span><br>                               <span class="hljs-comment">// and grandparent files</span><br><br>    <span class="hljs-comment">// State for implementing IsBaseLevelForKey</span><br><br>    <span class="hljs-comment">// level_ptrs_ holds indices into input_version_-&gt;levels_: our state</span><br>    <span class="hljs-comment">// is that we are positioned at one of the file ranges for each</span><br>    <span class="hljs-comment">// higher level than the ones involved in this compaction (i.e. for</span><br>    <span class="hljs-comment">// all L &gt;= level_ + 2).</span><br>    <span class="hljs-type">size_t</span> level_ptrs_[config::kNumLevels];<br><br><span class="hljs-keyword">public</span>:<br>    ~<span class="hljs-built_in">Compaction</span>();<br><br>    <span class="hljs-comment">// Return the level that is being compacted.  Inputs from "level"</span><br>    <span class="hljs-comment">// and "level+1" will be merged to produce a set of "level+1" files.</span><br>    <span class="hljs-comment">// 返回正在压缩的level</span><br>    <span class="hljs-function"><span class="hljs-type">int</span> <span class="hljs-title">level</span><span class="hljs-params">()</span> <span class="hljs-type">const</span> </span>{ <span class="hljs-keyword">return</span> level_; }<br><br>    <span class="hljs-comment">// Return the object that holds the edits to the descriptor done</span><br>    <span class="hljs-comment">// by this compaction.</span><br>    <span class="hljs-comment">// 返回压缩完成后的VersionEdit</span><br>    <span class="hljs-function">VersionEdit *<span class="hljs-title">edit</span><span class="hljs-params">()</span> </span>{ <span class="hljs-keyword">return</span> &amp;edit_; }<br><br>    <span class="hljs-comment">// "which" must be either 0 or 1</span><br>    <span class="hljs-comment">// 输入的文件个数</span><br>    <span class="hljs-function"><span class="hljs-type">int</span> <span class="hljs-title">num_input_files</span><span class="hljs-params">(<span class="hljs-type">int</span> which)</span> <span class="hljs-type">const</span> </span>{ <span class="hljs-keyword">return</span> inputs_[which].<span class="hljs-built_in">size</span>(); }<br><br>    <span class="hljs-comment">// Return the ith input file at "level()+which" ("which" must be 0 or 1).</span><br>    <span class="hljs-comment">// 返回输入的文件</span><br>    <span class="hljs-function">FileMetaData *<span class="hljs-title">input</span><span class="hljs-params">(<span class="hljs-type">int</span> which, <span class="hljs-type">int</span> i)</span> <span class="hljs-type">const</span> </span>{ <span class="hljs-keyword">return</span> inputs_[which][i]; }<br><br>    <span class="hljs-comment">// Maximum size of files to build during this compaction.</span><br>    <span class="hljs-comment">// 压缩中最大的文件数目</span><br>    <span class="hljs-function"><span class="hljs-type">uint64_t</span> <span class="hljs-title">MaxOutputFileSize</span><span class="hljs-params">()</span> <span class="hljs-type">const</span> </span>{ <span class="hljs-keyword">return</span> max_output_file_size_; }<br><br>    <span class="hljs-comment">// Is this a trivial compaction that can be implemented by just</span><br>    <span class="hljs-comment">// moving a single input file to the next level (no merging or splitting)</span><br>    <span class="hljs-comment">// 是否是平凡移动，即不经过任何归并直接移动到下一层</span><br>    <span class="hljs-function"><span class="hljs-type">bool</span> <span class="hljs-title">IsTrivialMove</span><span class="hljs-params">()</span> <span class="hljs-type">const</span></span>;<br><br>    <span class="hljs-comment">// Add all inputs to this compaction as delete operations to *edit.</span><br>    <span class="hljs-comment">// 把所有的输入文件在一个VersionEdit中删掉</span><br>    <span class="hljs-function"><span class="hljs-type">void</span> <span class="hljs-title">AddInputDeletions</span><span class="hljs-params">(VersionEdit *edit)</span></span>;<br><br>    <span class="hljs-comment">// Returns true if the information we have available guarantees that</span><br>    <span class="hljs-comment">// the compaction is producing data in "level+1" for which no data exists</span><br>    <span class="hljs-comment">// in levels greater than "level+1".</span><br>    <span class="hljs-comment">// 函数返回true表示user_key不存在于高层中</span><br>    <span class="hljs-function"><span class="hljs-type">bool</span> <span class="hljs-title">IsBaseLevelForKey</span><span class="hljs-params">(<span class="hljs-type">const</span> Slice &amp;user_key)</span></span>;<br><br>    <span class="hljs-comment">// Returns true iff we should stop building the current output</span><br>    <span class="hljs-comment">// before processing "internal_key".</span><br>    <span class="hljs-comment">// 在处理内部key之前需要停止构建当前输出的时候返回true</span><br>    <span class="hljs-function"><span class="hljs-type">bool</span> <span class="hljs-title">ShouldStopBefore</span><span class="hljs-params">(<span class="hljs-type">const</span> Slice &amp;internal_key)</span></span>;<br><br>    <span class="hljs-comment">// Release the input version for the compaction, once the compaction</span><br>    <span class="hljs-comment">// is successful.</span><br>    <span class="hljs-comment">// 压缩完成，释放输入版本</span><br>    <span class="hljs-function"><span class="hljs-type">void</span> <span class="hljs-title">ReleaseInputs</span><span class="hljs-params">()</span></span>;<br>};<br><br></code></pre></td></tr></table></figure>
+<pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp">
+<span class="token comment">// A Compaction encapsulates information about a compaction.</span>
+<span class="token keyword">class</span> <span class="token class-name">Compaction</span>
+<span class="token punctuation">{</span>
+<span class="token keyword">private</span><span class="token operator">:</span>
+    <span class="token keyword">friend</span> <span class="token keyword">class</span> <span class="token class-name">Version</span><span class="token punctuation">;</span> <span class="token comment">// 友元类和私有的构造函数</span>
+    <span class="token keyword">friend</span> <span class="token keyword">class</span> <span class="token class-name">VersionSet</span><span class="token punctuation">;</span>
+    <span class="token function">Compaction</span><span class="token punctuation">(</span><span class="token keyword">const</span> Options <span class="token operator">*</span>options<span class="token punctuation">,</span> <span class="token keyword">int</span> level<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token keyword">int</span> level_<span class="token punctuation">;</span>                     <span class="token comment">// Compaction文件所在的Level</span>
+    <span class="token keyword">uint64_t</span> max_output_file_size_<span class="token punctuation">;</span> <span class="token comment">// 生成文件最大值</span>
+    Version <span class="token operator">*</span>input_version_<span class="token punctuation">;</span>        <span class="token comment">// 输入的版本号</span>
+    VersionEdit edit_<span class="token punctuation">;</span>              <span class="token comment">// Compaction结果保存的VersionEdit</span>
+
+    <span class="token comment">// Each compaction reads inputs from "level_" and "level_+1"</span>
+    <span class="token comment">// 两个元素分别对应两层的sstable</span>
+    std<span class="token double-colon punctuation">::</span>vector<span class="token operator">&lt;</span>FileMetaData <span class="token operator">*</span><span class="token operator">&gt;</span> inputs_<span class="token punctuation">[</span><span class="token number">2</span><span class="token punctuation">]</span><span class="token punctuation">;</span> <span class="token comment">// The two sets of inputs</span>
+
+    <span class="token comment">// State used to check for number of overlapping grandparent files</span>
+    <span class="token comment">// (parent == level_ + 1, grandparent == level_ + 2)</span>
+    <span class="token comment">// 一些状态，用来检查是否存在重叠现象</span>
+    std<span class="token double-colon punctuation">::</span>vector<span class="token operator">&lt;</span>FileMetaData <span class="token operator">*</span><span class="token operator">&gt;</span> grandparents_<span class="token punctuation">;</span>
+    size_t grandparent_index_<span class="token punctuation">;</span> <span class="token comment">// Index in grandparent_starts_</span>
+    <span class="token keyword">bool</span> seen_key_<span class="token punctuation">;</span>            <span class="token comment">// Some output key has been seen</span>
+    <span class="token keyword">int64_t</span> overlapped_bytes_<span class="token punctuation">;</span> <span class="token comment">// Bytes of overlap between current output</span>
+                               <span class="token comment">// and grandparent files</span>
+
+    <span class="token comment">// State for implementing IsBaseLevelForKey</span>
+
+    <span class="token comment">// level_ptrs_ holds indices into input_version_-&gt;levels_: our state</span>
+    <span class="token comment">// is that we are positioned at one of the file ranges for each</span>
+    <span class="token comment">// higher level than the ones involved in this compaction (i.e. for</span>
+    <span class="token comment">// all L &gt;= level_ + 2).</span>
+    size_t level_ptrs_<span class="token punctuation">[</span>config<span class="token double-colon punctuation">::</span>kNumLevels<span class="token punctuation">]</span><span class="token punctuation">;</span>
+
+<span class="token keyword">public</span><span class="token operator">:</span>
+    <span class="token operator">~</span><span class="token function">Compaction</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token comment">// Return the level that is being compacted.  Inputs from "level"</span>
+    <span class="token comment">// and "level+1" will be merged to produce a set of "level+1" files.</span>
+    <span class="token comment">// 返回正在压缩的level</span>
+    <span class="token keyword">int</span> <span class="token function">level</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token keyword">const</span> <span class="token punctuation">{</span> <span class="token keyword">return</span> level_<span class="token punctuation">;</span> <span class="token punctuation">}</span>
+
+    <span class="token comment">// Return the object that holds the edits to the descriptor done</span>
+    <span class="token comment">// by this compaction.</span>
+    <span class="token comment">// 返回压缩完成后的VersionEdit</span>
+    VersionEdit <span class="token operator">*</span><span class="token function">edit</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span> <span class="token keyword">return</span> <span class="token operator">&amp;</span>edit_<span class="token punctuation">;</span> <span class="token punctuation">}</span>
+
+    <span class="token comment">// "which" must be either 0 or 1</span>
+    <span class="token comment">// 输入的文件个数</span>
+    <span class="token keyword">int</span> <span class="token function">num_input_files</span><span class="token punctuation">(</span><span class="token keyword">int</span> which<span class="token punctuation">)</span> <span class="token keyword">const</span> <span class="token punctuation">{</span> <span class="token keyword">return</span> inputs_<span class="token punctuation">[</span>which<span class="token punctuation">]</span><span class="token punctuation">.</span><span class="token function">size</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token punctuation">}</span>
+
+    <span class="token comment">// Return the ith input file at "level()+which" ("which" must be 0 or 1).</span>
+    <span class="token comment">// 返回输入的文件</span>
+    FileMetaData <span class="token operator">*</span><span class="token function">input</span><span class="token punctuation">(</span><span class="token keyword">int</span> which<span class="token punctuation">,</span> <span class="token keyword">int</span> i<span class="token punctuation">)</span> <span class="token keyword">const</span> <span class="token punctuation">{</span> <span class="token keyword">return</span> inputs_<span class="token punctuation">[</span>which<span class="token punctuation">]</span><span class="token punctuation">[</span>i<span class="token punctuation">]</span><span class="token punctuation">;</span> <span class="token punctuation">}</span>
+
+    <span class="token comment">// Maximum size of files to build during this compaction.</span>
+    <span class="token comment">// 压缩中最大的文件数目</span>
+    <span class="token keyword">uint64_t</span> <span class="token function">MaxOutputFileSize</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token keyword">const</span> <span class="token punctuation">{</span> <span class="token keyword">return</span> max_output_file_size_<span class="token punctuation">;</span> <span class="token punctuation">}</span>
+
+    <span class="token comment">// Is this a trivial compaction that can be implemented by just</span>
+    <span class="token comment">// moving a single input file to the next level (no merging or splitting)</span>
+    <span class="token comment">// 是否是平凡移动，即不经过任何归并直接移动到下一层</span>
+    <span class="token keyword">bool</span> <span class="token function">IsTrivialMove</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token keyword">const</span><span class="token punctuation">;</span>
+
+    <span class="token comment">// Add all inputs to this compaction as delete operations to *edit.</span>
+    <span class="token comment">// 把所有的输入文件在一个VersionEdit中删掉</span>
+    <span class="token keyword">void</span> <span class="token function">AddInputDeletions</span><span class="token punctuation">(</span>VersionEdit <span class="token operator">*</span>edit<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token comment">// Returns true if the information we have available guarantees that</span>
+    <span class="token comment">// the compaction is producing data in "level+1" for which no data exists</span>
+    <span class="token comment">// in levels greater than "level+1".</span>
+    <span class="token comment">// 函数返回true表示user_key不存在于高层中</span>
+    <span class="token keyword">bool</span> <span class="token function">IsBaseLevelForKey</span><span class="token punctuation">(</span><span class="token keyword">const</span> Slice <span class="token operator">&amp;</span>user_key<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token comment">// Returns true iff we should stop building the current output</span>
+    <span class="token comment">// before processing "internal_key".</span>
+    <span class="token comment">// 在处理内部key之前需要停止构建当前输出的时候返回true</span>
+    <span class="token keyword">bool</span> <span class="token function">ShouldStopBefore</span><span class="token punctuation">(</span><span class="token keyword">const</span> Slice <span class="token operator">&amp;</span>internal_key<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token comment">// Release the input version for the compaction, once the compaction</span>
+    <span class="token comment">// is successful.</span>
+    <span class="token comment">// 压缩完成，释放输入版本</span>
+    <span class="token keyword">void</span> <span class="token function">ReleaseInputs</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span><span class="token punctuation">;</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <p>Compaction的文件在两个Level，假设为level_ 和level_ +
 1，选定一个或几个SSTable Compaction时，就是选定了level_
 的文件，然后调用void VersionSet::SetupOtherInputs(Compaction*
@@ -493,7 +531,178 @@ c)可以获取到level_ +
 1中与level_中选定的文件有重叠的文件，这样输入的SSTable就选好了，一次Compactdoin要做的工作也就确定了。</p>
 <p>void
 DBImpl::BackgroundCompaction()首先会选定构造一个Compaction类的实例，也就是选定Compaction的任务。</p>
-<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br><span class="line">144</span><br><span class="line">145</span><br><span class="line">146</span><br><span class="line">147</span><br><span class="line">148</span><br><span class="line">149</span><br><span class="line">150</span><br><span class="line">151</span><br><span class="line">152</span><br><span class="line">153</span><br><span class="line">154</span><br><span class="line">155</span><br><span class="line">156</span><br><span class="line">157</span><br><span class="line">158</span><br><span class="line">159</span><br><span class="line">160</span><br><span class="line">161</span><br><span class="line">162</span><br><span class="line">163</span><br><span class="line">164</span><br><span class="line">165</span><br><span class="line">166</span><br><span class="line">167</span><br><span class="line">168</span><br><span class="line">169</span><br><span class="line">170</span><br><span class="line">171</span><br><span class="line">172</span><br></pre></td><td class="code"><pre><code class="hljs cpp"><br><span class="hljs-function"><span class="hljs-type">void</span> <span class="hljs-title">DBImpl::BackgroundCompaction</span><span class="hljs-params">()</span></span><br><span class="hljs-function"></span>{<br>    mutex_.<span class="hljs-built_in">AssertHeld</span>();<br><br>    <span class="hljs-keyword">if</span> (imm_ != <span class="hljs-literal">nullptr</span>)<br>    {<br>        <span class="hljs-built_in">CompactMemTable</span>();<br>        <span class="hljs-keyword">return</span>;<br>    }<br><br>    Compaction *c;<br>    <span class="hljs-type">bool</span> is_manual = (manual_compaction_ != <span class="hljs-literal">nullptr</span>);<br>    InternalKey manual_end;<br>    <span class="hljs-comment">// 先处理手动触发的压缩</span><br>    <span class="hljs-keyword">if</span> (is_manual)<br>    {<br>        ManualCompaction *m = manual_compaction_;<br>        c = versions_-&gt;<span class="hljs-built_in">CompactRange</span>(m-&gt;level, m-&gt;begin, m-&gt;end);<br>        m-&gt;done = (c == <span class="hljs-literal">nullptr</span>);<br>        <span class="hljs-keyword">if</span> (c != <span class="hljs-literal">nullptr</span>)<br>        {<br>            manual_end = c-&gt;<span class="hljs-built_in">input</span>(<span class="hljs-number">0</span>, c-&gt;<span class="hljs-built_in">num_input_files</span>(<span class="hljs-number">0</span>) - <span class="hljs-number">1</span>)-&gt;largest;<br>        }<br>        <span class="hljs-built_in">Log</span>(options_.info_log,<br>            <span class="hljs-string">"Manual compaction at level-%d from %s .. %s; will stop at %s\n"</span>,<br>            m-&gt;level, (m-&gt;begin ? m-&gt;begin-&gt;<span class="hljs-built_in">DebugString</span>().<span class="hljs-built_in">c_str</span>() : <span class="hljs-string">"(begin)"</span>),<br>            (m-&gt;end ? m-&gt;end-&gt;<span class="hljs-built_in">DebugString</span>().<span class="hljs-built_in">c_str</span>() : <span class="hljs-string">"(end)"</span>),<br>            (m-&gt;done ? <span class="hljs-string">"(end)"</span> : manual_end.<span class="hljs-built_in">DebugString</span>().<span class="hljs-built_in">c_str</span>()));<br>    }<br>    <span class="hljs-keyword">else</span><br>    {<br>        <span class="hljs-comment">// 选择一部分文件做压缩</span><br>        c = versions_-&gt;<span class="hljs-built_in">PickCompaction</span>();<br>    }<br><br>    Status status;<br>    <span class="hljs-keyword">if</span> (c == <span class="hljs-literal">nullptr</span>)<br>    <span class="hljs-comment">// 没有合并的文件</span><br>    {<br>        <span class="hljs-comment">// Nothing to do</span><br>    }<br>    <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (!is_manual &amp;&amp; c-&gt;<span class="hljs-built_in">IsTrivialMove</span>())<br>    {<br>        <span class="hljs-comment">// 处理一种特殊情况，也就是参与Compaction的文件，level_有一个文件，而level_ + 1 没有</span><br>        <span class="hljs-comment">// 这时候只需要直接更改元数据，然后文件移动到level_ + 1即可，不需要多路归并</span><br>        <span class="hljs-built_in">assert</span>(c-&gt;<span class="hljs-built_in">num_input_files</span>(<span class="hljs-number">0</span>) == <span class="hljs-number">1</span>);<br>        FileMetaData *f = c-&gt;<span class="hljs-built_in">input</span>(<span class="hljs-number">0</span>, <span class="hljs-number">0</span>);<br>        c-&gt;<span class="hljs-built_in">edit</span>()-&gt;<span class="hljs-built_in">RemoveFile</span>(c-&gt;<span class="hljs-built_in">level</span>(), f-&gt;number);<br>        c-&gt;<span class="hljs-built_in">edit</span>()-&gt;<span class="hljs-built_in">AddFile</span>(c-&gt;<span class="hljs-built_in">level</span>() + <span class="hljs-number">1</span>, f-&gt;number, f-&gt;file_size, f-&gt;smallest,<br>                           f-&gt;largest);<br>        status = versions_-&gt;<span class="hljs-built_in">LogAndApply</span>(c-&gt;<span class="hljs-built_in">edit</span>(), &amp;mutex_);<br>        <span class="hljs-keyword">if</span> (!status.<span class="hljs-built_in">ok</span>())<br>        {<br>            <span class="hljs-built_in">RecordBackgroundError</span>(status);<br>        }<br>        VersionSet::LevelSummaryStorage tmp;<br>        <span class="hljs-built_in">Log</span>(options_.info_log, <span class="hljs-string">"Moved #%lld to level-%d %lld bytes %s: %s\n"</span>,<br>            <span class="hljs-built_in">static_cast</span>&lt;<span class="hljs-type">unsigned</span> <span class="hljs-type">long</span> <span class="hljs-type">long</span>&gt;(f-&gt;number), c-&gt;<span class="hljs-built_in">level</span>() + <span class="hljs-number">1</span>,<br>            <span class="hljs-built_in">static_cast</span>&lt;<span class="hljs-type">unsigned</span> <span class="hljs-type">long</span> <span class="hljs-type">long</span>&gt;(f-&gt;file_size),<br>            status.<span class="hljs-built_in">ToString</span>().<span class="hljs-built_in">c_str</span>(), versions_-&gt;<span class="hljs-built_in">LevelSummary</span>(&amp;tmp));<br>    }<br>    <span class="hljs-keyword">else</span><br>    {<br>        CompactionState *compact = <span class="hljs-keyword">new</span> <span class="hljs-built_in">CompactionState</span>(c);<br>        <span class="hljs-comment">// 调用DBImpl::DoCompactionWork做实际的Compaction</span><br>        status = <span class="hljs-built_in">DoCompactionWork</span>(compact);<br>        <span class="hljs-keyword">if</span> (!status.<span class="hljs-built_in">ok</span>())<br>        {<br>            <span class="hljs-built_in">RecordBackgroundError</span>(status);<br>        }<br>        <span class="hljs-built_in">CleanupCompaction</span>(compact);<br>        c-&gt;<span class="hljs-built_in">ReleaseInputs</span>();<br>        <span class="hljs-built_in">RemoveObsoleteFiles</span>();<br>    }<br>    <span class="hljs-keyword">delete</span> c;<br><br>    <span class="hljs-keyword">if</span> (status.<span class="hljs-built_in">ok</span>())<br>    {<br>        <span class="hljs-comment">// Done</span><br>    }<br>    <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (shutting_down_.<span class="hljs-built_in">load</span>(std::memory_order_acquire))<br>    {<br>        <span class="hljs-comment">// Ignore compaction errors found during shutting down</span><br>    }<br>    <span class="hljs-keyword">else</span><br>    {<br>        <span class="hljs-built_in">Log</span>(options_.info_log, <span class="hljs-string">"Compaction error: %s"</span>, status.<span class="hljs-built_in">ToString</span>().<span class="hljs-built_in">c_str</span>());<br>    }<br><br>    <span class="hljs-keyword">if</span> (is_manual)<br>    {<br>        ManualCompaction *m = manual_compaction_;<br>        <span class="hljs-keyword">if</span> (!status.<span class="hljs-built_in">ok</span>())<br>        {<br>            m-&gt;done = <span class="hljs-literal">true</span>;<br>        }<br>        <span class="hljs-keyword">if</span> (!m-&gt;done)<br>        {<br>            <span class="hljs-comment">// We only compacted part of the requested range.  Update *m</span><br>            <span class="hljs-comment">// to the range that is left to be compacted.</span><br>            m-&gt;tmp_storage = manual_end;<br>            m-&gt;begin = &amp;m-&gt;tmp_storage;<br>        }<br>        manual_compaction_ = <span class="hljs-literal">nullptr</span>;<br>    }<br>}<br><br><span class="hljs-function">Compaction *<span class="hljs-title">VersionSet::PickCompaction</span><span class="hljs-params">()</span></span><br><span class="hljs-function"></span>{<br>    Compaction *c;<br>    <span class="hljs-type">int</span> level;<br><br>    <span class="hljs-comment">// We prefer compactions triggered by too much data in a level over</span><br>    <span class="hljs-comment">// the compactions triggered by seeks.</span><br>    <span class="hljs-type">const</span> <span class="hljs-type">bool</span> size_compaction = (current_-&gt;compaction_score_ &gt;= <span class="hljs-number">1</span>);<br>    <span class="hljs-type">const</span> <span class="hljs-type">bool</span> seek_compaction = (current_-&gt;file_to_compact_ != <span class="hljs-literal">nullptr</span>);<br>    <span class="hljs-keyword">if</span> (size_compaction)<br>    {<br>        level = current_-&gt;compaction_level_;<br>        <span class="hljs-built_in">assert</span>(level &gt;= <span class="hljs-number">0</span>);<br>        <span class="hljs-built_in">assert</span>(level + <span class="hljs-number">1</span> &lt; config::kNumLevels);<br>        c = <span class="hljs-keyword">new</span> <span class="hljs-built_in">Compaction</span>(options_, level);<br><br>        <span class="hljs-comment">// Pick the first file that comes after compact_pointer_[level]</span><br>        <span class="hljs-keyword">for</span> (<span class="hljs-type">size_t</span> i = <span class="hljs-number">0</span>; i &lt; current_-&gt;files_[level].<span class="hljs-built_in">size</span>(); i++)<br>        {<br>            FileMetaData *f = current_-&gt;files_[level][i];<br>            <span class="hljs-keyword">if</span> (compact_pointer_[level].<span class="hljs-built_in">empty</span>() ||<br>                icmp_.<span class="hljs-built_in">Compare</span>(f-&gt;largest.<span class="hljs-built_in">Encode</span>(), compact_pointer_[level]) &gt; <span class="hljs-number">0</span>)<br>            {<br>                c-&gt;inputs_[<span class="hljs-number">0</span>].<span class="hljs-built_in">push_back</span>(f);<br>                <span class="hljs-keyword">break</span>;<br>            }<br>        }<br>        <span class="hljs-keyword">if</span> (c-&gt;inputs_[<span class="hljs-number">0</span>].<span class="hljs-built_in">empty</span>())<br>        {<br>            <span class="hljs-comment">// Wrap-around to the beginning of the key space</span><br>            c-&gt;inputs_[<span class="hljs-number">0</span>].<span class="hljs-built_in">push_back</span>(current_-&gt;files_[level][<span class="hljs-number">0</span>]);<br>        }<br>    }<br>    <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (seek_compaction)<br>    {<br>        level = current_-&gt;file_to_compact_level_;<br>        c = <span class="hljs-keyword">new</span> <span class="hljs-built_in">Compaction</span>(options_, level);<br>        c-&gt;inputs_[<span class="hljs-number">0</span>].<span class="hljs-built_in">push_back</span>(current_-&gt;file_to_compact_);<br>    }<br>    <span class="hljs-keyword">else</span><br>    {<br>        <span class="hljs-keyword">return</span> <span class="hljs-literal">nullptr</span>;<br>    }<br><br>    c-&gt;input_version_ = current_;<br>    c-&gt;input_version_-&gt;<span class="hljs-built_in">Ref</span>();<br><br>    <span class="hljs-comment">// Files in level 0 may overlap each other, so pick up all overlapping ones</span><br>    <span class="hljs-keyword">if</span> (level == <span class="hljs-number">0</span>)<br>    {<br>        InternalKey smallest, largest;<br>        <span class="hljs-built_in">GetRange</span>(c-&gt;inputs_[<span class="hljs-number">0</span>], &amp;smallest, &amp;largest);<br>        <span class="hljs-comment">// Note that the next call will discard the file we placed in</span><br>        <span class="hljs-comment">// c-&gt;inputs_[0] earlier and replace it with an overlapping set</span><br>        <span class="hljs-comment">// which will include the picked file.</span><br>        current_-&gt;<span class="hljs-built_in">GetOverlappingInputs</span>(<span class="hljs-number">0</span>, &amp;smallest, &amp;largest, &amp;c-&gt;inputs_[<span class="hljs-number">0</span>]);<br>        <span class="hljs-built_in">assert</span>(!c-&gt;inputs_[<span class="hljs-number">0</span>].<span class="hljs-built_in">empty</span>());<br>    }<br><br>    <span class="hljs-built_in">SetupOtherInputs</span>(c);<br><br>    <span class="hljs-keyword">return</span> c;<br>}<br><br></code></pre></td></tr></table></figure>
+<pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp">
+<span class="token keyword">void</span> <span class="token class-name">DBImpl</span><span class="token double-colon punctuation">::</span><span class="token function">BackgroundCompaction</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+<span class="token punctuation">{</span>
+    mutex_<span class="token punctuation">.</span><span class="token function">AssertHeld</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>imm_ <span class="token operator">!=</span> <span class="token keyword">nullptr</span><span class="token punctuation">)</span>
+    <span class="token punctuation">{</span>
+        <span class="token function">CompactMemTable</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">return</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+
+    Compaction <span class="token operator">*</span>c<span class="token punctuation">;</span>
+    <span class="token keyword">bool</span> is_manual <span class="token operator">=</span> <span class="token punctuation">(</span>manual_compaction_ <span class="token operator">!=</span> <span class="token keyword">nullptr</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    InternalKey manual_end<span class="token punctuation">;</span>
+    <span class="token comment">// 先处理手动触发的压缩</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>is_manual<span class="token punctuation">)</span>
+    <span class="token punctuation">{</span>
+        ManualCompaction <span class="token operator">*</span>m <span class="token operator">=</span> manual_compaction_<span class="token punctuation">;</span>
+        c <span class="token operator">=</span> versions_<span class="token operator">-&gt;</span><span class="token function">CompactRange</span><span class="token punctuation">(</span>m<span class="token operator">-&gt;</span>level<span class="token punctuation">,</span> m<span class="token operator">-&gt;</span>begin<span class="token punctuation">,</span> m<span class="token operator">-&gt;</span>end<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        m<span class="token operator">-&gt;</span>done <span class="token operator">=</span> <span class="token punctuation">(</span>c <span class="token operator">==</span> <span class="token keyword">nullptr</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span>c <span class="token operator">!=</span> <span class="token keyword">nullptr</span><span class="token punctuation">)</span>
+        <span class="token punctuation">{</span>
+            manual_end <span class="token operator">=</span> c<span class="token operator">-&gt;</span><span class="token function">input</span><span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">,</span> c<span class="token operator">-&gt;</span><span class="token function">num_input_files</span><span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">)</span> <span class="token operator">-</span> <span class="token number">1</span><span class="token punctuation">)</span><span class="token operator">-&gt;</span>largest<span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+        <span class="token function">Log</span><span class="token punctuation">(</span>options_<span class="token punctuation">.</span>info_log<span class="token punctuation">,</span>
+            <span class="token string">"Manual compaction at level-%d from %s .. %s; will stop at %s\n"</span><span class="token punctuation">,</span>
+            m<span class="token operator">-&gt;</span>level<span class="token punctuation">,</span> <span class="token punctuation">(</span>m<span class="token operator">-&gt;</span>begin <span class="token operator">?</span> m<span class="token operator">-&gt;</span>begin<span class="token operator">-&gt;</span><span class="token function">DebugString</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">c_str</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">:</span> <span class="token string">"(begin)"</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+            <span class="token punctuation">(</span>m<span class="token operator">-&gt;</span>end <span class="token operator">?</span> m<span class="token operator">-&gt;</span>end<span class="token operator">-&gt;</span><span class="token function">DebugString</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">c_str</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">:</span> <span class="token string">"(end)"</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+            <span class="token punctuation">(</span>m<span class="token operator">-&gt;</span>done <span class="token operator">?</span> <span class="token string">"(end)"</span> <span class="token operator">:</span> manual_end<span class="token punctuation">.</span><span class="token function">DebugString</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">c_str</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+    <span class="token keyword">else</span>
+    <span class="token punctuation">{</span>
+        <span class="token comment">// 选择一部分文件做压缩</span>
+        c <span class="token operator">=</span> versions_<span class="token operator">-&gt;</span><span class="token function">PickCompaction</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+
+    Status status<span class="token punctuation">;</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>c <span class="token operator">==</span> <span class="token keyword">nullptr</span><span class="token punctuation">)</span>
+    <span class="token comment">// 没有合并的文件</span>
+    <span class="token punctuation">{</span>
+        <span class="token comment">// Nothing to do</span>
+    <span class="token punctuation">}</span>
+    <span class="token keyword">else</span> <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span>is_manual <span class="token operator">&amp;&amp;</span> c<span class="token operator">-&gt;</span><span class="token function">IsTrivialMove</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+    <span class="token punctuation">{</span>
+        <span class="token comment">// 处理一种特殊情况，也就是参与Compaction的文件，level_有一个文件，而level_ + 1 没有</span>
+        <span class="token comment">// 这时候只需要直接更改元数据，然后文件移动到level_ + 1即可，不需要多路归并</span>
+        <span class="token function">assert</span><span class="token punctuation">(</span>c<span class="token operator">-&gt;</span><span class="token function">num_input_files</span><span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">)</span> <span class="token operator">==</span> <span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        FileMetaData <span class="token operator">*</span>f <span class="token operator">=</span> c<span class="token operator">-&gt;</span><span class="token function">input</span><span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        c<span class="token operator">-&gt;</span><span class="token function">edit</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator">-&gt;</span><span class="token function">RemoveFile</span><span class="token punctuation">(</span>c<span class="token operator">-&gt;</span><span class="token function">level</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> f<span class="token operator">-&gt;</span>number<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        c<span class="token operator">-&gt;</span><span class="token function">edit</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator">-&gt;</span><span class="token function">AddFile</span><span class="token punctuation">(</span>c<span class="token operator">-&gt;</span><span class="token function">level</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">+</span> <span class="token number">1</span><span class="token punctuation">,</span> f<span class="token operator">-&gt;</span>number<span class="token punctuation">,</span> f<span class="token operator">-&gt;</span>file_size<span class="token punctuation">,</span> f<span class="token operator">-&gt;</span>smallest<span class="token punctuation">,</span>
+                           f<span class="token operator">-&gt;</span>largest<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        status <span class="token operator">=</span> versions_<span class="token operator">-&gt;</span><span class="token function">LogAndApply</span><span class="token punctuation">(</span>c<span class="token operator">-&gt;</span><span class="token function">edit</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token operator">&amp;</span>mutex_<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span>status<span class="token punctuation">.</span><span class="token function">ok</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+        <span class="token punctuation">{</span>
+            <span class="token function">RecordBackgroundError</span><span class="token punctuation">(</span>status<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+        VersionSet<span class="token double-colon punctuation">::</span>LevelSummaryStorage tmp<span class="token punctuation">;</span>
+        <span class="token function">Log</span><span class="token punctuation">(</span>options_<span class="token punctuation">.</span>info_log<span class="token punctuation">,</span> <span class="token string">"Moved #%lld to level-%d %lld bytes %s: %s\n"</span><span class="token punctuation">,</span>
+            <span class="token generic-function"><span class="token function">static_cast</span><span class="token generic class-name"><span class="token operator">&lt;</span><span class="token keyword">unsigned</span> <span class="token keyword">long</span> <span class="token keyword">long</span><span class="token operator">&gt;</span></span></span><span class="token punctuation">(</span>f<span class="token operator">-&gt;</span>number<span class="token punctuation">)</span><span class="token punctuation">,</span> c<span class="token operator">-&gt;</span><span class="token function">level</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">+</span> <span class="token number">1</span><span class="token punctuation">,</span>
+            <span class="token generic-function"><span class="token function">static_cast</span><span class="token generic class-name"><span class="token operator">&lt;</span><span class="token keyword">unsigned</span> <span class="token keyword">long</span> <span class="token keyword">long</span><span class="token operator">&gt;</span></span></span><span class="token punctuation">(</span>f<span class="token operator">-&gt;</span>file_size<span class="token punctuation">)</span><span class="token punctuation">,</span>
+            status<span class="token punctuation">.</span><span class="token function">ToString</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">c_str</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> versions_<span class="token operator">-&gt;</span><span class="token function">LevelSummary</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>tmp<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+    <span class="token keyword">else</span>
+    <span class="token punctuation">{</span>
+        CompactionState <span class="token operator">*</span>compact <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token function">CompactionState</span><span class="token punctuation">(</span>c<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token comment">// 调用DBImpl::DoCompactionWork做实际的Compaction</span>
+        status <span class="token operator">=</span> <span class="token function">DoCompactionWork</span><span class="token punctuation">(</span>compact<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span>status<span class="token punctuation">.</span><span class="token function">ok</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+        <span class="token punctuation">{</span>
+            <span class="token function">RecordBackgroundError</span><span class="token punctuation">(</span>status<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+        <span class="token function">CleanupCompaction</span><span class="token punctuation">(</span>compact<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        c<span class="token operator">-&gt;</span><span class="token function">ReleaseInputs</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token function">RemoveObsoleteFiles</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+    <span class="token keyword">delete</span> c<span class="token punctuation">;</span>
+
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>status<span class="token punctuation">.</span><span class="token function">ok</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+    <span class="token punctuation">{</span>
+        <span class="token comment">// Done</span>
+    <span class="token punctuation">}</span>
+    <span class="token keyword">else</span> <span class="token keyword">if</span> <span class="token punctuation">(</span>shutting_down_<span class="token punctuation">.</span><span class="token function">load</span><span class="token punctuation">(</span>std<span class="token double-colon punctuation">::</span>memory_order_acquire<span class="token punctuation">)</span><span class="token punctuation">)</span>
+    <span class="token punctuation">{</span>
+        <span class="token comment">// Ignore compaction errors found during shutting down</span>
+    <span class="token punctuation">}</span>
+    <span class="token keyword">else</span>
+    <span class="token punctuation">{</span>
+        <span class="token function">Log</span><span class="token punctuation">(</span>options_<span class="token punctuation">.</span>info_log<span class="token punctuation">,</span> <span class="token string">"Compaction error: %s"</span><span class="token punctuation">,</span> status<span class="token punctuation">.</span><span class="token function">ToString</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">c_str</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>is_manual<span class="token punctuation">)</span>
+    <span class="token punctuation">{</span>
+        ManualCompaction <span class="token operator">*</span>m <span class="token operator">=</span> manual_compaction_<span class="token punctuation">;</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span>status<span class="token punctuation">.</span><span class="token function">ok</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+        <span class="token punctuation">{</span>
+            m<span class="token operator">-&gt;</span>done <span class="token operator">=</span> <span class="token boolean">true</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span>m<span class="token operator">-&gt;</span>done<span class="token punctuation">)</span>
+        <span class="token punctuation">{</span>
+            <span class="token comment">// We only compacted part of the requested range.  Update *m</span>
+            <span class="token comment">// to the range that is left to be compacted.</span>
+            m<span class="token operator">-&gt;</span>tmp_storage <span class="token operator">=</span> manual_end<span class="token punctuation">;</span>
+            m<span class="token operator">-&gt;</span>begin <span class="token operator">=</span> <span class="token operator">&amp;</span>m<span class="token operator">-&gt;</span>tmp_storage<span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+        manual_compaction_ <span class="token operator">=</span> <span class="token keyword">nullptr</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+
+Compaction <span class="token operator">*</span><span class="token class-name">VersionSet</span><span class="token double-colon punctuation">::</span><span class="token function">PickCompaction</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+<span class="token punctuation">{</span>
+    Compaction <span class="token operator">*</span>c<span class="token punctuation">;</span>
+    <span class="token keyword">int</span> level<span class="token punctuation">;</span>
+
+    <span class="token comment">// We prefer compactions triggered by too much data in a level over</span>
+    <span class="token comment">// the compactions triggered by seeks.</span>
+    <span class="token keyword">const</span> <span class="token keyword">bool</span> size_compaction <span class="token operator">=</span> <span class="token punctuation">(</span>current_<span class="token operator">-&gt;</span>compaction_score_ <span class="token operator">&gt;=</span> <span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">const</span> <span class="token keyword">bool</span> seek_compaction <span class="token operator">=</span> <span class="token punctuation">(</span>current_<span class="token operator">-&gt;</span>file_to_compact_ <span class="token operator">!=</span> <span class="token keyword">nullptr</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>size_compaction<span class="token punctuation">)</span>
+    <span class="token punctuation">{</span>
+        level <span class="token operator">=</span> current_<span class="token operator">-&gt;</span>compaction_level_<span class="token punctuation">;</span>
+        <span class="token function">assert</span><span class="token punctuation">(</span>level <span class="token operator">&gt;=</span> <span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token function">assert</span><span class="token punctuation">(</span>level <span class="token operator">+</span> <span class="token number">1</span> <span class="token operator">&lt;</span> config<span class="token double-colon punctuation">::</span>kNumLevels<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        c <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token function">Compaction</span><span class="token punctuation">(</span>options_<span class="token punctuation">,</span> level<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+        <span class="token comment">// Pick the first file that comes after compact_pointer_[level]</span>
+        <span class="token keyword">for</span> <span class="token punctuation">(</span>size_t i <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span> i <span class="token operator">&lt;</span> current_<span class="token operator">-&gt;</span>files_<span class="token punctuation">[</span>level<span class="token punctuation">]</span><span class="token punctuation">.</span><span class="token function">size</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span> i<span class="token operator">++</span><span class="token punctuation">)</span>
+        <span class="token punctuation">{</span>
+            FileMetaData <span class="token operator">*</span>f <span class="token operator">=</span> current_<span class="token operator">-&gt;</span>files_<span class="token punctuation">[</span>level<span class="token punctuation">]</span><span class="token punctuation">[</span>i<span class="token punctuation">]</span><span class="token punctuation">;</span>
+            <span class="token keyword">if</span> <span class="token punctuation">(</span>compact_pointer_<span class="token punctuation">[</span>level<span class="token punctuation">]</span><span class="token punctuation">.</span><span class="token function">empty</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">||</span>
+                icmp_<span class="token punctuation">.</span><span class="token function">Compare</span><span class="token punctuation">(</span>f<span class="token operator">-&gt;</span>largest<span class="token punctuation">.</span><span class="token function">Encode</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> compact_pointer_<span class="token punctuation">[</span>level<span class="token punctuation">]</span><span class="token punctuation">)</span> <span class="token operator">&gt;</span> <span class="token number">0</span><span class="token punctuation">)</span>
+            <span class="token punctuation">{</span>
+                c<span class="token operator">-&gt;</span>inputs_<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span><span class="token punctuation">.</span><span class="token function">push_back</span><span class="token punctuation">(</span>f<span class="token punctuation">)</span><span class="token punctuation">;</span>
+                <span class="token keyword">break</span><span class="token punctuation">;</span>
+            <span class="token punctuation">}</span>
+        <span class="token punctuation">}</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span>c<span class="token operator">-&gt;</span>inputs_<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span><span class="token punctuation">.</span><span class="token function">empty</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+        <span class="token punctuation">{</span>
+            <span class="token comment">// Wrap-around to the beginning of the key space</span>
+            c<span class="token operator">-&gt;</span>inputs_<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span><span class="token punctuation">.</span><span class="token function">push_back</span><span class="token punctuation">(</span>current_<span class="token operator">-&gt;</span>files_<span class="token punctuation">[</span>level<span class="token punctuation">]</span><span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+    <span class="token punctuation">}</span>
+    <span class="token keyword">else</span> <span class="token keyword">if</span> <span class="token punctuation">(</span>seek_compaction<span class="token punctuation">)</span>
+    <span class="token punctuation">{</span>
+        level <span class="token operator">=</span> current_<span class="token operator">-&gt;</span>file_to_compact_level_<span class="token punctuation">;</span>
+        c <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token function">Compaction</span><span class="token punctuation">(</span>options_<span class="token punctuation">,</span> level<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        c<span class="token operator">-&gt;</span>inputs_<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span><span class="token punctuation">.</span><span class="token function">push_back</span><span class="token punctuation">(</span>current_<span class="token operator">-&gt;</span>file_to_compact_<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+    <span class="token keyword">else</span>
+    <span class="token punctuation">{</span>
+        <span class="token keyword">return</span> <span class="token keyword">nullptr</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+
+    c<span class="token operator">-&gt;</span>input_version_ <span class="token operator">=</span> current_<span class="token punctuation">;</span>
+    c<span class="token operator">-&gt;</span>input_version_<span class="token operator">-&gt;</span><span class="token function">Ref</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token comment">// Files in level 0 may overlap each other, so pick up all overlapping ones</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>level <span class="token operator">==</span> <span class="token number">0</span><span class="token punctuation">)</span>
+    <span class="token punctuation">{</span>
+        InternalKey smallest<span class="token punctuation">,</span> largest<span class="token punctuation">;</span>
+        <span class="token function">GetRange</span><span class="token punctuation">(</span>c<span class="token operator">-&gt;</span>inputs_<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span><span class="token punctuation">,</span> <span class="token operator">&amp;</span>smallest<span class="token punctuation">,</span> <span class="token operator">&amp;</span>largest<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token comment">// Note that the next call will discard the file we placed in</span>
+        <span class="token comment">// c-&gt;inputs_[0] earlier and replace it with an overlapping set</span>
+        <span class="token comment">// which will include the picked file.</span>
+        current_<span class="token operator">-&gt;</span><span class="token function">GetOverlappingInputs</span><span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">,</span> <span class="token operator">&amp;</span>smallest<span class="token punctuation">,</span> <span class="token operator">&amp;</span>largest<span class="token punctuation">,</span> <span class="token operator">&amp;</span>c<span class="token operator">-&gt;</span>inputs_<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token function">assert</span><span class="token punctuation">(</span><span class="token operator">!</span>c<span class="token operator">-&gt;</span>inputs_<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span><span class="token punctuation">.</span><span class="token function">empty</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+
+    <span class="token function">SetupOtherInputs</span><span class="token punctuation">(</span>c<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token keyword">return</span> c<span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <p>其中DBImpl::DoCompactionWork是真正处理多路归并的函数，会考虑以下几点：</p>
 <ul>
 <li>迭代按照Internal Key的顺序进行，多个连续的Internal
@@ -510,332 +719,245 @@ Key又可见了。如果不存在，那么可以安全的丢弃这个删除操�
 </ul>
 <p>最后通过DBImpl::InstallCompactionResults安装Compaction的结果，将改删除的文件和改添加的文件更新到VersionEdit里，然后应用版本更新。</p>
 
-                
-              </div>
-            
-            <hr/>
-            <div>
-              <div class="post-metas my-3">
-  
-    <div class="post-meta mr-3 d-flex align-items-center">
-      <i class="iconfont icon-category"></i>
-      
+    </div>
 
-<span class="category-chains">
-  
-  
     
-      <span class="category-chain">
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/C/" rel="tag"># C++</a>
+              <a href="/tags/levelDB/" rel="tag"># levelDB</a>
+          </div>
+
         
-  <a href="/categories/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/" class="category-chain-item">levelDB源码剖析</a>
-  
-  
 
-      </span>
-    
-  
-</span>
 
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2022/12/19/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-15/" rel="prev" title="levelDB源码剖析(15)--数据库的版本管理">
+      <i class="fa fa-chevron-left"></i> levelDB源码剖析(15)--数据库的版本管理
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2022/12/23/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-17/" rel="next" title="levelDB源码剖析(17)--Recover">
+      levelDB源码剖析(17)--Recover <i class="fa fa-chevron-right"></i>
+    </a></div>
     </div>
-  
-  
-    <div class="post-meta">
-      <i class="iconfont icon-tags"></i>
-      
-        <a href="/tags/C/">#C++</a>
-      
-        <a href="/tags/levelDB/">#levelDB</a>
-      
-    </div>
-  
-</div>
-
-
-              
-
-              
-                <div class="post-prevnext my-3">
-                  <article class="post-prev col-6">
-                    
-                    
-                      <a href="/2022/12/23/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-17/" title="levelDB源码剖析(17)--Recover">
-                        <i class="iconfont icon-arrowleft"></i>
-                        <span class="hidden-mobile">levelDB源码剖析(17)--Recover</span>
-                        <span class="visible-mobile">Previous</span>
-                      </a>
-                    
-                  </article>
-                  <article class="post-next col-6">
-                    
-                    
-                      <a href="/2022/12/19/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-15/" title="levelDB源码剖析(15)--数据库的版本管理">
-                        <span class="hidden-mobile">levelDB源码剖析(15)--数据库的版本管理</span>
-                        <span class="visible-mobile">Next</span>
-                        <i class="iconfont icon-arrowright"></i>
-                      </a>
-                    
-                  </article>
-                </div>
-              
-            </div>
-
-            
-  <article id="comments" lazyload>
+      </footer>
     
-  <div id="waline"></div>
-  <script type="text/javascript">
-    Fluid.utils.loadComments('#waline', function() {
-      Fluid.utils.createCssLink('https://lib.baomitu.com/waline/2.5.1/waline.min.css')
-      Fluid.utils.createScript('https://lib.baomitu.com/waline/2.5.1/waline.min.js', function() {
-        var options = Object.assign(
-          {"serverURL":"https://waline-tau.vercel.app/","path":"window.location.pathname","meta":["nick","mail","link"],"requiredMeta":["nick"],"lang":"zh-CN","emoji":["https://emoji.shojo.cn/bili/src/大航海嘉然","https://emoji.shojo.cn/bili/src/永雏塔菲","https://emoji.shojo.cn/bili/src/東雪蓮","https://unpkg.com/@waline/emojis@1.1.0/tieba","https://emoji.shojo.cn/bili/src/嘉然今天吃什么","https://emoji.shojo.cn/bili/src/小黄脸"],"dark":"html[data-user-color-scheme=\"dark\"]","wordLimit":0,"pageSize":10},
-          {
-            el: '#waline',
-            path: window.location.pathname
-          }
-        )
-        Waline.init(options);
-        Fluid.utils.waitElementVisible('#waline .vcontent', () => {
-          var imgSelector = '#waline .vcontent img:not(.vemoji)';
-          Fluid.plugins.imageCaption(imgSelector);
-          Fluid.plugins.fancyBox(imgSelector);
-        })
-      });
-    });
-  </script>
-  <noscript>Please enable JavaScript to view the comments</noscript>
-
-
   </article>
-
-
-          </article>
-        </div>
-      </div>
-    </div>
-
-    <div class="side-col d-none d-lg-block col-lg-2">
-      
-  <aside class="sidebar" style="margin-left: -1rem">
-    <div id="toc">
-  <p class="toc-header"><i class="iconfont icon-list"></i>&nbsp;Table of Contents</p>
-  <div class="toc-body" id="toc-body"></div>
-</div>
-
-
-
-  </aside>
-
-
-    </div>
-  </div>
-</div>
-
-
-
-
-
-  
-
-
-
-  
-
-
-
-  
-
-
-
-  
-
-
-
-  
-
-
-
-
-
-
-
-    
-
-    
-      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
-        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
-      </a>
-    
-
-    
-      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
-     aria-hidden="true">
-  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
-    <div class="modal-content">
-      <div class="modal-header text-center">
-        <h4 class="modal-title w-100 font-weight-bold">Search</h4>
-        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
-          <span aria-hidden="true">&times;</span>
-        </button>
-      </div>
-      <div class="modal-body mx-3">
-        <div class="md-form mb-5">
-          <input type="text" id="local-search-input" class="form-control validate">
-          <label data-error="x" data-success="v" for="local-search-input">Keyword</label>
-        </div>
-        <div class="list-group" id="local-search-result"></div>
-      </div>
-    </div>
-  </div>
-</div>
-
-    
-
-    
-  </main>
-
-  <footer>
-    <div class="footer-inner">
-  
-    <div class="footer-content">
-       <a href="https://github.com/staskaer" target="_blank" rel="nofollow noopener"><span>Staskaer</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
-    </div>
   
   
   
-  
-</div>
-
-  </footer>
-
-  <!-- Scripts -->
-  
-  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
-  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
-
-  <script>
-    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
-    NProgress.start()
-    window.addEventListener('load', function() {
-      NProgress.done();
-    })
-  </script>
 
 
-<script  src="https://lib.baomitu.com/jquery/3.6.0/jquery.min.js" ></script>
-<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
-<script  src="/js/events.js" ></script>
-<script  src="/js/plugins.js" ></script>
 
+          </div>
+          
+    <div class="comments" id="valine-comments"></div>
 
-  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
-  <script>
-    (function (window, document) {
-      var typing = Fluid.plugins.typing;
-      var subtitle = document.getElementById('subtitle');
-      if (!subtitle || !typing) {
-        return;
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
       }
-      var text = subtitle.getAttribute('data-typed-text');
-      
-        typing(text);
-      
-    })(window, document);
-  </script>
-
-
-
-
-  
-    <script  src="/js/img-lazyload.js" ></script>
-  
-
-
-
-
-  
-<script>
-  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.18.2/tocbot.min.js', function() {
-    var toc = jQuery('#toc');
-    if (toc.length === 0 || !window.tocbot) { return; }
-    var boardCtn = jQuery('#board-ctn');
-    var boardTop = boardCtn.offset().top;
-
-    window.tocbot.init({
-      tocSelector     : '#toc-body',
-      contentSelector : '.markdown-body',
-      headingSelector : CONFIG.toc.headingSelector || 'h1,h2,h3,h4,h5,h6',
-      linkClass       : 'tocbot-link',
-      activeLinkClass : 'tocbot-active-link',
-      listClass       : 'tocbot-list',
-      isCollapsedClass: 'tocbot-is-collapsed',
-      collapsibleClass: 'tocbot-is-collapsible',
-      collapseDepth   : CONFIG.toc.collapseDepth || 0,
-      scrollSmooth    : true,
-      headingsOffset  : -boardTop
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
     });
-    if (toc.find('.toc-list-item').length > 0) {
-      toc.css('visibility', 'visible');
-    }
-  });
+  }
 </script>
 
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
 
-  <script src=https://lib.baomitu.com/clipboard.js/2.0.10/clipboard.min.js></script>
+  <aside class="sidebar">
+    <div class="sidebar-inner">
 
-  <script>Fluid.plugins.codeWidget();</script>
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#compaction"><span class="nav-number">1.</span> <span class="nav-text">Compaction</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#compaction%E5%AE%9E%E7%8E%B0"><span class="nav-number">1.1.</span> <span class="nav-text">Compaction实现</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Staskaer"
+      src="/imgs/theme_pic/head_img.png">
+  <p class="site-author-name" itemprop="name">Staskaer</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">63</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">10</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">18</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/Staskaer" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;Staskaer" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:liujiaxin011121@gmail.com" title="E-Mail → mailto:liujiaxin011121@gmail.com" rel="noopener" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2023</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Staskaer</span>
+</div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
 
 
   
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+
 <script>
-  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/4.3.1/anchor.min.js', function() {
-    window.anchors.options = {
-      placement: CONFIG.anchorjs.placement,
-      visible  : CONFIG.anchorjs.visible
-    };
-    if (CONFIG.anchorjs.icon) {
-      window.anchors.options.icon = CONFIG.anchorjs.icon;
-    }
-    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
-    var res = [];
-    for (var item of el) {
-      res.push('.markdown-body > ' + item.trim());
-    }
-    if (CONFIG.anchorjs.placement === 'left') {
-      window.anchors.options.class = 'anchorjs-link-left';
-    }
-    window.anchors.add(res.join(', '));
-  });
+NexT.utils.loadComments(document.querySelector('#valine-comments'), () => {
+  NexT.utils.getScript('https://cdn.jsdelivr.net/npm/valine@1.5.1/dist/Valine.min.js', () => {
+    var GUEST = ['nick', 'mail', 'link'];
+    var guest = 'nick,mail,link';
+    guest = guest.split(',').filter(item => {
+      return GUEST.includes(item);
+    });
+    new Valine({
+      el         : '#valine-comments',
+      verify     : false,
+      notify     : false,
+      appId      : 'xH8NDrh9u4SQrUpQOd0lICnX-MdYXbMMI',
+      appKey     : 'jl3JjPS4jsosZG29Zv24Y7LE',
+      placeholder: "Just go go",
+      avatar     : 'mm',
+      meta       : guest,
+      pageSize   : '10' || 10,
+      visitor    : false,
+      lang       : 'zh-Hans' || 'zh-cn',
+      path       : location.pathname,
+      recordIP   : false,
+      serverURLs : ''
+    });
+  }, window.Valine);
+});
 </script>
 
-
-  
-<script>
-  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
-    Fluid.plugins.fancyBox();
-  });
-</script>
-
-
-  <script>Fluid.plugins.imageCaption();</script>
-
-  <script defer src="/js/leancloud.js" ></script>
-
-  <script  src="/js/local-search.js" ></script>
-
-
-
-
-
-<!-- 主题的启动项，将它保持在最底部 -->
-<!-- the boot of the theme, keep it at the bottom -->
-<script  src="/js/boot.js" ></script>
-
-
-  
-
-  <noscript>
-    <div class="noscript-warning">Blog works best with JavaScript enabled</div>
-  </noscript>
 </body>
 </html>
+

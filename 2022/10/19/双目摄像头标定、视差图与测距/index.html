@@ -1,107 +1,87 @@
-
-
 <!DOCTYPE html>
-<html lang="en" data-default-color-scheme=auto>
-
-
-
+<html lang="en">
 <head>
   <meta charset="UTF-8">
-  <link rel="apple-touch-icon" sizes="76x76" href="/imgs/theme_pic/staskaer.png">
-  <link rel="icon" href="/imgs/theme_pic/staskaer.png">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
-  <meta http-equiv="x-ua-compatible" content="ie=edge">
-  
-  <meta name="theme-color" content="#2f4154">
-  <meta name="author" content="Staskaer">
-  <meta name="keywords" content="">
-  
-    <meta name="description" content="双目摄像头标定、视差图与测距">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 6.2.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/imgs/theme_pic/staskaer.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/imgs/theme_pic/staskaer.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/imgs/theme_pic/staskaer.png">
+  <link rel="mask-icon" href="/imgs/theme_pic/staskaer.png" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Gemini","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"flat"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"valine","storage":true,"lazyload":false,"nav":null,"activeClass":"valine"},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="双目摄像头标定、视差图与测距">
 <meta property="og:type" content="article">
 <meta property="og:title" content="双目摄像头标定、视差图与测距的实现--玩具级别">
 <meta property="og:url" content="http://example.com/2022/10/19/%E5%8F%8C%E7%9B%AE%E6%91%84%E5%83%8F%E5%A4%B4%E6%A0%87%E5%AE%9A%E3%80%81%E8%A7%86%E5%B7%AE%E5%9B%BE%E4%B8%8E%E6%B5%8B%E8%B7%9D/index.html">
 <meta property="og:site_name" content="Staskaer">
 <meta property="og:description" content="双目摄像头标定、视差图与测距">
 <meta property="og:locale" content="en_US">
-<meta property="og:image" content="http://example.com/imgs/post_index_img/toy_stereo_vision.jpg">
+<meta property="og:image" content="http://example.com/2022/10/19/%E5%8F%8C%E7%9B%AE%E6%91%84%E5%83%8F%E5%A4%B4%E6%A0%87%E5%AE%9A%E3%80%81%E8%A7%86%E5%B7%AE%E5%9B%BE%E4%B8%8E%E6%B5%8B%E8%B7%9D/pic0.jpg">
+<meta property="og:image" content="http://example.com/2022/10/19/%E5%8F%8C%E7%9B%AE%E6%91%84%E5%83%8F%E5%A4%B4%E6%A0%87%E5%AE%9A%E3%80%81%E8%A7%86%E5%B7%AE%E5%9B%BE%E4%B8%8E%E6%B5%8B%E8%B7%9D/pic1.png">
+<meta property="og:image" content="http://example.com/2022/10/19/%E5%8F%8C%E7%9B%AE%E6%91%84%E5%83%8F%E5%A4%B4%E6%A0%87%E5%AE%9A%E3%80%81%E8%A7%86%E5%B7%AE%E5%9B%BE%E4%B8%8E%E6%B5%8B%E8%B7%9D/pic3.png">
 <meta property="article:published_time" content="2022-10-19T14:12:12.000Z">
 <meta property="article:modified_time" content="2022-11-04T06:04:12.679Z">
 <meta property="article:author" content="Staskaer">
 <meta property="article:tag" content="双目摄像头">
-<meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:image" content="http://example.com/imgs/post_index_img/toy_stereo_vision.jpg">
-  
-  
-  
-  <title>双目摄像头标定、视差图与测距的实现--玩具级别 - Staskaer</title>
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://example.com/2022/10/19/%E5%8F%8C%E7%9B%AE%E6%91%84%E5%83%8F%E5%A4%B4%E6%A0%87%E5%AE%9A%E3%80%81%E8%A7%86%E5%B7%AE%E5%9B%BE%E4%B8%8E%E6%B5%8B%E8%B7%9D/pic0.jpg">
 
-  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+<link rel="canonical" href="http://example.com/2022/10/19/%E5%8F%8C%E7%9B%AE%E6%91%84%E5%83%8F%E5%A4%B4%E6%A0%87%E5%AE%9A%E3%80%81%E8%A7%86%E5%B7%AE%E5%9B%BE%E4%B8%8E%E6%B5%8B%E8%B7%9D/">
 
 
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'en'
+  };
+</script>
 
-  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
-
-  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
-
-  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
-
-
-
-<!-- 主题依赖的图标库，不要自行修改 -->
-<!-- Do not modify the link that theme dependent icons -->
-
-<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_hj8rtnfg7um.css">
-
-
-
-<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_lbnruvf0jn.css">
-
-
-<link  rel="stylesheet" href="/css/main.css" />
-
-
-  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
-  
-    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  <title>双目摄像头标定、视差图与测距的实现--玩具级别 | Staskaer</title>
   
 
 
 
 
-  <script id="fluid-configs">
-    var Fluid = window.Fluid || {};
-    Fluid.ctx = Object.assign({}, Fluid.ctx)
-    var CONFIG = {"hostname":"example.com","root":"/","version":"1.9.2","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":true,"follow_dnt":false,"baidu":null,"google":null,"gtag":null,"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":"xH8NDrh9u4SQrUpQOd0lICnX-MdYXbMMI","app_key":"jl3JjPS4jsosZG29Zv24Y7LE","server_url":null,"path":"window.location.pathname","ignore_local":false}},"search_path":"/local-search.xml"};
-
-    if (CONFIG.web_analytics.follow_dnt) {
-      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
-      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
-    }
-  </script>
-  <script  src="/js/utils.js" ></script>
-  <script  src="/js/color-schema.js" ></script>
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-    
-  
 
 
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
 
-  
-<meta name="generator" content="Hexo 6.2.0"><style>mjx-container[jax="SVG"] {
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+<style>mjx-container[jax="SVG"] {
   direction: ltr;
 }
 
@@ -215,577 +195,642 @@ mjx-container[display="true"] + br {
 }
 </style></head>
 
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
 
-<body>
-  
-
-  <header>
-    
-
-<div class="header-inner" style="height: 70vh;">
-  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
-  <div class="container">
-    <a class="navbar-brand" href="/">
-      <strong>Staskaer</strong>
-    </a>
-
-    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
-            data-target="#navbarSupportedContent"
-            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
-      <div class="animated-icon"><span></span><span></span><span></span></div>
-    </button>
-
-    <!-- Collapsible content -->
-    <div class="collapse navbar-collapse" id="navbarSupportedContent">
-      <ul class="navbar-nav ml-auto text-center">
-        
-          
-          
-          
-          
-            <li class="nav-item">
-              <a class="nav-link" href="/">
-                <i class="iconfont icon-home-fill"></i>
-                Home
-              </a>
-            </li>
-          
-        
-          
-          
-          
-          
-            <li class="nav-item">
-              <a class="nav-link" href="/archives/">
-                <i class="iconfont icon-archive-fill"></i>
-                Archives
-              </a>
-            </li>
-          
-        
-          
-          
-          
-          
-            <li class="nav-item">
-              <a class="nav-link" href="/categories/">
-                <i class="iconfont icon-category-fill"></i>
-                Categories
-              </a>
-            </li>
-          
-        
-          
-          
-          
-          
-            <li class="nav-item">
-              <a class="nav-link" href="/tags/">
-                <i class="iconfont icon-tags-fill"></i>
-                Tags
-              </a>
-            </li>
-          
-        
-          
-          
-          
-          
-            <li class="nav-item">
-              <a class="nav-link" href="/about/">
-                <i class="iconfont icon-user-fill"></i>
-                About
-              </a>
-            </li>
-          
-        
-          
-          
-          
-          
-            <li class="nav-item">
-              <a class="nav-link" href="/links/">
-                <i class="iconfont icon-link-fill"></i>
-                Links
-              </a>
-            </li>
-          
-        
-        
-          <li class="nav-item" id="search-btn">
-            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
-              &nbsp;<i class="iconfont icon-search"></i>&nbsp;
-            </a>
-          </li>
-          
-        
-        
-          <li class="nav-item" id="color-toggle-btn">
-            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">&nbsp;<i
-                class="iconfont icon-dark" id="color-toggle-icon"></i>&nbsp;</a>
-          </li>
-        
-      </ul>
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
     </div>
   </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Staskaer</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">Hi, this is Staskaer</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
 </nav>
 
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="Searching..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2022/10/19/%E5%8F%8C%E7%9B%AE%E6%91%84%E5%83%8F%E5%A4%B4%E6%A0%87%E5%AE%9A%E3%80%81%E8%A7%86%E5%B7%AE%E5%9B%BE%E4%B8%8E%E6%B5%8B%E8%B7%9D/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/imgs/theme_pic/head_img.png">
+      <meta itemprop="name" content="Staskaer">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Staskaer">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          双目摄像头标定、视差图与测距的实现--玩具级别
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2022-10-19 22:12:12" itemprop="dateCreated datePublished" datetime="2022-10-19T22:12:12+08:00">2022-10-19</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2022-11-04 14:04:12" itemprop="dateModified" datetime="2022-11-04T14:04:12+08:00">2022-11-04</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E4%B8%89%E7%BB%B4%E8%A7%86%E8%A7%89/" itemprop="url" rel="index"><span itemprop="name">三维视觉</span></a>
+                </span>
+            </span>
+
+          
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Valine: </span>
+    
+    <a title="valine" href="/2022/10/19/%E5%8F%8C%E7%9B%AE%E6%91%84%E5%83%8F%E5%A4%B4%E6%A0%87%E5%AE%9A%E3%80%81%E8%A7%86%E5%B7%AE%E5%9B%BE%E4%B8%8E%E6%B5%8B%E8%B7%9D/#valine-comments" itemprop="discussionUrl">
+      <span class="post-comments-count valine-comment-count" data-xid="/2022/10/19/%E5%8F%8C%E7%9B%AE%E6%91%84%E5%83%8F%E5%A4%B4%E6%A0%87%E5%AE%9A%E3%80%81%E8%A7%86%E5%B7%AE%E5%9B%BE%E4%B8%8E%E6%B5%8B%E8%B7%9D/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
   
 
-<div id="banner" class="banner" parallax=true
-     style="background: url('/imgs/post_index_img/toy_stereo_vision.jpg') no-repeat center center; background-size: cover;">
-  <div class="full-bg-img">
-    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
-      <div class="banner-text text-center fade-in-up">
-        <div class="h2">
-          
-            <span id="subtitle" data-typed-text="一个玩具级别的双目摄像头的标定"></span>
-          
         </div>
-
-        
-          
-  <div class="mt-3">
-    
-    
-      <span class="post-meta">
-        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
-        <time datetime="2022-10-19 22:12" pubdate>
-          October 19, 2022 pm
-        </time>
-      </span>
-    
-  </div>
-
-  <div class="mt-1">
-    
-      <span class="post-meta mr-2">
-        <i class="iconfont icon-chart"></i>
-        
-          5.8k words
-        
-      </span>
-    
-
-    
-      <span class="post-meta mr-2">
-        <i class="iconfont icon-clock-fill"></i>
-        
-        
-        
-          25 mins
-        
-      </span>
-    
+      </header>
 
     
     
-      
-        <span id="leancloud-page-views-container" class="post-meta" style="display: none">
-          <i class="iconfont icon-eye" aria-hidden="true"></i>
-          <span id="leancloud-page-views"></span> views
-        </span>
-        
-      
     
-  </div>
-
-
-        
-      </div>
+    <div class="post-body" itemprop="articleBody">
 
       
-    </div>
-  </div>
-</div>
-
-</div>
-
-  </header>
-
-  <main>
-    
-      
-
-<div class="container-fluid nopadding-x">
-  <div class="row nomargin-x">
-    <div class="side-col d-none d-lg-block col-lg-2">
-      
-
-    </div>
-
-    <div class="col-lg-8 nopadding-x-md">
-      <div class="container nopadding-x-md" id="board-ctn">
-        <div id="board">
-          <article class="post-content mx-auto">
-            <!-- SEO header -->
-            <h1 style="display: none">一个玩具级别的双目摄像头的标定</h1>
-            
-            
-              <div class="markdown-body">
-                
-                <h2 id="双目摄像头标定视差图与测距">双目摄像头标定、视差图与测距</h2>
+        <h2 id="双目摄像头标定视差图与测距">双目摄像头标定、视差图与测距</h2>
 <span id="more"></span>
 <p>因为贫穷，所以从海鲜市场捡了俩双目摄像头来进行标定和重建。由于原理部分的笔记还在整理中，所以本篇主要是直接介绍应用，旨在快速完成标定和测距的任务。</p>
-<img src="/2022/10/19/%E5%8F%8C%E7%9B%AE%E6%91%84%E5%83%8F%E5%A4%B4%E6%A0%87%E5%AE%9A%E3%80%81%E8%A7%86%E5%B7%AE%E5%9B%BE%E4%B8%8E%E6%B5%8B%E8%B7%9D/pic0.jpg" srcset="/img/loading.gif" lazyload class="">
+<img src="/2022/10/19/%E5%8F%8C%E7%9B%AE%E6%91%84%E5%83%8F%E5%A4%B4%E6%A0%87%E5%AE%9A%E3%80%81%E8%A7%86%E5%B7%AE%E5%9B%BE%E4%B8%8E%E6%B5%8B%E8%B7%9D/pic0.jpg" class="">
 <p>廉价的相机...还是双帧不同步的，只能希望时差不要太大了捏。</p>
 <h3 id="相机标定">相机标定</h3>
 <h4 id="拍摄标定板">拍摄标定板</h4>
 <p>相机标定主要是用来标定相机内参矩阵的。我们使用张正友标定法。所以需要先拍摄一些标定图片。</p>
 <p>由于可能会出现图像中虽然有标定板，但是在标定程序中不能正确检测出角点，所以我们直接在拍摄的时候就显示出检测的角点，这样能保证拍摄下来的图像肯定能用于标定。</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br></pre></td><td class="code"><pre><code class="hljs python"><br><span class="hljs-comment"># coding=utf-8</span><br><span class="hljs-keyword">import</span> cv2<br><span class="hljs-keyword">import</span> numpy <span class="hljs-keyword">as</span> np<br><span class="hljs-keyword">import</span> os<br><br><br><span class="hljs-keyword">def</span> <span class="hljs-title function_">find_chessboard_corners</span>(<span class="hljs-params">img</span>):<br>    h, w = img.shape[:<span class="hljs-number">2</span>]<br>    <span class="hljs-keyword">assert</span> w == img.shape[<span class="hljs-number">1</span>] <span class="hljs-keyword">and</span> h == img.shape[<span class="hljs-number">0</span>], (<span class="hljs-string">"size: %d x %d ... "</span> % (<br>        img.shape[<span class="hljs-number">1</span>], img.shape[<span class="hljs-number">0</span>]))<br>    pattern_size = (<span class="hljs-number">9</span>, <span class="hljs-number">6</span>)<br>    found, corners = cv2.findChessboardCorners(img, pattern_size)<br>    vis = <span class="hljs-literal">None</span><br>    <span class="hljs-keyword">if</span> found:<br>        term = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_COUNT, <span class="hljs-number">30</span>, <span class="hljs-number">0.1</span>)<br>        cv2.cornerSubPix(img, corners, (<span class="hljs-number">5</span>, <span class="hljs-number">5</span>), (-<span class="hljs-number">1</span>, -<span class="hljs-number">1</span>), term)<br>        vis = cv2.cvtColor(img, cv2.COLOR_GRAY2BGR)<br>        cv2.drawChessboardCorners(vis, pattern_size, corners, found)<br><br>    <span class="hljs-keyword">return</span> found, vis<br><br><br>cap0 = cv2.VideoCapture(<span class="hljs-number">0</span>)<br>cap1 = cv2.VideoCapture(<span class="hljs-number">1</span>)<br>img_path = <span class="hljs-string">r"StereoCamera\data\\"</span><br>firstFrame = <span class="hljs-literal">None</span><br>window_size = <span class="hljs-number">0</span><br>i = <span class="hljs-number">0</span><br>lst = <span class="hljs-built_in">open</span>(<span class="hljs-string">r'StereoCamera\data\imglst.lst'</span>, <span class="hljs-string">'w'</span>)<br><br><span class="hljs-keyword">while</span> <span class="hljs-number">1</span>:<br>    ret, frame1 = cap0.read()<br>    ret, frame2 = cap1.read()<br>    frame1 = cv2.resize(frame1, (<span class="hljs-number">640</span>, <span class="hljs-number">480</span>), interpolation=cv2.CV_8SC1)<br>    frame2 = cv2.resize(frame2, (<span class="hljs-number">640</span>, <span class="hljs-number">480</span>), interpolation=cv2.CV_8SC1)<br>    frame = np.concatenate([frame1, frame2], axis=<span class="hljs-number">1</span>)<br>    cv2.imshow(<span class="hljs-string">'img'</span>, frame)<br><br>    frame_left = frame1<br>    frame_right = frame2<br>    found1, vis1 = find_chessboard_corners(<br>        cv2.cvtColor(frame_left, cv2.COLOR_BGR2GRAY))<br>    found2, vis2 = find_chessboard_corners(<br>        cv2.cvtColor(frame_right, cv2.COLOR_BGR2GRAY))<br><br>    <span class="hljs-keyword">if</span> found1 <span class="hljs-keyword">and</span> found2:<br>        image = np.concatenate([vis1, vis2], axis=<span class="hljs-number">1</span>)<br>        image = np.concatenate([frame, image])<br>        cv2.imshow(<span class="hljs-string">'output'</span>, image)<br><br>    key = cv2.waitKey(<span class="hljs-number">30</span>)<br><br>    <span class="hljs-keyword">if</span> key == <span class="hljs-built_in">ord</span>(<span class="hljs-string">"s"</span>) <span class="hljs-keyword">and</span> found1 <span class="hljs-keyword">and</span> found2:<br><br>        cv2.imwrite((<span class="hljs-string">f'<span class="hljs-subst">{img_path}</span><span class="hljs-subst">{i}</span>left.jpg'</span>), frame_left)<br>        cv2.imwrite((<span class="hljs-string">f'<span class="hljs-subst">{img_path}</span><span class="hljs-subst">{i}</span>right.jpg'</span>), frame_right)<br><br>        lst.write(<span class="hljs-string">f"<span class="hljs-subst">{img_path}</span><span class="hljs-subst">{i}</span>left.jpg\n"</span>)<br>        lst.write(<span class="hljs-string">f"<span class="hljs-subst">{img_path}</span><span class="hljs-subst">{i}</span>right.jpg\n"</span>)<br>        i = i + <span class="hljs-number">1</span><br>        <span class="hljs-keyword">if</span> i &gt; <span class="hljs-number">20</span>:<br>            <span class="hljs-keyword">break</span><br><br>    <span class="hljs-keyword">if</span> key &amp; <span class="hljs-number">0xFF</span> == <span class="hljs-built_in">ord</span>(<span class="hljs-string">'q'</span>):<br>        <span class="hljs-keyword">break</span><br><br>lst.close()<br>cap0.release()<br>cap1.release()<br>cv2.destroyAllWindows()<br><br></code></pre></td></tr></table></figure>
-<div class="note note-info">
+<pre class="line-numbers language-python" data-language="python"><code class="language-python">
+<span class="token comment"># coding=utf-8</span>
+<span class="token keyword">import</span> cv2
+<span class="token keyword">import</span> numpy <span class="token keyword">as</span> np
+<span class="token keyword">import</span> os
+
+
+<span class="token keyword">def</span> <span class="token function">find_chessboard_corners</span><span class="token punctuation">(</span>img<span class="token punctuation">)</span><span class="token punctuation">:</span>
+    h<span class="token punctuation">,</span> w <span class="token operator">=</span> img<span class="token punctuation">.</span>shape<span class="token punctuation">[</span><span class="token punctuation">:</span><span class="token number">2</span><span class="token punctuation">]</span>
+    <span class="token keyword">assert</span> w <span class="token operator">==</span> img<span class="token punctuation">.</span>shape<span class="token punctuation">[</span><span class="token number">1</span><span class="token punctuation">]</span> <span class="token keyword">and</span> h <span class="token operator">==</span> img<span class="token punctuation">.</span>shape<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span><span class="token punctuation">,</span> <span class="token punctuation">(</span><span class="token string">"size: %d x %d ... "</span> <span class="token operator">%</span> <span class="token punctuation">(</span>
+        img<span class="token punctuation">.</span>shape<span class="token punctuation">[</span><span class="token number">1</span><span class="token punctuation">]</span><span class="token punctuation">,</span> img<span class="token punctuation">.</span>shape<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+    pattern_size <span class="token operator">=</span> <span class="token punctuation">(</span><span class="token number">9</span><span class="token punctuation">,</span> <span class="token number">6</span><span class="token punctuation">)</span>
+    found<span class="token punctuation">,</span> corners <span class="token operator">=</span> cv2<span class="token punctuation">.</span>findChessboardCorners<span class="token punctuation">(</span>img<span class="token punctuation">,</span> pattern_size<span class="token punctuation">)</span>
+    vis <span class="token operator">=</span> <span class="token boolean">None</span>
+    <span class="token keyword">if</span> found<span class="token punctuation">:</span>
+        term <span class="token operator">=</span> <span class="token punctuation">(</span>cv2<span class="token punctuation">.</span>TERM_CRITERIA_EPS <span class="token operator">+</span> cv2<span class="token punctuation">.</span>TERM_CRITERIA_COUNT<span class="token punctuation">,</span> <span class="token number">30</span><span class="token punctuation">,</span> <span class="token number">0.1</span><span class="token punctuation">)</span>
+        cv2<span class="token punctuation">.</span>cornerSubPix<span class="token punctuation">(</span>img<span class="token punctuation">,</span> corners<span class="token punctuation">,</span> <span class="token punctuation">(</span><span class="token number">5</span><span class="token punctuation">,</span> <span class="token number">5</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token punctuation">(</span><span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">,</span> <span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">,</span> term<span class="token punctuation">)</span>
+        vis <span class="token operator">=</span> cv2<span class="token punctuation">.</span>cvtColor<span class="token punctuation">(</span>img<span class="token punctuation">,</span> cv2<span class="token punctuation">.</span>COLOR_GRAY2BGR<span class="token punctuation">)</span>
+        cv2<span class="token punctuation">.</span>drawChessboardCorners<span class="token punctuation">(</span>vis<span class="token punctuation">,</span> pattern_size<span class="token punctuation">,</span> corners<span class="token punctuation">,</span> found<span class="token punctuation">)</span>
+
+    <span class="token keyword">return</span> found<span class="token punctuation">,</span> vis
+
+
+cap0 <span class="token operator">=</span> cv2<span class="token punctuation">.</span>VideoCapture<span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">)</span>
+cap1 <span class="token operator">=</span> cv2<span class="token punctuation">.</span>VideoCapture<span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">)</span>
+img_path <span class="token operator">=</span> <span class="token string">r"StereoCamera\data\\"</span>
+firstFrame <span class="token operator">=</span> <span class="token boolean">None</span>
+window_size <span class="token operator">=</span> <span class="token number">0</span>
+i <span class="token operator">=</span> <span class="token number">0</span>
+lst <span class="token operator">=</span> <span class="token builtin">open</span><span class="token punctuation">(</span><span class="token string">r'StereoCamera\data\imglst.lst'</span><span class="token punctuation">,</span> <span class="token string">'w'</span><span class="token punctuation">)</span>
+
+<span class="token keyword">while</span> <span class="token number">1</span><span class="token punctuation">:</span>
+    ret<span class="token punctuation">,</span> frame1 <span class="token operator">=</span> cap0<span class="token punctuation">.</span>read<span class="token punctuation">(</span><span class="token punctuation">)</span>
+    ret<span class="token punctuation">,</span> frame2 <span class="token operator">=</span> cap1<span class="token punctuation">.</span>read<span class="token punctuation">(</span><span class="token punctuation">)</span>
+    frame1 <span class="token operator">=</span> cv2<span class="token punctuation">.</span>resize<span class="token punctuation">(</span>frame1<span class="token punctuation">,</span> <span class="token punctuation">(</span><span class="token number">640</span><span class="token punctuation">,</span> <span class="token number">480</span><span class="token punctuation">)</span><span class="token punctuation">,</span> interpolation<span class="token operator">=</span>cv2<span class="token punctuation">.</span>CV_8SC1<span class="token punctuation">)</span>
+    frame2 <span class="token operator">=</span> cv2<span class="token punctuation">.</span>resize<span class="token punctuation">(</span>frame2<span class="token punctuation">,</span> <span class="token punctuation">(</span><span class="token number">640</span><span class="token punctuation">,</span> <span class="token number">480</span><span class="token punctuation">)</span><span class="token punctuation">,</span> interpolation<span class="token operator">=</span>cv2<span class="token punctuation">.</span>CV_8SC1<span class="token punctuation">)</span>
+    frame <span class="token operator">=</span> np<span class="token punctuation">.</span>concatenate<span class="token punctuation">(</span><span class="token punctuation">[</span>frame1<span class="token punctuation">,</span> frame2<span class="token punctuation">]</span><span class="token punctuation">,</span> axis<span class="token operator">=</span><span class="token number">1</span><span class="token punctuation">)</span>
+    cv2<span class="token punctuation">.</span>imshow<span class="token punctuation">(</span><span class="token string">'img'</span><span class="token punctuation">,</span> frame<span class="token punctuation">)</span>
+
+    frame_left <span class="token operator">=</span> frame1
+    frame_right <span class="token operator">=</span> frame2
+    found1<span class="token punctuation">,</span> vis1 <span class="token operator">=</span> find_chessboard_corners<span class="token punctuation">(</span>
+        cv2<span class="token punctuation">.</span>cvtColor<span class="token punctuation">(</span>frame_left<span class="token punctuation">,</span> cv2<span class="token punctuation">.</span>COLOR_BGR2GRAY<span class="token punctuation">)</span><span class="token punctuation">)</span>
+    found2<span class="token punctuation">,</span> vis2 <span class="token operator">=</span> find_chessboard_corners<span class="token punctuation">(</span>
+        cv2<span class="token punctuation">.</span>cvtColor<span class="token punctuation">(</span>frame_right<span class="token punctuation">,</span> cv2<span class="token punctuation">.</span>COLOR_BGR2GRAY<span class="token punctuation">)</span><span class="token punctuation">)</span>
+
+    <span class="token keyword">if</span> found1 <span class="token keyword">and</span> found2<span class="token punctuation">:</span>
+        image <span class="token operator">=</span> np<span class="token punctuation">.</span>concatenate<span class="token punctuation">(</span><span class="token punctuation">[</span>vis1<span class="token punctuation">,</span> vis2<span class="token punctuation">]</span><span class="token punctuation">,</span> axis<span class="token operator">=</span><span class="token number">1</span><span class="token punctuation">)</span>
+        image <span class="token operator">=</span> np<span class="token punctuation">.</span>concatenate<span class="token punctuation">(</span><span class="token punctuation">[</span>frame<span class="token punctuation">,</span> image<span class="token punctuation">]</span><span class="token punctuation">)</span>
+        cv2<span class="token punctuation">.</span>imshow<span class="token punctuation">(</span><span class="token string">'output'</span><span class="token punctuation">,</span> image<span class="token punctuation">)</span>
+
+    key <span class="token operator">=</span> cv2<span class="token punctuation">.</span>waitKey<span class="token punctuation">(</span><span class="token number">30</span><span class="token punctuation">)</span>
+
+    <span class="token keyword">if</span> key <span class="token operator">==</span> <span class="token builtin">ord</span><span class="token punctuation">(</span><span class="token string">"s"</span><span class="token punctuation">)</span> <span class="token keyword">and</span> found1 <span class="token keyword">and</span> found2<span class="token punctuation">:</span>
+
+        cv2<span class="token punctuation">.</span>imwrite<span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token string-interpolation"><span class="token string">f'</span><span class="token interpolation"><span class="token punctuation">{</span>img_path<span class="token punctuation">}</span></span><span class="token interpolation"><span class="token punctuation">{</span>i<span class="token punctuation">}</span></span><span class="token string">left.jpg'</span></span><span class="token punctuation">)</span><span class="token punctuation">,</span> frame_left<span class="token punctuation">)</span>
+        cv2<span class="token punctuation">.</span>imwrite<span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token string-interpolation"><span class="token string">f'</span><span class="token interpolation"><span class="token punctuation">{</span>img_path<span class="token punctuation">}</span></span><span class="token interpolation"><span class="token punctuation">{</span>i<span class="token punctuation">}</span></span><span class="token string">right.jpg'</span></span><span class="token punctuation">)</span><span class="token punctuation">,</span> frame_right<span class="token punctuation">)</span>
+
+        lst<span class="token punctuation">.</span>write<span class="token punctuation">(</span><span class="token string-interpolation"><span class="token string">f"</span><span class="token interpolation"><span class="token punctuation">{</span>img_path<span class="token punctuation">}</span></span><span class="token interpolation"><span class="token punctuation">{</span>i<span class="token punctuation">}</span></span><span class="token string">left.jpg\n"</span></span><span class="token punctuation">)</span>
+        lst<span class="token punctuation">.</span>write<span class="token punctuation">(</span><span class="token string-interpolation"><span class="token string">f"</span><span class="token interpolation"><span class="token punctuation">{</span>img_path<span class="token punctuation">}</span></span><span class="token interpolation"><span class="token punctuation">{</span>i<span class="token punctuation">}</span></span><span class="token string">right.jpg\n"</span></span><span class="token punctuation">)</span>
+        i <span class="token operator">=</span> i <span class="token operator">+</span> <span class="token number">1</span>
+        <span class="token keyword">if</span> i <span class="token operator">&gt;</span> <span class="token number">20</span><span class="token punctuation">:</span>
+            <span class="token keyword">break</span>
+
+    <span class="token keyword">if</span> key <span class="token operator">&amp;</span> <span class="token number">0xFF</span> <span class="token operator">==</span> <span class="token builtin">ord</span><span class="token punctuation">(</span><span class="token string">'q'</span><span class="token punctuation">)</span><span class="token punctuation">:</span>
+        <span class="token keyword">break</span>
+
+lst<span class="token punctuation">.</span>close<span class="token punctuation">(</span><span class="token punctuation">)</span>
+cap0<span class="token punctuation">.</span>release<span class="token punctuation">(</span><span class="token punctuation">)</span>
+cap1<span class="token punctuation">.</span>release<span class="token punctuation">(</span><span class="token punctuation">)</span>
+cv2<span class="token punctuation">.</span>destroyAllWindows<span class="token punctuation">(</span><span class="token punctuation">)</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<div class="note info">
             <p>注意修改路径和你的标定板的角点数目哦！</p><p>当出现角点的时候，按下s就能截取了，会保存若干图像和一个路径文件，用于标定。</p>
           </div>
-<img src="/2022/10/19/%E5%8F%8C%E7%9B%AE%E6%91%84%E5%83%8F%E5%A4%B4%E6%A0%87%E5%AE%9A%E3%80%81%E8%A7%86%E5%B7%AE%E5%9B%BE%E4%B8%8E%E6%B5%8B%E8%B7%9D/pic1.png" srcset="/img/loading.gif" lazyload class="">
+<img src="/2022/10/19/%E5%8F%8C%E7%9B%AE%E6%91%84%E5%83%8F%E5%A4%B4%E6%A0%87%E5%AE%9A%E3%80%81%E8%A7%86%E5%B7%AE%E5%9B%BE%E4%B8%8E%E6%B5%8B%E8%B7%9D/pic1.png" class="">
 <p>一般来说，我们需要拍摄20张左右的标定板，让标定板最好位于各个位置。</p>
 <h4 id="调用opencv-samples中标定程序用于标定">调用opencv
 samples中标定程序用于标定</h4>
 <p>在opencv的samples/cpp文件夹中，有一个现成的给图像进行标定的程序<code>stereo_calib.cpp</code>，我们先把它编译好(在编译它之前，你得先编译opencv这个库哦~)。</p>
 <p>不妨假设你已经编译好这个程序了，下一步就是要制作一个xml文件，用于告诉他，哪些图像是用于标定的。</p>
 <p>xml形式如下，我们把这个文件命名为<code>stereo_calib.xml</code></p>
-<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><code class="hljs xml"><br><span class="hljs-meta">&lt;?xml version=<span class="hljs-string">"1.0"</span>?&gt;</span><br><span class="hljs-tag">&lt;<span class="hljs-name">opencv_storage</span>&gt;</span><br><span class="hljs-tag">&lt;<span class="hljs-name">imagelist</span>&gt;</span><br>"data\0left.jpg"<br>"data\0right.jpg"<br>...<br>(这里放你的图像路径哦，一行一个，像上面那样)<br><span class="hljs-tag">&lt;/<span class="hljs-name">imagelist</span>&gt;</span><br><span class="hljs-tag">&lt;/<span class="hljs-name">opencv_storage</span>&gt;</span><br><br></code></pre></td></tr></table></figure>
+<pre class="line-numbers language-markup" data-language="markup"><code class="language-markup">
+<span class="token prolog">&lt;?xml version="1.0"?&gt;</span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>opencv_storage</span><span class="token punctuation">&gt;</span></span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>imagelist</span><span class="token punctuation">&gt;</span></span>
+"data\0left.jpg"
+"data\0right.jpg"
+...
+(这里放你的图像路径哦，一行一个，像上面那样)
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>imagelist</span><span class="token punctuation">&gt;</span></span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>opencv_storage</span><span class="token punctuation">&gt;</span></span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <p>然后在命令行中执行</p>
-<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs sh"><br>// w h分别是角点的横向和纵向的数目，s是面积<br><br>stereo_calib.exe -w=9 -h=6 -s=1 stereo_calib.xml<br><br></code></pre></td></tr></table></figure>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">
+// w h分别是角点的横向和纵向的数目，s是面积
+
+stereo_calib.exe <span class="token parameter variable">-w</span><span class="token operator">=</span><span class="token number">9</span> <span class="token parameter variable">-h</span><span class="token operator">=</span><span class="token number">6</span> <span class="token parameter variable">-s</span><span class="token operator">=</span><span class="token number">1</span> stereo_calib.xml
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
 <p>然后就会生成两个文件<code>intrinsics.yml</code>和<code>extrinsics.yml</code>这就是标定后的参数矩阵哦。</p>
 <h3 id="视差图与测距">视差图与测距</h3>
 <p>完成相机的标定后，我们使用BM算法进行立体匹配，然后根据空间坐标的公式完成测距。同样此处也不深入这些原理，而是给出应用。</p>
 <p>我们首先把之前的<code>intrinsics.yml</code>和<code>extrinsics.yml</code>放在测距文件的同一目录下，这样你复制下来就不用修改路径了。</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br></pre></td><td class="code"><pre><code class="hljs python"><br><span class="hljs-keyword">import</span> cv2 <span class="hljs-keyword">as</span> cv<br><span class="hljs-keyword">import</span> numpy <span class="hljs-keyword">as</span> np<br><span class="hljs-keyword">import</span> time<br><span class="hljs-keyword">import</span> os<br><br>depthWinTitle = <span class="hljs-string">'Depth'</span><br><br>cv.namedWindow(depthWinTitle)<br>cv.createTrackbar(<span class="hljs-string">"num"</span>, depthWinTitle, <span class="hljs-number">0</span>, <span class="hljs-number">10</span>, <span class="hljs-keyword">lambda</span> x: <span class="hljs-literal">None</span>)<br>cv.createTrackbar(<span class="hljs-string">"blockSize"</span>, depthWinTitle, <span class="hljs-number">5</span>, <span class="hljs-number">255</span>, <span class="hljs-keyword">lambda</span> x: <span class="hljs-literal">None</span>)<br>cv.namedWindow(<span class="hljs-string">"3D Cam"</span>)<br>cv.moveWindow(<span class="hljs-string">"3D Cam"</span>, <span class="hljs-number">100</span>, <span class="hljs-number">50</span>)<br>cv.moveWindow(depthWinTitle, <span class="hljs-number">800</span>, <span class="hljs-number">50</span>)<br><br><br><span class="hljs-keyword">def</span> <span class="hljs-title function_">callbackfunc</span>(<span class="hljs-params">e, x, y, f, p</span>):<br>    <span class="hljs-keyword">if</span> e == cv.EVENT_LBUTTONDOWN:<br>        <span class="hljs-built_in">print</span>(threeD[y][x])<br><br><br>cv.setMouseCallback(depthWinTitle, callbackfunc, <span class="hljs-literal">None</span>)<br><br>fs = cv.FileStorage(<span class="hljs-string">r'intrinsics.yml'</span>, cv.FILE_STORAGE_READ)<br>M1 = fs.getNode(<span class="hljs-string">'M1'</span>).mat()<br>D1 = fs.getNode(<span class="hljs-string">'D1'</span>).mat()<br>M2 = fs.getNode(<span class="hljs-string">'M2'</span>).mat()<br>D2 = fs.getNode(<span class="hljs-string">'D2'</span>).mat()<br><br>fs = cv.FileStorage(<span class="hljs-string">r'extrinsics.yml'</span>, cv.FILE_STORAGE_READ)<br>R = fs.getNode(<span class="hljs-string">'R'</span>).mat()<br>T = fs.getNode(<span class="hljs-string">'T'</span>).mat()<br>R1 = fs.getNode(<span class="hljs-string">'R1'</span>).mat()<br>P1 = fs.getNode(<span class="hljs-string">'P1'</span>).mat()<br>R2 = fs.getNode(<span class="hljs-string">'R2'</span>).mat()<br>P2 = fs.getNode(<span class="hljs-string">'P2'</span>).mat()<br>Q = fs.getNode(<span class="hljs-string">'Q'</span>).mat()<br><br>cap0 = cv.VideoCapture(<span class="hljs-number">0</span>)<br>cap1 = cv.VideoCapture(<span class="hljs-number">1</span>)<br>size = (<span class="hljs-number">640</span>, <span class="hljs-number">480</span>)<br>left_map1, left_map2 = cv.initUndistortRectifyMap(<br>    M1, D1, R1, P1, size, cv.CV_16SC2)<br>right_map1, right_map2 = cv.initUndistortRectifyMap(<br>    M2, D2, R2, P2, size, cv.CV_16SC2)<br><br><span class="hljs-keyword">while</span> <span class="hljs-literal">True</span>:<br>    ret, frame1 = cap0.read()<br>    ret, frame2 = cap1.read()<br>    frame1 = cv.resize(frame1, (<span class="hljs-number">640</span>, <span class="hljs-number">480</span>), interpolation=cv.CV_8SC1)<br>    frame2 = cv.resize(frame2, (<span class="hljs-number">640</span>, <span class="hljs-number">480</span>), interpolation=cv.CV_8SC1)<br>    frame = np.concatenate([frame1, frame2], axis=<span class="hljs-number">1</span>)<br>    frame_left = frame1<br>    frame_right = frame2<br><br>    left_rectified = cv.remap(frame_left, left_map1,<br>                              left_map2, cv.INTER_LINEAR)<br>    right_rectified = cv.remap(<br>        frame_right, right_map1, right_map2, cv.INTER_LINEAR)<br>    rectified = np.concatenate([left_rectified, right_rectified], axis=<span class="hljs-number">1</span>)<br>    image = np.concatenate([frame, rectified])<br><br>    imgL = cv.cvtColor(left_rectified, cv.COLOR_BGR2GRAY)<br>    imgR = cv.cvtColor(right_rectified, cv.COLOR_BGR2GRAY)<br><br>    num = cv.getTrackbarPos(<span class="hljs-string">"num"</span>, depthWinTitle)<br>    blockSize = cv.getTrackbarPos(<span class="hljs-string">"blockSize"</span>, depthWinTitle)<br>    <span class="hljs-keyword">if</span> blockSize % <span class="hljs-number">2</span> == <span class="hljs-number">0</span>:<br>        blockSize += <span class="hljs-number">1</span><br>    <span class="hljs-keyword">if</span> blockSize &lt; <span class="hljs-number">5</span>:<br>        blockSize = <span class="hljs-number">5</span><br><br>    stereo = cv.StereoBM_create(numDisparities=<span class="hljs-number">16</span> * num, blockSize=blockSize)<br>    <span class="hljs-comment">#print(16 * num, blockSize)</span><br>    disparity = stereo.compute(imgL, imgR)<br><br>    disp = cv.normalize(disparity, disparity, alpha=<span class="hljs-number">0</span>,<br>                        beta=<span class="hljs-number">255</span>, norm_type=cv.NORM_MINMAX, dtype=cv.CV_8U)<br>    threeD = cv.reprojectImageTo3D(disparity.astype(np.float32) / <span class="hljs-number">16.</span>, Q)<br>    <span class="hljs-keyword">for</span> i <span class="hljs-keyword">in</span> <span class="hljs-built_in">range</span>(<span class="hljs-number">1</span>, <span class="hljs-number">30</span>):<br>        cv.line(image, (<span class="hljs-number">0</span>, <span class="hljs-number">16</span> * i), (<span class="hljs-number">640</span>, <span class="hljs-number">16</span> * i), (<span class="hljs-number">0</span>, <span class="hljs-number">255</span>, <span class="hljs-number">0</span>), <span class="hljs-number">1</span>)<br><br>    cv.imshow(<span class="hljs-string">'3D Cam'</span>, image)<br>    cv.imshow(depthWinTitle, disp)<br><br>    <span class="hljs-keyword">if</span> cv.waitKey(<span class="hljs-number">1</span>) &amp; <span class="hljs-number">0xFF</span> == <span class="hljs-built_in">ord</span>(<span class="hljs-string">'q'</span>):<br>        <span class="hljs-keyword">break</span><br><br>cap0.release()<br>cap1.release()<br>cv.destroyAllWindows()<br><br></code></pre></td></tr></table></figure>
+<pre class="line-numbers language-python" data-language="python"><code class="language-python">
+<span class="token keyword">import</span> cv2 <span class="token keyword">as</span> cv
+<span class="token keyword">import</span> numpy <span class="token keyword">as</span> np
+<span class="token keyword">import</span> time
+<span class="token keyword">import</span> os
+
+depthWinTitle <span class="token operator">=</span> <span class="token string">'Depth'</span>
+
+cv<span class="token punctuation">.</span>namedWindow<span class="token punctuation">(</span>depthWinTitle<span class="token punctuation">)</span>
+cv<span class="token punctuation">.</span>createTrackbar<span class="token punctuation">(</span><span class="token string">"num"</span><span class="token punctuation">,</span> depthWinTitle<span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">,</span> <span class="token number">10</span><span class="token punctuation">,</span> <span class="token keyword">lambda</span> x<span class="token punctuation">:</span> <span class="token boolean">None</span><span class="token punctuation">)</span>
+cv<span class="token punctuation">.</span>createTrackbar<span class="token punctuation">(</span><span class="token string">"blockSize"</span><span class="token punctuation">,</span> depthWinTitle<span class="token punctuation">,</span> <span class="token number">5</span><span class="token punctuation">,</span> <span class="token number">255</span><span class="token punctuation">,</span> <span class="token keyword">lambda</span> x<span class="token punctuation">:</span> <span class="token boolean">None</span><span class="token punctuation">)</span>
+cv<span class="token punctuation">.</span>namedWindow<span class="token punctuation">(</span><span class="token string">"3D Cam"</span><span class="token punctuation">)</span>
+cv<span class="token punctuation">.</span>moveWindow<span class="token punctuation">(</span><span class="token string">"3D Cam"</span><span class="token punctuation">,</span> <span class="token number">100</span><span class="token punctuation">,</span> <span class="token number">50</span><span class="token punctuation">)</span>
+cv<span class="token punctuation">.</span>moveWindow<span class="token punctuation">(</span>depthWinTitle<span class="token punctuation">,</span> <span class="token number">800</span><span class="token punctuation">,</span> <span class="token number">50</span><span class="token punctuation">)</span>
+
+
+<span class="token keyword">def</span> <span class="token function">callbackfunc</span><span class="token punctuation">(</span>e<span class="token punctuation">,</span> x<span class="token punctuation">,</span> y<span class="token punctuation">,</span> f<span class="token punctuation">,</span> p<span class="token punctuation">)</span><span class="token punctuation">:</span>
+    <span class="token keyword">if</span> e <span class="token operator">==</span> cv<span class="token punctuation">.</span>EVENT_LBUTTONDOWN<span class="token punctuation">:</span>
+        <span class="token keyword">print</span><span class="token punctuation">(</span>threeD<span class="token punctuation">[</span>y<span class="token punctuation">]</span><span class="token punctuation">[</span>x<span class="token punctuation">]</span><span class="token punctuation">)</span>
+
+
+cv<span class="token punctuation">.</span>setMouseCallback<span class="token punctuation">(</span>depthWinTitle<span class="token punctuation">,</span> callbackfunc<span class="token punctuation">,</span> <span class="token boolean">None</span><span class="token punctuation">)</span>
+
+fs <span class="token operator">=</span> cv<span class="token punctuation">.</span>FileStorage<span class="token punctuation">(</span><span class="token string">r'intrinsics.yml'</span><span class="token punctuation">,</span> cv<span class="token punctuation">.</span>FILE_STORAGE_READ<span class="token punctuation">)</span>
+M1 <span class="token operator">=</span> fs<span class="token punctuation">.</span>getNode<span class="token punctuation">(</span><span class="token string">'M1'</span><span class="token punctuation">)</span><span class="token punctuation">.</span>mat<span class="token punctuation">(</span><span class="token punctuation">)</span>
+D1 <span class="token operator">=</span> fs<span class="token punctuation">.</span>getNode<span class="token punctuation">(</span><span class="token string">'D1'</span><span class="token punctuation">)</span><span class="token punctuation">.</span>mat<span class="token punctuation">(</span><span class="token punctuation">)</span>
+M2 <span class="token operator">=</span> fs<span class="token punctuation">.</span>getNode<span class="token punctuation">(</span><span class="token string">'M2'</span><span class="token punctuation">)</span><span class="token punctuation">.</span>mat<span class="token punctuation">(</span><span class="token punctuation">)</span>
+D2 <span class="token operator">=</span> fs<span class="token punctuation">.</span>getNode<span class="token punctuation">(</span><span class="token string">'D2'</span><span class="token punctuation">)</span><span class="token punctuation">.</span>mat<span class="token punctuation">(</span><span class="token punctuation">)</span>
+
+fs <span class="token operator">=</span> cv<span class="token punctuation">.</span>FileStorage<span class="token punctuation">(</span><span class="token string">r'extrinsics.yml'</span><span class="token punctuation">,</span> cv<span class="token punctuation">.</span>FILE_STORAGE_READ<span class="token punctuation">)</span>
+R <span class="token operator">=</span> fs<span class="token punctuation">.</span>getNode<span class="token punctuation">(</span><span class="token string">'R'</span><span class="token punctuation">)</span><span class="token punctuation">.</span>mat<span class="token punctuation">(</span><span class="token punctuation">)</span>
+T <span class="token operator">=</span> fs<span class="token punctuation">.</span>getNode<span class="token punctuation">(</span><span class="token string">'T'</span><span class="token punctuation">)</span><span class="token punctuation">.</span>mat<span class="token punctuation">(</span><span class="token punctuation">)</span>
+R1 <span class="token operator">=</span> fs<span class="token punctuation">.</span>getNode<span class="token punctuation">(</span><span class="token string">'R1'</span><span class="token punctuation">)</span><span class="token punctuation">.</span>mat<span class="token punctuation">(</span><span class="token punctuation">)</span>
+P1 <span class="token operator">=</span> fs<span class="token punctuation">.</span>getNode<span class="token punctuation">(</span><span class="token string">'P1'</span><span class="token punctuation">)</span><span class="token punctuation">.</span>mat<span class="token punctuation">(</span><span class="token punctuation">)</span>
+R2 <span class="token operator">=</span> fs<span class="token punctuation">.</span>getNode<span class="token punctuation">(</span><span class="token string">'R2'</span><span class="token punctuation">)</span><span class="token punctuation">.</span>mat<span class="token punctuation">(</span><span class="token punctuation">)</span>
+P2 <span class="token operator">=</span> fs<span class="token punctuation">.</span>getNode<span class="token punctuation">(</span><span class="token string">'P2'</span><span class="token punctuation">)</span><span class="token punctuation">.</span>mat<span class="token punctuation">(</span><span class="token punctuation">)</span>
+Q <span class="token operator">=</span> fs<span class="token punctuation">.</span>getNode<span class="token punctuation">(</span><span class="token string">'Q'</span><span class="token punctuation">)</span><span class="token punctuation">.</span>mat<span class="token punctuation">(</span><span class="token punctuation">)</span>
+
+cap0 <span class="token operator">=</span> cv<span class="token punctuation">.</span>VideoCapture<span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">)</span>
+cap1 <span class="token operator">=</span> cv<span class="token punctuation">.</span>VideoCapture<span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">)</span>
+size <span class="token operator">=</span> <span class="token punctuation">(</span><span class="token number">640</span><span class="token punctuation">,</span> <span class="token number">480</span><span class="token punctuation">)</span>
+left_map1<span class="token punctuation">,</span> left_map2 <span class="token operator">=</span> cv<span class="token punctuation">.</span>initUndistortRectifyMap<span class="token punctuation">(</span>
+    M1<span class="token punctuation">,</span> D1<span class="token punctuation">,</span> R1<span class="token punctuation">,</span> P1<span class="token punctuation">,</span> size<span class="token punctuation">,</span> cv<span class="token punctuation">.</span>CV_16SC2<span class="token punctuation">)</span>
+right_map1<span class="token punctuation">,</span> right_map2 <span class="token operator">=</span> cv<span class="token punctuation">.</span>initUndistortRectifyMap<span class="token punctuation">(</span>
+    M2<span class="token punctuation">,</span> D2<span class="token punctuation">,</span> R2<span class="token punctuation">,</span> P2<span class="token punctuation">,</span> size<span class="token punctuation">,</span> cv<span class="token punctuation">.</span>CV_16SC2<span class="token punctuation">)</span>
+
+<span class="token keyword">while</span> <span class="token boolean">True</span><span class="token punctuation">:</span>
+    ret<span class="token punctuation">,</span> frame1 <span class="token operator">=</span> cap0<span class="token punctuation">.</span>read<span class="token punctuation">(</span><span class="token punctuation">)</span>
+    ret<span class="token punctuation">,</span> frame2 <span class="token operator">=</span> cap1<span class="token punctuation">.</span>read<span class="token punctuation">(</span><span class="token punctuation">)</span>
+    frame1 <span class="token operator">=</span> cv<span class="token punctuation">.</span>resize<span class="token punctuation">(</span>frame1<span class="token punctuation">,</span> <span class="token punctuation">(</span><span class="token number">640</span><span class="token punctuation">,</span> <span class="token number">480</span><span class="token punctuation">)</span><span class="token punctuation">,</span> interpolation<span class="token operator">=</span>cv<span class="token punctuation">.</span>CV_8SC1<span class="token punctuation">)</span>
+    frame2 <span class="token operator">=</span> cv<span class="token punctuation">.</span>resize<span class="token punctuation">(</span>frame2<span class="token punctuation">,</span> <span class="token punctuation">(</span><span class="token number">640</span><span class="token punctuation">,</span> <span class="token number">480</span><span class="token punctuation">)</span><span class="token punctuation">,</span> interpolation<span class="token operator">=</span>cv<span class="token punctuation">.</span>CV_8SC1<span class="token punctuation">)</span>
+    frame <span class="token operator">=</span> np<span class="token punctuation">.</span>concatenate<span class="token punctuation">(</span><span class="token punctuation">[</span>frame1<span class="token punctuation">,</span> frame2<span class="token punctuation">]</span><span class="token punctuation">,</span> axis<span class="token operator">=</span><span class="token number">1</span><span class="token punctuation">)</span>
+    frame_left <span class="token operator">=</span> frame1
+    frame_right <span class="token operator">=</span> frame2
+
+    left_rectified <span class="token operator">=</span> cv<span class="token punctuation">.</span>remap<span class="token punctuation">(</span>frame_left<span class="token punctuation">,</span> left_map1<span class="token punctuation">,</span>
+                              left_map2<span class="token punctuation">,</span> cv<span class="token punctuation">.</span>INTER_LINEAR<span class="token punctuation">)</span>
+    right_rectified <span class="token operator">=</span> cv<span class="token punctuation">.</span>remap<span class="token punctuation">(</span>
+        frame_right<span class="token punctuation">,</span> right_map1<span class="token punctuation">,</span> right_map2<span class="token punctuation">,</span> cv<span class="token punctuation">.</span>INTER_LINEAR<span class="token punctuation">)</span>
+    rectified <span class="token operator">=</span> np<span class="token punctuation">.</span>concatenate<span class="token punctuation">(</span><span class="token punctuation">[</span>left_rectified<span class="token punctuation">,</span> right_rectified<span class="token punctuation">]</span><span class="token punctuation">,</span> axis<span class="token operator">=</span><span class="token number">1</span><span class="token punctuation">)</span>
+    image <span class="token operator">=</span> np<span class="token punctuation">.</span>concatenate<span class="token punctuation">(</span><span class="token punctuation">[</span>frame<span class="token punctuation">,</span> rectified<span class="token punctuation">]</span><span class="token punctuation">)</span>
+
+    imgL <span class="token operator">=</span> cv<span class="token punctuation">.</span>cvtColor<span class="token punctuation">(</span>left_rectified<span class="token punctuation">,</span> cv<span class="token punctuation">.</span>COLOR_BGR2GRAY<span class="token punctuation">)</span>
+    imgR <span class="token operator">=</span> cv<span class="token punctuation">.</span>cvtColor<span class="token punctuation">(</span>right_rectified<span class="token punctuation">,</span> cv<span class="token punctuation">.</span>COLOR_BGR2GRAY<span class="token punctuation">)</span>
+
+    num <span class="token operator">=</span> cv<span class="token punctuation">.</span>getTrackbarPos<span class="token punctuation">(</span><span class="token string">"num"</span><span class="token punctuation">,</span> depthWinTitle<span class="token punctuation">)</span>
+    blockSize <span class="token operator">=</span> cv<span class="token punctuation">.</span>getTrackbarPos<span class="token punctuation">(</span><span class="token string">"blockSize"</span><span class="token punctuation">,</span> depthWinTitle<span class="token punctuation">)</span>
+    <span class="token keyword">if</span> blockSize <span class="token operator">%</span> <span class="token number">2</span> <span class="token operator">==</span> <span class="token number">0</span><span class="token punctuation">:</span>
+        blockSize <span class="token operator">+=</span> <span class="token number">1</span>
+    <span class="token keyword">if</span> blockSize <span class="token operator">&lt;</span> <span class="token number">5</span><span class="token punctuation">:</span>
+        blockSize <span class="token operator">=</span> <span class="token number">5</span>
+
+    stereo <span class="token operator">=</span> cv<span class="token punctuation">.</span>StereoBM_create<span class="token punctuation">(</span>numDisparities<span class="token operator">=</span><span class="token number">16</span> <span class="token operator">*</span> num<span class="token punctuation">,</span> blockSize<span class="token operator">=</span>blockSize<span class="token punctuation">)</span>
+    <span class="token comment">#print(16 * num, blockSize)</span>
+    disparity <span class="token operator">=</span> stereo<span class="token punctuation">.</span>compute<span class="token punctuation">(</span>imgL<span class="token punctuation">,</span> imgR<span class="token punctuation">)</span>
+
+    disp <span class="token operator">=</span> cv<span class="token punctuation">.</span>normalize<span class="token punctuation">(</span>disparity<span class="token punctuation">,</span> disparity<span class="token punctuation">,</span> alpha<span class="token operator">=</span><span class="token number">0</span><span class="token punctuation">,</span>
+                        beta<span class="token operator">=</span><span class="token number">255</span><span class="token punctuation">,</span> norm_type<span class="token operator">=</span>cv<span class="token punctuation">.</span>NORM_MINMAX<span class="token punctuation">,</span> dtype<span class="token operator">=</span>cv<span class="token punctuation">.</span>CV_8U<span class="token punctuation">)</span>
+    threeD <span class="token operator">=</span> cv<span class="token punctuation">.</span>reprojectImageTo3D<span class="token punctuation">(</span>disparity<span class="token punctuation">.</span>astype<span class="token punctuation">(</span>np<span class="token punctuation">.</span>float32<span class="token punctuation">)</span> <span class="token operator">/</span> <span class="token number">16.</span><span class="token punctuation">,</span> Q<span class="token punctuation">)</span>
+    <span class="token keyword">for</span> i <span class="token keyword">in</span> <span class="token builtin">range</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">,</span> <span class="token number">30</span><span class="token punctuation">)</span><span class="token punctuation">:</span>
+        cv<span class="token punctuation">.</span>line<span class="token punctuation">(</span>image<span class="token punctuation">,</span> <span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">,</span> <span class="token number">16</span> <span class="token operator">*</span> i<span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token punctuation">(</span><span class="token number">640</span><span class="token punctuation">,</span> <span class="token number">16</span> <span class="token operator">*</span> i<span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">,</span> <span class="token number">255</span><span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token number">1</span><span class="token punctuation">)</span>
+
+    cv<span class="token punctuation">.</span>imshow<span class="token punctuation">(</span><span class="token string">'3D Cam'</span><span class="token punctuation">,</span> image<span class="token punctuation">)</span>
+    cv<span class="token punctuation">.</span>imshow<span class="token punctuation">(</span>depthWinTitle<span class="token punctuation">,</span> disp<span class="token punctuation">)</span>
+
+    <span class="token keyword">if</span> cv<span class="token punctuation">.</span>waitKey<span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">)</span> <span class="token operator">&amp;</span> <span class="token number">0xFF</span> <span class="token operator">==</span> <span class="token builtin">ord</span><span class="token punctuation">(</span><span class="token string">'q'</span><span class="token punctuation">)</span><span class="token punctuation">:</span>
+        <span class="token keyword">break</span>
+
+cap0<span class="token punctuation">.</span>release<span class="token punctuation">(</span><span class="token punctuation">)</span>
+cap1<span class="token punctuation">.</span>release<span class="token punctuation">(</span><span class="token punctuation">)</span>
+cv<span class="token punctuation">.</span>destroyAllWindows<span class="token punctuation">(</span><span class="token punctuation">)</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <p>执行这个文件，就会自动采集图像进行匹配，最后计算出深度。</p>
 <p>用鼠标在视差图上点一下就会显示出深度信息了哦。</p>
-<img src="/2022/10/19/%E5%8F%8C%E7%9B%AE%E6%91%84%E5%83%8F%E5%A4%B4%E6%A0%87%E5%AE%9A%E3%80%81%E8%A7%86%E5%B7%AE%E5%9B%BE%E4%B8%8E%E6%B5%8B%E8%B7%9D/pic3.png" srcset="/img/loading.gif" lazyload class="">
+<img src="/2022/10/19/%E5%8F%8C%E7%9B%AE%E6%91%84%E5%83%8F%E5%A4%B4%E6%A0%87%E5%AE%9A%E3%80%81%E8%A7%86%E5%B7%AE%E5%9B%BE%E4%B8%8E%E6%B5%8B%E8%B7%9D/pic3.png" class="">
 <p>作为一个双帧不同步的摄像头，这个视差图的效果感觉已经可以了，准确率还算可以，能跟5块钱的超声波测距打的有来有回，符合了一个玩具的身份...</p>
 <p>当然，感觉标定板用的比较小，导致标定的误差还是比较大，还有一定的优化空间。</p>
 <p>有钱了一定要上好一点的相机！</p>
-<div class="note note-primary">
+<div class="note primary">
             <p>这篇博客代表三维视觉部分正式开坑了啦，考虑到这部分代码写的比较乱，打算后面在具体阐述原理的时候把他们好好地整理成一个方便可用的库。</p>
           </div>
 
-                
-              </div>
-            
-            <hr/>
-            <div>
-              <div class="post-metas my-3">
-  
-    <div class="post-meta mr-3 d-flex align-items-center">
-      <i class="iconfont icon-category"></i>
-      
+    </div>
 
-<span class="category-chains">
-  
-  
     
-      <span class="category-chain">
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/%E5%8F%8C%E7%9B%AE%E6%91%84%E5%83%8F%E5%A4%B4/" rel="tag"># 双目摄像头</a>
+          </div>
+
         
-  <a href="/categories/%E4%B8%89%E7%BB%B4%E8%A7%86%E8%A7%89/" class="category-chain-item">三维视觉</a>
-  
-  
 
-      </span>
-    
-  
-</span>
 
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2022/10/19/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-12/" rel="prev" title="levelDB源码剖析(12)--迭代器的实现">
+      <i class="fa fa-chevron-left"></i> levelDB源码剖析(12)--迭代器的实现
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2022/10/21/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-13/" rel="next" title="levelDB源码剖析(13)--缓存Cache">
+      levelDB源码剖析(13)--缓存Cache <i class="fa fa-chevron-right"></i>
+    </a></div>
     </div>
-  
-  
-    <div class="post-meta">
-      <i class="iconfont icon-tags"></i>
-      
-        <a href="/tags/%E5%8F%8C%E7%9B%AE%E6%91%84%E5%83%8F%E5%A4%B4/">#双目摄像头</a>
-      
-    </div>
-  
-</div>
-
-
-              
-
-              
-                <div class="post-prevnext my-3">
-                  <article class="post-prev col-6">
-                    
-                    
-                      <a href="/2022/10/21/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-13/" title="levelDB源码剖析(13)--缓存Cache">
-                        <i class="iconfont icon-arrowleft"></i>
-                        <span class="hidden-mobile">levelDB源码剖析(13)--缓存Cache</span>
-                        <span class="visible-mobile">Previous</span>
-                      </a>
-                    
-                  </article>
-                  <article class="post-next col-6">
-                    
-                    
-                      <a href="/2022/10/19/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-12/" title="levelDB源码剖析(12)--迭代器的实现">
-                        <span class="hidden-mobile">levelDB源码剖析(12)--迭代器的实现</span>
-                        <span class="visible-mobile">Next</span>
-                        <i class="iconfont icon-arrowright"></i>
-                      </a>
-                    
-                  </article>
-                </div>
-              
-            </div>
-
-            
-  <article id="comments" lazyload>
+      </footer>
     
-  <div id="waline"></div>
-  <script type="text/javascript">
-    Fluid.utils.loadComments('#waline', function() {
-      Fluid.utils.createCssLink('https://lib.baomitu.com/waline/2.5.1/waline.min.css')
-      Fluid.utils.createScript('https://lib.baomitu.com/waline/2.5.1/waline.min.js', function() {
-        var options = Object.assign(
-          {"serverURL":"https://waline-tau.vercel.app/","path":"window.location.pathname","meta":["nick","mail","link"],"requiredMeta":["nick"],"lang":"zh-CN","emoji":["https://emoji.shojo.cn/bili/src/大航海嘉然","https://emoji.shojo.cn/bili/src/永雏塔菲","https://emoji.shojo.cn/bili/src/東雪蓮","https://unpkg.com/@waline/emojis@1.1.0/tieba","https://emoji.shojo.cn/bili/src/嘉然今天吃什么","https://emoji.shojo.cn/bili/src/小黄脸"],"dark":"html[data-user-color-scheme=\"dark\"]","wordLimit":0,"pageSize":10},
-          {
-            el: '#waline',
-            path: window.location.pathname
-          }
-        )
-        Waline.init(options);
-        Fluid.utils.waitElementVisible('#waline .vcontent', () => {
-          var imgSelector = '#waline .vcontent img:not(.vemoji)';
-          Fluid.plugins.imageCaption(imgSelector);
-          Fluid.plugins.fancyBox(imgSelector);
-        })
-      });
-    });
-  </script>
-  <noscript>Please enable JavaScript to view the comments</noscript>
-
-
   </article>
-
-
-          </article>
-        </div>
-      </div>
-    </div>
-
-    <div class="side-col d-none d-lg-block col-lg-2">
-      
-  <aside class="sidebar" style="margin-left: -1rem">
-    <div id="toc">
-  <p class="toc-header"><i class="iconfont icon-list"></i>&nbsp;Table of Contents</p>
-  <div class="toc-body" id="toc-body"></div>
-</div>
-
-
-
-  </aside>
-
-
-    </div>
-  </div>
-</div>
-
-
-
-
-
-  
-
-
-
-  
-
-
-
-  
-
-
-
-  
-
-
-
-  
-
-
-
-
-
-
-
-    
-
-    
-      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
-        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
-      </a>
-    
-
-    
-      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
-     aria-hidden="true">
-  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
-    <div class="modal-content">
-      <div class="modal-header text-center">
-        <h4 class="modal-title w-100 font-weight-bold">Search</h4>
-        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
-          <span aria-hidden="true">&times;</span>
-        </button>
-      </div>
-      <div class="modal-body mx-3">
-        <div class="md-form mb-5">
-          <input type="text" id="local-search-input" class="form-control validate">
-          <label data-error="x" data-success="v" for="local-search-input">Keyword</label>
-        </div>
-        <div class="list-group" id="local-search-result"></div>
-      </div>
-    </div>
-  </div>
-</div>
-
-    
-
-    
-  </main>
-
-  <footer>
-    <div class="footer-inner">
-  
-    <div class="footer-content">
-       <a href="https://github.com/staskaer" target="_blank" rel="nofollow noopener"><span>Staskaer</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
-    </div>
   
   
   
-  
-</div>
-
-  </footer>
-
-  <!-- Scripts -->
-  
-  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
-  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
-
-  <script>
-    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
-    NProgress.start()
-    window.addEventListener('load', function() {
-      NProgress.done();
-    })
-  </script>
 
 
-<script  src="https://lib.baomitu.com/jquery/3.6.0/jquery.min.js" ></script>
-<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
-<script  src="/js/events.js" ></script>
-<script  src="/js/plugins.js" ></script>
 
+          </div>
+          
+    <div class="comments" id="valine-comments"></div>
 
-  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
-  <script>
-    (function (window, document) {
-      var typing = Fluid.plugins.typing;
-      var subtitle = document.getElementById('subtitle');
-      if (!subtitle || !typing) {
-        return;
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
       }
-      var text = subtitle.getAttribute('data-typed-text');
-      
-        typing(text);
-      
-    })(window, document);
-  </script>
-
-
-
-
-  
-    <script  src="/js/img-lazyload.js" ></script>
-  
-
-
-
-
-  
-<script>
-  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.18.2/tocbot.min.js', function() {
-    var toc = jQuery('#toc');
-    if (toc.length === 0 || !window.tocbot) { return; }
-    var boardCtn = jQuery('#board-ctn');
-    var boardTop = boardCtn.offset().top;
-
-    window.tocbot.init({
-      tocSelector     : '#toc-body',
-      contentSelector : '.markdown-body',
-      headingSelector : CONFIG.toc.headingSelector || 'h1,h2,h3,h4,h5,h6',
-      linkClass       : 'tocbot-link',
-      activeLinkClass : 'tocbot-active-link',
-      listClass       : 'tocbot-list',
-      isCollapsedClass: 'tocbot-is-collapsed',
-      collapsibleClass: 'tocbot-is-collapsible',
-      collapseDepth   : CONFIG.toc.collapseDepth || 0,
-      scrollSmooth    : true,
-      headingsOffset  : -boardTop
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
     });
-    if (toc.find('.toc-list-item').length > 0) {
-      toc.css('visibility', 'visible');
-    }
-  });
+  }
 </script>
 
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
 
-  <script src=https://lib.baomitu.com/clipboard.js/2.0.10/clipboard.min.js></script>
+  <aside class="sidebar">
+    <div class="sidebar-inner">
 
-  <script>Fluid.plugins.codeWidget();</script>
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8F%8C%E7%9B%AE%E6%91%84%E5%83%8F%E5%A4%B4%E6%A0%87%E5%AE%9A%E8%A7%86%E5%B7%AE%E5%9B%BE%E4%B8%8E%E6%B5%8B%E8%B7%9D"><span class="nav-number">1.</span> <span class="nav-text">双目摄像头标定、视差图与测距</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%9B%B8%E6%9C%BA%E6%A0%87%E5%AE%9A"><span class="nav-number">1.1.</span> <span class="nav-text">相机标定</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%8B%8D%E6%91%84%E6%A0%87%E5%AE%9A%E6%9D%BF"><span class="nav-number">1.1.1.</span> <span class="nav-text">拍摄标定板</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E8%B0%83%E7%94%A8opencv-samples%E4%B8%AD%E6%A0%87%E5%AE%9A%E7%A8%8B%E5%BA%8F%E7%94%A8%E4%BA%8E%E6%A0%87%E5%AE%9A"><span class="nav-number">1.1.2.</span> <span class="nav-text">调用opencv
+samples中标定程序用于标定</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%A7%86%E5%B7%AE%E5%9B%BE%E4%B8%8E%E6%B5%8B%E8%B7%9D"><span class="nav-number">1.2.</span> <span class="nav-text">视差图与测距</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Staskaer"
+      src="/imgs/theme_pic/head_img.png">
+  <p class="site-author-name" itemprop="name">Staskaer</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">63</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">10</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">18</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/Staskaer" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;Staskaer" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:liujiaxin011121@gmail.com" title="E-Mail → mailto:liujiaxin011121@gmail.com" rel="noopener" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2023</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Staskaer</span>
+</div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
 
 
   
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+
 <script>
-  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/4.3.1/anchor.min.js', function() {
-    window.anchors.options = {
-      placement: CONFIG.anchorjs.placement,
-      visible  : CONFIG.anchorjs.visible
-    };
-    if (CONFIG.anchorjs.icon) {
-      window.anchors.options.icon = CONFIG.anchorjs.icon;
-    }
-    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
-    var res = [];
-    for (var item of el) {
-      res.push('.markdown-body > ' + item.trim());
-    }
-    if (CONFIG.anchorjs.placement === 'left') {
-      window.anchors.options.class = 'anchorjs-link-left';
-    }
-    window.anchors.add(res.join(', '));
-  });
+NexT.utils.loadComments(document.querySelector('#valine-comments'), () => {
+  NexT.utils.getScript('https://cdn.jsdelivr.net/npm/valine@1.5.1/dist/Valine.min.js', () => {
+    var GUEST = ['nick', 'mail', 'link'];
+    var guest = 'nick,mail,link';
+    guest = guest.split(',').filter(item => {
+      return GUEST.includes(item);
+    });
+    new Valine({
+      el         : '#valine-comments',
+      verify     : false,
+      notify     : false,
+      appId      : 'xH8NDrh9u4SQrUpQOd0lICnX-MdYXbMMI',
+      appKey     : 'jl3JjPS4jsosZG29Zv24Y7LE',
+      placeholder: "Just go go",
+      avatar     : 'mm',
+      meta       : guest,
+      pageSize   : '10' || 10,
+      visitor    : false,
+      lang       : 'zh-Hans' || 'zh-cn',
+      path       : location.pathname,
+      recordIP   : false,
+      serverURLs : ''
+    });
+  }, window.Valine);
+});
 </script>
 
-
-  
-<script>
-  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
-    Fluid.plugins.fancyBox();
-  });
-</script>
-
-
-  <script>Fluid.plugins.imageCaption();</script>
-
-  <script defer src="/js/leancloud.js" ></script>
-
-  <script  src="/js/local-search.js" ></script>
-
-
-
-
-
-<!-- 主题的启动项，将它保持在最底部 -->
-<!-- the boot of the theme, keep it at the bottom -->
-<script  src="/js/boot.js" ></script>
-
-
-  
-
-  <noscript>
-    <div class="noscript-warning">Blog works best with JavaScript enabled</div>
-  </noscript>
 </body>
 </html>
+

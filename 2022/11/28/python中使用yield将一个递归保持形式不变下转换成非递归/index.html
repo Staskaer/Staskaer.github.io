@@ -1,108 +1,87 @@
-
-
 <!DOCTYPE html>
-<html lang="en" data-default-color-scheme=auto>
-
-
-
+<html lang="en">
 <head>
   <meta charset="UTF-8">
-  <link rel="apple-touch-icon" sizes="76x76" href="/imgs/theme_pic/staskaer.png">
-  <link rel="icon" href="/imgs/theme_pic/staskaer.png">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
-  <meta http-equiv="x-ua-compatible" content="ie=edge">
-  
-  <meta name="theme-color" content="#2f4154">
-  <meta name="author" content="Staskaer">
-  <meta name="keywords" content="">
-  
-    <meta name="description" content="使用yield将一个递归保持形式不变下转换成非递归">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 6.2.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/imgs/theme_pic/staskaer.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/imgs/theme_pic/staskaer.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/imgs/theme_pic/staskaer.png">
+  <link rel="mask-icon" href="/imgs/theme_pic/staskaer.png" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Gemini","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"flat"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"valine","storage":true,"lazyload":false,"nav":null,"activeClass":"valine"},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="使用yield将一个递归保持形式不变下转换成非递归">
 <meta property="og:type" content="article">
 <meta property="og:title" content="python中使用yield将一个递归保持形式不变下转换成非递归">
 <meta property="og:url" content="http://example.com/2022/11/28/python%E4%B8%AD%E4%BD%BF%E7%94%A8yield%E5%B0%86%E4%B8%80%E4%B8%AA%E9%80%92%E5%BD%92%E4%BF%9D%E6%8C%81%E5%BD%A2%E5%BC%8F%E4%B8%8D%E5%8F%98%E4%B8%8B%E8%BD%AC%E6%8D%A2%E6%88%90%E9%9D%9E%E9%80%92%E5%BD%92/index.html">
 <meta property="og:site_name" content="Staskaer">
 <meta property="og:description" content="使用yield将一个递归保持形式不变下转换成非递归">
 <meta property="og:locale" content="en_US">
-<meta property="og:image" content="http://example.com/imgs/post_index_img/yield1.jpg">
+<meta property="og:image" content="http://example.com/2022/11/28/python%E4%B8%AD%E4%BD%BF%E7%94%A8yield%E5%B0%86%E4%B8%80%E4%B8%AA%E9%80%92%E5%BD%92%E4%BF%9D%E6%8C%81%E5%BD%A2%E5%BC%8F%E4%B8%8D%E5%8F%98%E4%B8%8B%E8%BD%AC%E6%8D%A2%E6%88%90%E9%9D%9E%E9%80%92%E5%BD%92/pic1.png">
+<meta property="og:image" content="http://example.com/2022/11/28/python%E4%B8%AD%E4%BD%BF%E7%94%A8yield%E5%B0%86%E4%B8%80%E4%B8%AA%E9%80%92%E5%BD%92%E4%BF%9D%E6%8C%81%E5%BD%A2%E5%BC%8F%E4%B8%8D%E5%8F%98%E4%B8%8B%E8%BD%AC%E6%8D%A2%E6%88%90%E9%9D%9E%E9%80%92%E5%BD%92/pic2.png">
 <meta property="article:published_time" content="2022-11-28T11:36:20.000Z">
 <meta property="article:modified_time" content="2023-02-22T11:28:04.075Z">
 <meta property="article:author" content="Staskaer">
 <meta property="article:tag" content="Python">
 <meta property="article:tag" content="Python协程">
-<meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:image" content="http://example.com/imgs/post_index_img/yield1.jpg">
-  
-  
-  
-  <title>python中使用yield将一个递归保持形式不变下转换成非递归 - Staskaer</title>
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://example.com/2022/11/28/python%E4%B8%AD%E4%BD%BF%E7%94%A8yield%E5%B0%86%E4%B8%80%E4%B8%AA%E9%80%92%E5%BD%92%E4%BF%9D%E6%8C%81%E5%BD%A2%E5%BC%8F%E4%B8%8D%E5%8F%98%E4%B8%8B%E8%BD%AC%E6%8D%A2%E6%88%90%E9%9D%9E%E9%80%92%E5%BD%92/pic1.png">
 
-  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+<link rel="canonical" href="http://example.com/2022/11/28/python%E4%B8%AD%E4%BD%BF%E7%94%A8yield%E5%B0%86%E4%B8%80%E4%B8%AA%E9%80%92%E5%BD%92%E4%BF%9D%E6%8C%81%E5%BD%A2%E5%BC%8F%E4%B8%8D%E5%8F%98%E4%B8%8B%E8%BD%AC%E6%8D%A2%E6%88%90%E9%9D%9E%E9%80%92%E5%BD%92/">
 
 
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'en'
+  };
+</script>
 
-  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
-
-  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
-
-  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
-
-
-
-<!-- 主题依赖的图标库，不要自行修改 -->
-<!-- Do not modify the link that theme dependent icons -->
-
-<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_hj8rtnfg7um.css">
-
-
-
-<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_lbnruvf0jn.css">
-
-
-<link  rel="stylesheet" href="/css/main.css" />
-
-
-  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
-  
-    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  <title>python中使用yield将一个递归保持形式不变下转换成非递归 | Staskaer</title>
   
 
 
 
 
-  <script id="fluid-configs">
-    var Fluid = window.Fluid || {};
-    Fluid.ctx = Object.assign({}, Fluid.ctx)
-    var CONFIG = {"hostname":"example.com","root":"/","version":"1.9.2","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":true,"follow_dnt":false,"baidu":null,"google":null,"gtag":null,"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":"xH8NDrh9u4SQrUpQOd0lICnX-MdYXbMMI","app_key":"jl3JjPS4jsosZG29Zv24Y7LE","server_url":null,"path":"window.location.pathname","ignore_local":false}},"search_path":"/local-search.xml"};
-
-    if (CONFIG.web_analytics.follow_dnt) {
-      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
-      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
-    }
-  </script>
-  <script  src="/js/utils.js" ></script>
-  <script  src="/js/color-schema.js" ></script>
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-    
-  
 
 
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
 
-  
-<meta name="generator" content="Hexo 6.2.0"><style>mjx-container[jax="SVG"] {
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+<style>mjx-container[jax="SVG"] {
   direction: ltr;
 }
 
@@ -216,242 +195,364 @@ mjx-container[display="true"] + br {
 }
 </style></head>
 
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
 
-<body>
-  
-
-  <header>
-    
-
-<div class="header-inner" style="height: 70vh;">
-  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
-  <div class="container">
-    <a class="navbar-brand" href="/">
-      <strong>Staskaer</strong>
-    </a>
-
-    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
-            data-target="#navbarSupportedContent"
-            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
-      <div class="animated-icon"><span></span><span></span><span></span></div>
-    </button>
-
-    <!-- Collapsible content -->
-    <div class="collapse navbar-collapse" id="navbarSupportedContent">
-      <ul class="navbar-nav ml-auto text-center">
-        
-          
-          
-          
-          
-            <li class="nav-item">
-              <a class="nav-link" href="/">
-                <i class="iconfont icon-home-fill"></i>
-                Home
-              </a>
-            </li>
-          
-        
-          
-          
-          
-          
-            <li class="nav-item">
-              <a class="nav-link" href="/archives/">
-                <i class="iconfont icon-archive-fill"></i>
-                Archives
-              </a>
-            </li>
-          
-        
-          
-          
-          
-          
-            <li class="nav-item">
-              <a class="nav-link" href="/categories/">
-                <i class="iconfont icon-category-fill"></i>
-                Categories
-              </a>
-            </li>
-          
-        
-          
-          
-          
-          
-            <li class="nav-item">
-              <a class="nav-link" href="/tags/">
-                <i class="iconfont icon-tags-fill"></i>
-                Tags
-              </a>
-            </li>
-          
-        
-          
-          
-          
-          
-            <li class="nav-item">
-              <a class="nav-link" href="/about/">
-                <i class="iconfont icon-user-fill"></i>
-                About
-              </a>
-            </li>
-          
-        
-          
-          
-          
-          
-            <li class="nav-item">
-              <a class="nav-link" href="/links/">
-                <i class="iconfont icon-link-fill"></i>
-                Links
-              </a>
-            </li>
-          
-        
-        
-          <li class="nav-item" id="search-btn">
-            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
-              &nbsp;<i class="iconfont icon-search"></i>&nbsp;
-            </a>
-          </li>
-          
-        
-        
-          <li class="nav-item" id="color-toggle-btn">
-            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">&nbsp;<i
-                class="iconfont icon-dark" id="color-toggle-icon"></i>&nbsp;</a>
-          </li>
-        
-      </ul>
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
     </div>
   </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Staskaer</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">Hi, this is Staskaer</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
 </nav>
 
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="Searching..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2022/11/28/python%E4%B8%AD%E4%BD%BF%E7%94%A8yield%E5%B0%86%E4%B8%80%E4%B8%AA%E9%80%92%E5%BD%92%E4%BF%9D%E6%8C%81%E5%BD%A2%E5%BC%8F%E4%B8%8D%E5%8F%98%E4%B8%8B%E8%BD%AC%E6%8D%A2%E6%88%90%E9%9D%9E%E9%80%92%E5%BD%92/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/imgs/theme_pic/head_img.png">
+      <meta itemprop="name" content="Staskaer">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Staskaer">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          python中使用yield将一个递归保持形式不变下转换成非递归
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2022-11-28 19:36:20" itemprop="dateCreated datePublished" datetime="2022-11-28T19:36:20+08:00">2022-11-28</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2023-02-22 19:28:04" itemprop="dateModified" datetime="2023-02-22T19:28:04+08:00">2023-02-22</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/python%E6%8A%80%E5%B7%A7/" itemprop="url" rel="index"><span itemprop="name">python技巧</span></a>
+                </span>
+            </span>
+
+          
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Valine: </span>
+    
+    <a title="valine" href="/2022/11/28/python%E4%B8%AD%E4%BD%BF%E7%94%A8yield%E5%B0%86%E4%B8%80%E4%B8%AA%E9%80%92%E5%BD%92%E4%BF%9D%E6%8C%81%E5%BD%A2%E5%BC%8F%E4%B8%8D%E5%8F%98%E4%B8%8B%E8%BD%AC%E6%8D%A2%E6%88%90%E9%9D%9E%E9%80%92%E5%BD%92/#valine-comments" itemprop="discussionUrl">
+      <span class="post-comments-count valine-comment-count" data-xid="/2022/11/28/python%E4%B8%AD%E4%BD%BF%E7%94%A8yield%E5%B0%86%E4%B8%80%E4%B8%AA%E9%80%92%E5%BD%92%E4%BF%9D%E6%8C%81%E5%BD%A2%E5%BC%8F%E4%B8%8D%E5%8F%98%E4%B8%8B%E8%BD%AC%E6%8D%A2%E6%88%90%E9%9D%9E%E9%80%92%E5%BD%92/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
   
 
-<div id="banner" class="banner" parallax=true
-     style="background: url('/imgs/post_index_img/yield1.jpg') no-repeat center center; background-size: cover;">
-  <div class="full-bg-img">
-    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
-      <div class="banner-text text-center fade-in-up">
-        <div class="h2">
-          
-            <span id="subtitle" data-typed-text="没用的知识又增加啦"></span>
-          
         </div>
-
-        
-          
-  <div class="mt-3">
-    
-    
-      <span class="post-meta">
-        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
-        <time datetime="2022-11-28 19:36" pubdate>
-          November 28, 2022 pm
-        </time>
-      </span>
-    
-  </div>
-
-  <div class="mt-1">
-    
-      <span class="post-meta mr-2">
-        <i class="iconfont icon-chart"></i>
-        
-          3.5k words
-        
-      </span>
-    
-
-    
-      <span class="post-meta mr-2">
-        <i class="iconfont icon-clock-fill"></i>
-        
-        
-        
-          15 mins
-        
-      </span>
-    
+      </header>
 
     
     
-      
-        <span id="leancloud-page-views-container" class="post-meta" style="display: none">
-          <i class="iconfont icon-eye" aria-hidden="true"></i>
-          <span id="leancloud-page-views"></span> views
-        </span>
-        
-      
     
-  </div>
-
-
-        
-      </div>
+    <div class="post-body" itemprop="articleBody">
 
       
-    </div>
-  </div>
-</div>
-
-</div>
-
-  </header>
-
-  <main>
-    
-      
-
-<div class="container-fluid nopadding-x">
-  <div class="row nomargin-x">
-    <div class="side-col d-none d-lg-block col-lg-2">
-      
-
-    </div>
-
-    <div class="col-lg-8 nopadding-x-md">
-      <div class="container nopadding-x-md" id="board-ctn">
-        <div id="board">
-          <article class="post-content mx-auto">
-            <!-- SEO header -->
-            <h1 style="display: none">没用的知识又增加啦</h1>
-            
-            
-              <div class="markdown-body">
-                
-                <h2 id="使用yield将一个递归保持形式不变下转换成非递归">使用yield将一个递归保持形式不变下转换成非递归</h2>
+        <h2 id="使用yield将一个递归保持形式不变下转换成非递归">使用yield将一个递归保持形式不变下转换成非递归</h2>
 <span id="more"></span>
 <p>递归函数的可读性高，但是效率不高；非递归函数的效率高，但是可读性会略逊一筹。不过在python中借助yield这个工具我们可以做到鱼和熊掌得兼。</p>
 <h3 id="yield的一些技巧">yield的一些技巧</h3>
 <p>函数内有yield的函数将被作为生成器，当函数执行到yield这里时会将生成器挂起，直到下一次调用。</p>
 <p>yield当然还有其他的很多用处和技巧，可以说是python中最重要的概念之一。我们此处用到的技巧主要还是<code>send()</code>方法。</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><code class="hljs python"><br><span class="hljs-keyword">def</span> <span class="hljs-title function_">a</span>():<br>    <span class="hljs-keyword">yield</span> <span class="hljs-number">1</span><br>    x = <span class="hljs-keyword">yield</span> <br>    <span class="hljs-keyword">yield</span> x<br><br>b = a()<br><span class="hljs-built_in">print</span>(<span class="hljs-built_in">next</span>(b)) <span class="hljs-comment"># 1</span><br><span class="hljs-built_in">print</span>(<span class="hljs-built_in">next</span>(b)) <span class="hljs-comment"># 空</span><br><span class="hljs-built_in">print</span>(b.send(<span class="hljs-number">2</span>)) <span class="hljs-comment"># 2</span><br><br><span class="hljs-keyword">def</span> <span class="hljs-title function_">c</span>():<br>    <span class="hljs-keyword">yield</span> <span class="hljs-number">1</span><br>    x = <span class="hljs-keyword">yield</span> <span class="hljs-number">2</span><br>    <span class="hljs-keyword">yield</span> x<br><br>d = c()<br><span class="hljs-built_in">print</span>(<span class="hljs-built_in">next</span>(d)) <span class="hljs-comment"># 1</span><br><span class="hljs-built_in">print</span>(<span class="hljs-built_in">next</span>(d)) <span class="hljs-comment"># 2</span><br><span class="hljs-built_in">print</span>(d.send(<span class="hljs-number">3</span>)) <span class="hljs-comment"># 空</span><br><span class="hljs-built_in">print</span>(d.send(<span class="hljs-number">4</span>)) <span class="hljs-comment"># 4</span><br><br></code></pre></td></tr></table></figure>
+<pre class="line-numbers language-python" data-language="python"><code class="language-python">
+<span class="token keyword">def</span> <span class="token function">a</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">:</span>
+    <span class="token keyword">yield</span> <span class="token number">1</span>
+    x <span class="token operator">=</span> <span class="token keyword">yield</span> 
+    <span class="token keyword">yield</span> x
+
+b <span class="token operator">=</span> a<span class="token punctuation">(</span><span class="token punctuation">)</span>
+<span class="token keyword">print</span><span class="token punctuation">(</span><span class="token builtin">next</span><span class="token punctuation">(</span>b<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token comment"># 1</span>
+<span class="token keyword">print</span><span class="token punctuation">(</span><span class="token builtin">next</span><span class="token punctuation">(</span>b<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token comment"># 空</span>
+<span class="token keyword">print</span><span class="token punctuation">(</span>b<span class="token punctuation">.</span>send<span class="token punctuation">(</span><span class="token number">2</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token comment"># 2</span>
+
+<span class="token keyword">def</span> <span class="token function">c</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">:</span>
+    <span class="token keyword">yield</span> <span class="token number">1</span>
+    x <span class="token operator">=</span> <span class="token keyword">yield</span> <span class="token number">2</span>
+    <span class="token keyword">yield</span> x
+
+d <span class="token operator">=</span> c<span class="token punctuation">(</span><span class="token punctuation">)</span>
+<span class="token keyword">print</span><span class="token punctuation">(</span><span class="token builtin">next</span><span class="token punctuation">(</span>d<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token comment"># 1</span>
+<span class="token keyword">print</span><span class="token punctuation">(</span><span class="token builtin">next</span><span class="token punctuation">(</span>d<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token comment"># 2</span>
+<span class="token keyword">print</span><span class="token punctuation">(</span>d<span class="token punctuation">.</span>send<span class="token punctuation">(</span><span class="token number">3</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token comment"># 空</span>
+<span class="token keyword">print</span><span class="token punctuation">(</span>d<span class="token punctuation">.</span>send<span class="token punctuation">(</span><span class="token number">4</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token comment"># 4</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <p><code>send()</code>函数可以向生成器中发送数据，但是在调用send前需要保证生成器处于yield的位置上(<strong>即保证在send前调用next，当然send本身也是会有一次next调用的，因此send也会返回值</strong>)</p>
 <p>关于send的细节此处就不展开了。</p>
 <p>在上面代码中的</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs python"><br>x = <span class="hljs-keyword">yield</span> <span class="hljs-number">2</span><br><br></code></pre></td></tr></table></figure>
+<pre class="line-numbers language-python" data-language="python"><code class="language-python">
+x <span class="token operator">=</span> <span class="token keyword">yield</span> <span class="token number">2</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
 <p>等效于</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs python"><br><span class="hljs-keyword">yield</span> <span class="hljs-number">2</span><br>x = <span class="hljs-keyword">yield</span><br><br></code></pre></td></tr></table></figure>
+<pre class="line-numbers language-python" data-language="python"><code class="language-python">
+<span class="token keyword">yield</span> <span class="token number">2</span>
+x <span class="token operator">=</span> <span class="token keyword">yield</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
 <p>其中<code>x = yield</code>为send的接受点，即send进生成器中的数据会被发送给x。</p>
 <h3 id="一个递归函数">一个递归函数</h3>
 <p>此处我们就以一个树的访问者模式遍历为例</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><code class="hljs python"><br><span class="hljs-keyword">class</span> <span class="hljs-title class_">Node</span>:<br>    <span class="hljs-keyword">def</span> <span class="hljs-title function_">__init__</span>(<span class="hljs-params">self, data, left = <span class="hljs-literal">None</span>, right = <span class="hljs-literal">None</span></span>):<br>        self.left = left<br>        self.right = right<br>        self.data = data<br>    <br><span class="hljs-keyword">class</span> <span class="hljs-title class_">Visitor</span>:<br>    <span class="hljs-keyword">def</span> <span class="hljs-title function_">__init__</span>(<span class="hljs-params">self</span>):<br>        ...<br>    <br>    <span class="hljs-keyword">def</span> <span class="hljs-title function_">visit</span>(<span class="hljs-params">self, node</span>):<br>        <span class="hljs-comment"># 前序遍历</span><br>        <span class="hljs-keyword">if</span> node.left <span class="hljs-keyword">is</span> <span class="hljs-keyword">not</span> <span class="hljs-literal">None</span>:<br>            self.visit(node.left)<br>        <span class="hljs-keyword">if</span> node.right <span class="hljs-keyword">is</span> <span class="hljs-keyword">not</span> <span class="hljs-literal">None</span>:<br>            self.visit(node.right)<br>        <span class="hljs-built_in">print</span>(node.data)<br><br>t5 = Node(<span class="hljs-number">5</span>)<br>t4 = Node(<span class="hljs-number">4</span>)<br>t3 = Node(<span class="hljs-number">3</span>, t4, t5)<br>t2 = Node(<span class="hljs-number">2</span>, t3)<br>t1 = Node(<span class="hljs-number">1</span>)<br>t0 = Node(<span class="hljs-number">0</span>, t1, t2) <span class="hljs-comment"># 前序遍历结果为 1 4 5 3 2 0</span><br><br>v = Visitor<br>v.visit(t0) <span class="hljs-comment"># 1 4 5 3 2 0</span><br><br></code></pre></td></tr></table></figure>
+<pre class="line-numbers language-python" data-language="python"><code class="language-python">
+<span class="token keyword">class</span> <span class="token class-name">Node</span><span class="token punctuation">:</span>
+    <span class="token keyword">def</span> <span class="token function">__init__</span><span class="token punctuation">(</span>self<span class="token punctuation">,</span> data<span class="token punctuation">,</span> left <span class="token operator">=</span> <span class="token boolean">None</span><span class="token punctuation">,</span> right <span class="token operator">=</span> <span class="token boolean">None</span><span class="token punctuation">)</span><span class="token punctuation">:</span>
+        self<span class="token punctuation">.</span>left <span class="token operator">=</span> left
+        self<span class="token punctuation">.</span>right <span class="token operator">=</span> right
+        self<span class="token punctuation">.</span>data <span class="token operator">=</span> data
+    
+<span class="token keyword">class</span> <span class="token class-name">Visitor</span><span class="token punctuation">:</span>
+    <span class="token keyword">def</span> <span class="token function">__init__</span><span class="token punctuation">(</span>self<span class="token punctuation">)</span><span class="token punctuation">:</span>
+        <span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span>
+    
+    <span class="token keyword">def</span> <span class="token function">visit</span><span class="token punctuation">(</span>self<span class="token punctuation">,</span> node<span class="token punctuation">)</span><span class="token punctuation">:</span>
+        <span class="token comment"># 前序遍历</span>
+        <span class="token keyword">if</span> node<span class="token punctuation">.</span>left <span class="token keyword">is</span> <span class="token keyword">not</span> <span class="token boolean">None</span><span class="token punctuation">:</span>
+            self<span class="token punctuation">.</span>visit<span class="token punctuation">(</span>node<span class="token punctuation">.</span>left<span class="token punctuation">)</span>
+        <span class="token keyword">if</span> node<span class="token punctuation">.</span>right <span class="token keyword">is</span> <span class="token keyword">not</span> <span class="token boolean">None</span><span class="token punctuation">:</span>
+            self<span class="token punctuation">.</span>visit<span class="token punctuation">(</span>node<span class="token punctuation">.</span>right<span class="token punctuation">)</span>
+        <span class="token keyword">print</span><span class="token punctuation">(</span>node<span class="token punctuation">.</span>data<span class="token punctuation">)</span>
+
+t5 <span class="token operator">=</span> Node<span class="token punctuation">(</span><span class="token number">5</span><span class="token punctuation">)</span>
+t4 <span class="token operator">=</span> Node<span class="token punctuation">(</span><span class="token number">4</span><span class="token punctuation">)</span>
+t3 <span class="token operator">=</span> Node<span class="token punctuation">(</span><span class="token number">3</span><span class="token punctuation">,</span> t4<span class="token punctuation">,</span> t5<span class="token punctuation">)</span>
+t2 <span class="token operator">=</span> Node<span class="token punctuation">(</span><span class="token number">2</span><span class="token punctuation">,</span> t3<span class="token punctuation">)</span>
+t1 <span class="token operator">=</span> Node<span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">)</span>
+t0 <span class="token operator">=</span> Node<span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">,</span> t1<span class="token punctuation">,</span> t2<span class="token punctuation">)</span> <span class="token comment"># 前序遍历结果为 1 4 5 3 2 0</span>
+
+v <span class="token operator">=</span> Visitor
+v<span class="token punctuation">.</span>visit<span class="token punctuation">(</span>t0<span class="token punctuation">)</span> <span class="token comment"># 1 4 5 3 2 0</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <p>此时的前序遍历是一个递归的操作，但是递归效率不高且会爆栈。递归爆栈的原因也很简单，即它会不断保留当前的状态，直到进入到递归的最内层，并逐层向外解开求值。</p>
-<img src="/2022/11/28/python%E4%B8%AD%E4%BD%BF%E7%94%A8yield%E5%B0%86%E4%B8%80%E4%B8%AA%E9%80%92%E5%BD%92%E4%BF%9D%E6%8C%81%E5%BD%A2%E5%BC%8F%E4%B8%8D%E5%8F%98%E4%B8%8B%E8%BD%AC%E6%8D%A2%E6%88%90%E9%9D%9E%E9%80%92%E5%BD%92/pic1.png" srcset="/img/loading.gif" lazyload class="">
+<img src="/2022/11/28/python%E4%B8%AD%E4%BD%BF%E7%94%A8yield%E5%B0%86%E4%B8%80%E4%B8%AA%E9%80%92%E5%BD%92%E4%BF%9D%E6%8C%81%E5%BD%A2%E5%BC%8F%E4%B8%8D%E5%8F%98%E4%B8%8B%E8%BD%AC%E6%8D%A2%E6%88%90%E9%9D%9E%E9%80%92%E5%BD%92/pic1.png" class="">
 <p>每次压入栈中时会把函数涉及到的变量一起压入，这就导致了内存占用过高而爆栈。假如存在一个栈，把结果(数据、起始结点甚至是生成器)全部压进去，然后每次从中pop一个出来根据类型处理，这样就能解决爆栈问题。</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br></pre></td><td class="code"><pre><code class="hljs python"><br><span class="hljs-keyword">from</span> types <span class="hljs-keyword">import</span> GeneratorType<br><br><span class="hljs-keyword">class</span> <span class="hljs-title class_">Visitor</span>:<br>    <span class="hljs-keyword">def</span> <span class="hljs-title function_">__init__</span>(<span class="hljs-params">self</span>):<br>        ...<br><br>    <span class="hljs-keyword">def</span> <span class="hljs-title function_">visit</span>(<span class="hljs-params">self, node</span>):<br>        stack = [node]<br>        <span class="hljs-keyword">while</span> stack:<br>            <span class="hljs-keyword">try</span>:<br>                last = stack[-<span class="hljs-number">1</span>]<br>                <span class="hljs-comment"># 根据类型来进行处理</span><br>                <span class="hljs-keyword">if</span> <span class="hljs-built_in">isinstance</span>(last, GeneratorType):<br>                    <span class="hljs-comment"># 生成器的话就生成一个值出来</span><br>                    stack.append(<span class="hljs-built_in">next</span>(last))<br>                <span class="hljs-keyword">elif</span> <span class="hljs-built_in">isinstance</span>(last, Node):<br>                    <span class="hljs-comment"># 结点的话就转换成生成器压入栈</span><br>                    stack.append(self._visit(stack.pop()))<br>                <span class="hljs-keyword">else</span>:<br>                    <span class="hljs-comment"># 其他（数据类型）就打印出来</span><br>                    <span class="hljs-built_in">print</span>(stack.pop())<br>            <span class="hljs-keyword">except</span> StopIteration <span class="hljs-keyword">as</span> e:<br>                <span class="hljs-comment"># 这个异常需要注意一下哦</span><br>                <span class="hljs-comment"># 此处目的是捕获生成器异常，从而把没用的生成器扔掉</span><br>                stack.pop()<br><br>    <span class="hljs-keyword">def</span> <span class="hljs-title function_">_visit</span>(<span class="hljs-params">self, node</span>):<br>        <span class="hljs-keyword">if</span> node.left <span class="hljs-keyword">is</span> <span class="hljs-keyword">not</span> <span class="hljs-literal">None</span>:<br>            <span class="hljs-comment"># 注意此处，还保留了递归的形式（调用自身）</span><br>            <span class="hljs-keyword">yield</span> self._visit(node.left)<br>        <span class="hljs-keyword">if</span> node.right <span class="hljs-keyword">is</span> <span class="hljs-keyword">not</span> <span class="hljs-literal">None</span>:<br>            <span class="hljs-keyword">yield</span> self._visit(node.right)<br>        <span class="hljs-keyword">yield</span> node.data<br><br></code></pre></td></tr></table></figure>
+<pre class="line-numbers language-python" data-language="python"><code class="language-python">
+<span class="token keyword">from</span> types <span class="token keyword">import</span> GeneratorType
+
+<span class="token keyword">class</span> <span class="token class-name">Visitor</span><span class="token punctuation">:</span>
+    <span class="token keyword">def</span> <span class="token function">__init__</span><span class="token punctuation">(</span>self<span class="token punctuation">)</span><span class="token punctuation">:</span>
+        <span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span>
+
+    <span class="token keyword">def</span> <span class="token function">visit</span><span class="token punctuation">(</span>self<span class="token punctuation">,</span> node<span class="token punctuation">)</span><span class="token punctuation">:</span>
+        stack <span class="token operator">=</span> <span class="token punctuation">[</span>node<span class="token punctuation">]</span>
+        <span class="token keyword">while</span> stack<span class="token punctuation">:</span>
+            <span class="token keyword">try</span><span class="token punctuation">:</span>
+                last <span class="token operator">=</span> stack<span class="token punctuation">[</span><span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">]</span>
+                <span class="token comment"># 根据类型来进行处理</span>
+                <span class="token keyword">if</span> <span class="token builtin">isinstance</span><span class="token punctuation">(</span>last<span class="token punctuation">,</span> GeneratorType<span class="token punctuation">)</span><span class="token punctuation">:</span>
+                    <span class="token comment"># 生成器的话就生成一个值出来</span>
+                    stack<span class="token punctuation">.</span>append<span class="token punctuation">(</span><span class="token builtin">next</span><span class="token punctuation">(</span>last<span class="token punctuation">)</span><span class="token punctuation">)</span>
+                <span class="token keyword">elif</span> <span class="token builtin">isinstance</span><span class="token punctuation">(</span>last<span class="token punctuation">,</span> Node<span class="token punctuation">)</span><span class="token punctuation">:</span>
+                    <span class="token comment"># 结点的话就转换成生成器压入栈</span>
+                    stack<span class="token punctuation">.</span>append<span class="token punctuation">(</span>self<span class="token punctuation">.</span>_visit<span class="token punctuation">(</span>stack<span class="token punctuation">.</span>pop<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+                <span class="token keyword">else</span><span class="token punctuation">:</span>
+                    <span class="token comment"># 其他（数据类型）就打印出来</span>
+                    <span class="token keyword">print</span><span class="token punctuation">(</span>stack<span class="token punctuation">.</span>pop<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+            <span class="token keyword">except</span> StopIteration <span class="token keyword">as</span> e<span class="token punctuation">:</span>
+                <span class="token comment"># 这个异常需要注意一下哦</span>
+                <span class="token comment"># 此处目的是捕获生成器异常，从而把没用的生成器扔掉</span>
+                stack<span class="token punctuation">.</span>pop<span class="token punctuation">(</span><span class="token punctuation">)</span>
+
+    <span class="token keyword">def</span> <span class="token function">_visit</span><span class="token punctuation">(</span>self<span class="token punctuation">,</span> node<span class="token punctuation">)</span><span class="token punctuation">:</span>
+        <span class="token keyword">if</span> node<span class="token punctuation">.</span>left <span class="token keyword">is</span> <span class="token keyword">not</span> <span class="token boolean">None</span><span class="token punctuation">:</span>
+            <span class="token comment"># 注意此处，还保留了递归的形式（调用自身）</span>
+            <span class="token keyword">yield</span> self<span class="token punctuation">.</span>_visit<span class="token punctuation">(</span>node<span class="token punctuation">.</span>left<span class="token punctuation">)</span>
+        <span class="token keyword">if</span> node<span class="token punctuation">.</span>right <span class="token keyword">is</span> <span class="token keyword">not</span> <span class="token boolean">None</span><span class="token punctuation">:</span>
+            <span class="token keyword">yield</span> self<span class="token punctuation">.</span>_visit<span class="token punctuation">(</span>node<span class="token punctuation">.</span>right<span class="token punctuation">)</span>
+        <span class="token keyword">yield</span> node<span class="token punctuation">.</span>data
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <p>可以看到，关键的部分还是保持了递归的形式（即自身函数调用自身），但是由于生成器函数并不会直接执行函数内部代码，所以给了可以操作的空间。</p>
-<img src="/2022/11/28/python%E4%B8%AD%E4%BD%BF%E7%94%A8yield%E5%B0%86%E4%B8%80%E4%B8%AA%E9%80%92%E5%BD%92%E4%BF%9D%E6%8C%81%E5%BD%A2%E5%BC%8F%E4%B8%8D%E5%8F%98%E4%B8%8B%E8%BD%AC%E6%8D%A2%E6%88%90%E9%9D%9E%E9%80%92%E5%BD%92/pic2.png" srcset="/img/loading.gif" lazyload class="">
+<img src="/2022/11/28/python%E4%B8%AD%E4%BD%BF%E7%94%A8yield%E5%B0%86%E4%B8%80%E4%B8%AA%E9%80%92%E5%BD%92%E4%BF%9D%E6%8C%81%E5%BD%A2%E5%BC%8F%E4%B8%8D%E5%8F%98%E4%B8%8B%E8%BD%AC%E6%8D%A2%E6%88%90%E9%9D%9E%E9%80%92%E5%BD%92/pic2.png" class="">
 <p>可以看成是一个状态机。</p>
 <h3 id="一个更高级的例子">一个更高级的例子</h3>
 <p>当然，上面的例子比较简单，简单的原因是：<strong>每个生成器之间不涉及到数据交换，是独立的</strong>。我们接下来看一下需要交换数据的例子，此处我们改写一下斐波那契。</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br></pre></td><td class="code"><pre><code class="hljs python"><br><span class="hljs-keyword">from</span> types <span class="hljs-keyword">import</span> GeneratorType<br><br><br><span class="hljs-keyword">class</span> <span class="hljs-title class_">Number</span>:<br>    <span class="hljs-keyword">def</span> <span class="hljs-title function_">__init__</span>(<span class="hljs-params">self, n</span>):<br>        self.n = n<br><br>    <span class="hljs-keyword">def</span> <span class="hljs-title function_">dec</span>(<span class="hljs-params">self, x=<span class="hljs-number">1</span></span>):<br>        <span class="hljs-keyword">return</span> Number(self.n-x)<br><br><br><span class="hljs-keyword">class</span> <span class="hljs-title class_">Fib</span>:<br>    <span class="hljs-comment"># 这个函数是yield改写递归的接口</span><br>    <span class="hljs-keyword">def</span> <span class="hljs-title function_">fib</span>(<span class="hljs-params">self, number</span>):<br>        stack = [number]<br>        last_result = <span class="hljs-literal">None</span><br>        <span class="hljs-keyword">while</span> stack:<br>            <span class="hljs-keyword">try</span>:<br>                last = stack[-<span class="hljs-number">1</span>]<br>                <span class="hljs-keyword">if</span> <span class="hljs-built_in">isinstance</span>(last, GeneratorType):<br>                    <span class="hljs-comment"># 是生成器的话就send，要把last_result设置为none</span><br>                    <span class="hljs-comment"># 如果生成出来的还是生成器的话，表示递归继续，</span><br>                    <span class="hljs-comment"># 此时就send(None)让新生成的迭代器进入send位置</span><br>                    <span class="hljs-comment"># 如果生成出来的是值，那么下次循环会把这个值设置成last_result</span><br>                    <span class="hljs-comment"># last_result负责保存上一次值的结果，从而实现传递数据</span><br>                    t = last.send(last_result)<br>                    stack.append(t)<br>                    last_result = <span class="hljs-literal">None</span><br>                <span class="hljs-keyword">elif</span> <span class="hljs-built_in">isinstance</span>(last, Number):<br>                    <span class="hljs-comment"># 是Number类的话就把生成器加入</span><br>                    stack.append(self._fib(stack.pop()))<br>                <span class="hljs-keyword">else</span>:<br>                    <span class="hljs-comment"># 如果是值的话，就保存进last_result</span><br>                    <span class="hljs-comment"># 后续会被送入生成器的send中</span><br>                    last_result = stack.pop()<br>            <span class="hljs-keyword">except</span> StopAsyncIteration <span class="hljs-keyword">as</span> e:<br>                <span class="hljs-comment"># 目的还是丢弃终止迭代器</span><br>                stack.pop()<br>        <span class="hljs-keyword">return</span> last_result<br><br>    <span class="hljs-comment"># 这个是使用yield改写的</span><br>    <span class="hljs-keyword">def</span> <span class="hljs-title function_">_fib</span>(<span class="hljs-params">self, n</span>):<br>        <span class="hljs-keyword">if</span> n.n == <span class="hljs-number">1</span> <span class="hljs-keyword">or</span> n.n == <span class="hljs-number">2</span>:<br>            <span class="hljs-keyword">yield</span> <span class="hljs-number">1</span><br>        <span class="hljs-keyword">else</span>:<br>            <span class="hljs-comment"># 保持了递归形式上的不变（还是在调用自身，但是实际上已经不是递归了）</span><br>            <span class="hljs-keyword">yield</span> (<span class="hljs-keyword">yield</span> self._fib(n.dec())) + (<span class="hljs-keyword">yield</span> self._fib(n.dec(<span class="hljs-number">2</span>)))<br><br>    <span class="hljs-comment"># 这个是原始的递归</span><br>    <span class="hljs-keyword">def</span> <span class="hljs-title function_">fib_raw</span>(<span class="hljs-params">self, n</span>):<br>        <span class="hljs-keyword">if</span> n == <span class="hljs-number">1</span> <span class="hljs-keyword">or</span> n == <span class="hljs-number">2</span>:<br>            <span class="hljs-keyword">return</span> <span class="hljs-number">1</span><br>        <span class="hljs-keyword">else</span>:<br>            <span class="hljs-keyword">return</span> self.fib_raw(n-<span class="hljs-number">1</span>) + self.fib_raw(n-<span class="hljs-number">2</span>)<br><br><br>f = Fib()<br><span class="hljs-built_in">print</span>(f.fib(Number(<span class="hljs-number">6</span>)))<br><span class="hljs-built_in">print</span>(f.fib_raw(<span class="hljs-number">6</span>))<br><br></code></pre></td></tr></table></figure>
+<pre class="line-numbers language-python" data-language="python"><code class="language-python">
+<span class="token keyword">from</span> types <span class="token keyword">import</span> GeneratorType
+
+
+<span class="token keyword">class</span> <span class="token class-name">Number</span><span class="token punctuation">:</span>
+    <span class="token keyword">def</span> <span class="token function">__init__</span><span class="token punctuation">(</span>self<span class="token punctuation">,</span> n<span class="token punctuation">)</span><span class="token punctuation">:</span>
+        self<span class="token punctuation">.</span>n <span class="token operator">=</span> n
+
+    <span class="token keyword">def</span> <span class="token function">dec</span><span class="token punctuation">(</span>self<span class="token punctuation">,</span> x<span class="token operator">=</span><span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">:</span>
+        <span class="token keyword">return</span> Number<span class="token punctuation">(</span>self<span class="token punctuation">.</span>n<span class="token operator">-</span>x<span class="token punctuation">)</span>
+
+
+<span class="token keyword">class</span> <span class="token class-name">Fib</span><span class="token punctuation">:</span>
+    <span class="token comment"># 这个函数是yield改写递归的接口</span>
+    <span class="token keyword">def</span> <span class="token function">fib</span><span class="token punctuation">(</span>self<span class="token punctuation">,</span> number<span class="token punctuation">)</span><span class="token punctuation">:</span>
+        stack <span class="token operator">=</span> <span class="token punctuation">[</span>number<span class="token punctuation">]</span>
+        last_result <span class="token operator">=</span> <span class="token boolean">None</span>
+        <span class="token keyword">while</span> stack<span class="token punctuation">:</span>
+            <span class="token keyword">try</span><span class="token punctuation">:</span>
+                last <span class="token operator">=</span> stack<span class="token punctuation">[</span><span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">]</span>
+                <span class="token keyword">if</span> <span class="token builtin">isinstance</span><span class="token punctuation">(</span>last<span class="token punctuation">,</span> GeneratorType<span class="token punctuation">)</span><span class="token punctuation">:</span>
+                    <span class="token comment"># 是生成器的话就send，要把last_result设置为none</span>
+                    <span class="token comment"># 如果生成出来的还是生成器的话，表示递归继续，</span>
+                    <span class="token comment"># 此时就send(None)让新生成的迭代器进入send位置</span>
+                    <span class="token comment"># 如果生成出来的是值，那么下次循环会把这个值设置成last_result</span>
+                    <span class="token comment"># last_result负责保存上一次值的结果，从而实现传递数据</span>
+                    t <span class="token operator">=</span> last<span class="token punctuation">.</span>send<span class="token punctuation">(</span>last_result<span class="token punctuation">)</span>
+                    stack<span class="token punctuation">.</span>append<span class="token punctuation">(</span>t<span class="token punctuation">)</span>
+                    last_result <span class="token operator">=</span> <span class="token boolean">None</span>
+                <span class="token keyword">elif</span> <span class="token builtin">isinstance</span><span class="token punctuation">(</span>last<span class="token punctuation">,</span> Number<span class="token punctuation">)</span><span class="token punctuation">:</span>
+                    <span class="token comment"># 是Number类的话就把生成器加入</span>
+                    stack<span class="token punctuation">.</span>append<span class="token punctuation">(</span>self<span class="token punctuation">.</span>_fib<span class="token punctuation">(</span>stack<span class="token punctuation">.</span>pop<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+                <span class="token keyword">else</span><span class="token punctuation">:</span>
+                    <span class="token comment"># 如果是值的话，就保存进last_result</span>
+                    <span class="token comment"># 后续会被送入生成器的send中</span>
+                    last_result <span class="token operator">=</span> stack<span class="token punctuation">.</span>pop<span class="token punctuation">(</span><span class="token punctuation">)</span>
+            <span class="token keyword">except</span> StopAsyncIteration <span class="token keyword">as</span> e<span class="token punctuation">:</span>
+                <span class="token comment"># 目的还是丢弃终止迭代器</span>
+                stack<span class="token punctuation">.</span>pop<span class="token punctuation">(</span><span class="token punctuation">)</span>
+        <span class="token keyword">return</span> last_result
+
+    <span class="token comment"># 这个是使用yield改写的</span>
+    <span class="token keyword">def</span> <span class="token function">_fib</span><span class="token punctuation">(</span>self<span class="token punctuation">,</span> n<span class="token punctuation">)</span><span class="token punctuation">:</span>
+        <span class="token keyword">if</span> n<span class="token punctuation">.</span>n <span class="token operator">==</span> <span class="token number">1</span> <span class="token keyword">or</span> n<span class="token punctuation">.</span>n <span class="token operator">==</span> <span class="token number">2</span><span class="token punctuation">:</span>
+            <span class="token keyword">yield</span> <span class="token number">1</span>
+        <span class="token keyword">else</span><span class="token punctuation">:</span>
+            <span class="token comment"># 保持了递归形式上的不变（还是在调用自身，但是实际上已经不是递归了）</span>
+            <span class="token keyword">yield</span> <span class="token punctuation">(</span><span class="token keyword">yield</span> self<span class="token punctuation">.</span>_fib<span class="token punctuation">(</span>n<span class="token punctuation">.</span>dec<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token operator">+</span> <span class="token punctuation">(</span><span class="token keyword">yield</span> self<span class="token punctuation">.</span>_fib<span class="token punctuation">(</span>n<span class="token punctuation">.</span>dec<span class="token punctuation">(</span><span class="token number">2</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+
+    <span class="token comment"># 这个是原始的递归</span>
+    <span class="token keyword">def</span> <span class="token function">fib_raw</span><span class="token punctuation">(</span>self<span class="token punctuation">,</span> n<span class="token punctuation">)</span><span class="token punctuation">:</span>
+        <span class="token keyword">if</span> n <span class="token operator">==</span> <span class="token number">1</span> <span class="token keyword">or</span> n <span class="token operator">==</span> <span class="token number">2</span><span class="token punctuation">:</span>
+            <span class="token keyword">return</span> <span class="token number">1</span>
+        <span class="token keyword">else</span><span class="token punctuation">:</span>
+            <span class="token keyword">return</span> self<span class="token punctuation">.</span>fib_raw<span class="token punctuation">(</span>n<span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">)</span> <span class="token operator">+</span> self<span class="token punctuation">.</span>fib_raw<span class="token punctuation">(</span>n<span class="token operator">-</span><span class="token number">2</span><span class="token punctuation">)</span>
+
+
+f <span class="token operator">=</span> Fib<span class="token punctuation">(</span><span class="token punctuation">)</span>
+<span class="token keyword">print</span><span class="token punctuation">(</span>f<span class="token punctuation">.</span>fib<span class="token punctuation">(</span>Number<span class="token punctuation">(</span><span class="token number">6</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+<span class="token keyword">print</span><span class="token punctuation">(</span>f<span class="token punctuation">.</span>fib_raw<span class="token punctuation">(</span><span class="token number">6</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <p>每次遇到生成器后都要把last_result设置为None，需要注意<code>last_result</code>的作用有两个：</p>
 <ul>
 <li>如果生成出来的还是生成器的话，表示递归继续，此时就send(None)让新生成的迭代器进入send位置</li>
@@ -459,338 +560,257 @@ mjx-container[display="true"] + br {
 </ul>
 <p><strong>不过这种方式似乎需要保证中间过程值与结果输出值类型不一致呢。</strong></p>
 <p>其中</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs python"><br><span class="hljs-keyword">yield</span> (<span class="hljs-keyword">yield</span> n.dec()) + (<span class="hljs-keyword">yield</span> n.dec(<span class="hljs-number">2</span>))<br><br></code></pre></td></tr></table></figure>
+<pre class="line-numbers language-python" data-language="python"><code class="language-python">
+<span class="token keyword">yield</span> <span class="token punctuation">(</span><span class="token keyword">yield</span> n<span class="token punctuation">.</span>dec<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token operator">+</span> <span class="token punctuation">(</span><span class="token keyword">yield</span> n<span class="token punctuation">.</span>dec<span class="token punctuation">(</span><span class="token number">2</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
 <p>等效于</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs python"><br>x = <span class="hljs-keyword">yield</span> n.dec()<br>y = <span class="hljs-keyword">yield</span> n.dec(<span class="hljs-number">2</span>)<br><span class="hljs-keyword">yield</span> x + y<br><br></code></pre></td></tr></table></figure>
+<pre class="line-numbers language-python" data-language="python"><code class="language-python">
+x <span class="token operator">=</span> <span class="token keyword">yield</span> n<span class="token punctuation">.</span>dec<span class="token punctuation">(</span><span class="token punctuation">)</span>
+y <span class="token operator">=</span> <span class="token keyword">yield</span> n<span class="token punctuation">.</span>dec<span class="token punctuation">(</span><span class="token number">2</span><span class="token punctuation">)</span>
+<span class="token keyword">yield</span> x <span class="token operator">+</span> y
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
 <p><strong>注意，这种方式本质上只改善了递归的爆栈问题，它的实际运行过程跟递归是一样的。（即，不能当作递归--&gt;非递归的优化方法）</strong></p>
 <p>其实就是把递归的整个过程用yield和一个栈来全部模拟一遍啦，且在模拟的时候不改变递归函数形式(即仍然是自身调用自身，但是用生成器惰性求值+挂起的特性来防止不断申请栈空间)</p>
 
-                
-              </div>
-            
-            <hr/>
-            <div>
-              <div class="post-metas my-3">
-  
-    <div class="post-meta mr-3 d-flex align-items-center">
-      <i class="iconfont icon-category"></i>
-      
+    </div>
 
-<span class="category-chains">
-  
-  
     
-      <span class="category-chain">
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Python/" rel="tag"># Python</a>
+              <a href="/tags/Python%E5%8D%8F%E7%A8%8B/" rel="tag"># Python协程</a>
+          </div>
+
         
-  <a href="/categories/python%E6%8A%80%E5%B7%A7/" class="category-chain-item">python技巧</a>
-  
-  
 
-      </span>
-    
-  
-</span>
 
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2022/11/06/Python%E5%B0%8F%E6%8A%80%E5%B7%A7-7/" rel="prev" title="Python小技巧(7)--类的技巧(其一)">
+      <i class="fa fa-chevron-left"></i> Python小技巧(7)--类的技巧(其一)
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2022/12/13/Python%E5%B0%8F%E6%8A%80%E5%B7%A7-8/" rel="next" title="Python小技巧(8)--类的技巧(其二)">
+      Python小技巧(8)--类的技巧(其二) <i class="fa fa-chevron-right"></i>
+    </a></div>
     </div>
-  
-  
-    <div class="post-meta">
-      <i class="iconfont icon-tags"></i>
-      
-        <a href="/tags/Python/">#Python</a>
-      
-        <a href="/tags/Python%E5%8D%8F%E7%A8%8B/">#Python协程</a>
-      
-    </div>
-  
-</div>
-
-
-              
-
-              
-                <div class="post-prevnext my-3">
-                  <article class="post-prev col-6">
-                    
-                    
-                      <a href="/2022/12/13/Python%E5%B0%8F%E6%8A%80%E5%B7%A7-8/" title="Python小技巧(8)--类的技巧(其二)">
-                        <i class="iconfont icon-arrowleft"></i>
-                        <span class="hidden-mobile">Python小技巧(8)--类的技巧(其二)</span>
-                        <span class="visible-mobile">Previous</span>
-                      </a>
-                    
-                  </article>
-                  <article class="post-next col-6">
-                    
-                    
-                      <a href="/2022/11/06/Python%E5%B0%8F%E6%8A%80%E5%B7%A7-7/" title="Python小技巧(7)--类的技巧(其一)">
-                        <span class="hidden-mobile">Python小技巧(7)--类的技巧(其一)</span>
-                        <span class="visible-mobile">Next</span>
-                        <i class="iconfont icon-arrowright"></i>
-                      </a>
-                    
-                  </article>
-                </div>
-              
-            </div>
-
-            
-  <article id="comments" lazyload>
+      </footer>
     
-  <div id="waline"></div>
-  <script type="text/javascript">
-    Fluid.utils.loadComments('#waline', function() {
-      Fluid.utils.createCssLink('https://lib.baomitu.com/waline/2.5.1/waline.min.css')
-      Fluid.utils.createScript('https://lib.baomitu.com/waline/2.5.1/waline.min.js', function() {
-        var options = Object.assign(
-          {"serverURL":"https://waline-tau.vercel.app/","path":"window.location.pathname","meta":["nick","mail","link"],"requiredMeta":["nick"],"lang":"zh-CN","emoji":["https://emoji.shojo.cn/bili/src/大航海嘉然","https://emoji.shojo.cn/bili/src/永雏塔菲","https://emoji.shojo.cn/bili/src/東雪蓮","https://unpkg.com/@waline/emojis@1.1.0/tieba","https://emoji.shojo.cn/bili/src/嘉然今天吃什么","https://emoji.shojo.cn/bili/src/小黄脸"],"dark":"html[data-user-color-scheme=\"dark\"]","wordLimit":0,"pageSize":10},
-          {
-            el: '#waline',
-            path: window.location.pathname
-          }
-        )
-        Waline.init(options);
-        Fluid.utils.waitElementVisible('#waline .vcontent', () => {
-          var imgSelector = '#waline .vcontent img:not(.vemoji)';
-          Fluid.plugins.imageCaption(imgSelector);
-          Fluid.plugins.fancyBox(imgSelector);
-        })
-      });
-    });
-  </script>
-  <noscript>Please enable JavaScript to view the comments</noscript>
-
-
   </article>
-
-
-          </article>
-        </div>
-      </div>
-    </div>
-
-    <div class="side-col d-none d-lg-block col-lg-2">
-      
-  <aside class="sidebar" style="margin-left: -1rem">
-    <div id="toc">
-  <p class="toc-header"><i class="iconfont icon-list"></i>&nbsp;Table of Contents</p>
-  <div class="toc-body" id="toc-body"></div>
-</div>
-
-
-
-  </aside>
-
-
-    </div>
-  </div>
-</div>
-
-
-
-
-
-  
-
-
-
-  
-
-
-
-  
-
-
-
-  
-
-
-
-  
-
-
-
-
-
-
-
-    
-
-    
-      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
-        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
-      </a>
-    
-
-    
-      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
-     aria-hidden="true">
-  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
-    <div class="modal-content">
-      <div class="modal-header text-center">
-        <h4 class="modal-title w-100 font-weight-bold">Search</h4>
-        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
-          <span aria-hidden="true">&times;</span>
-        </button>
-      </div>
-      <div class="modal-body mx-3">
-        <div class="md-form mb-5">
-          <input type="text" id="local-search-input" class="form-control validate">
-          <label data-error="x" data-success="v" for="local-search-input">Keyword</label>
-        </div>
-        <div class="list-group" id="local-search-result"></div>
-      </div>
-    </div>
-  </div>
-</div>
-
-    
-
-    
-  </main>
-
-  <footer>
-    <div class="footer-inner">
-  
-    <div class="footer-content">
-       <a href="https://github.com/staskaer" target="_blank" rel="nofollow noopener"><span>Staskaer</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
-    </div>
   
   
   
-  
-</div>
-
-  </footer>
-
-  <!-- Scripts -->
-  
-  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
-  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
-
-  <script>
-    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
-    NProgress.start()
-    window.addEventListener('load', function() {
-      NProgress.done();
-    })
-  </script>
 
 
-<script  src="https://lib.baomitu.com/jquery/3.6.0/jquery.min.js" ></script>
-<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
-<script  src="/js/events.js" ></script>
-<script  src="/js/plugins.js" ></script>
 
+          </div>
+          
+    <div class="comments" id="valine-comments"></div>
 
-  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
-  <script>
-    (function (window, document) {
-      var typing = Fluid.plugins.typing;
-      var subtitle = document.getElementById('subtitle');
-      if (!subtitle || !typing) {
-        return;
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
       }
-      var text = subtitle.getAttribute('data-typed-text');
-      
-        typing(text);
-      
-    })(window, document);
-  </script>
-
-
-
-
-  
-    <script  src="/js/img-lazyload.js" ></script>
-  
-
-
-
-
-  
-<script>
-  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.18.2/tocbot.min.js', function() {
-    var toc = jQuery('#toc');
-    if (toc.length === 0 || !window.tocbot) { return; }
-    var boardCtn = jQuery('#board-ctn');
-    var boardTop = boardCtn.offset().top;
-
-    window.tocbot.init({
-      tocSelector     : '#toc-body',
-      contentSelector : '.markdown-body',
-      headingSelector : CONFIG.toc.headingSelector || 'h1,h2,h3,h4,h5,h6',
-      linkClass       : 'tocbot-link',
-      activeLinkClass : 'tocbot-active-link',
-      listClass       : 'tocbot-list',
-      isCollapsedClass: 'tocbot-is-collapsed',
-      collapsibleClass: 'tocbot-is-collapsible',
-      collapseDepth   : CONFIG.toc.collapseDepth || 0,
-      scrollSmooth    : true,
-      headingsOffset  : -boardTop
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
     });
-    if (toc.find('.toc-list-item').length > 0) {
-      toc.css('visibility', 'visible');
-    }
-  });
+  }
 </script>
 
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
 
-  <script src=https://lib.baomitu.com/clipboard.js/2.0.10/clipboard.min.js></script>
+  <aside class="sidebar">
+    <div class="sidebar-inner">
 
-  <script>Fluid.plugins.codeWidget();</script>
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BD%BF%E7%94%A8yield%E5%B0%86%E4%B8%80%E4%B8%AA%E9%80%92%E5%BD%92%E4%BF%9D%E6%8C%81%E5%BD%A2%E5%BC%8F%E4%B8%8D%E5%8F%98%E4%B8%8B%E8%BD%AC%E6%8D%A2%E6%88%90%E9%9D%9E%E9%80%92%E5%BD%92"><span class="nav-number">1.</span> <span class="nav-text">使用yield将一个递归保持形式不变下转换成非递归</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#yield%E7%9A%84%E4%B8%80%E4%BA%9B%E6%8A%80%E5%B7%A7"><span class="nav-number">1.1.</span> <span class="nav-text">yield的一些技巧</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%B8%80%E4%B8%AA%E9%80%92%E5%BD%92%E5%87%BD%E6%95%B0"><span class="nav-number">1.2.</span> <span class="nav-text">一个递归函数</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%B8%80%E4%B8%AA%E6%9B%B4%E9%AB%98%E7%BA%A7%E7%9A%84%E4%BE%8B%E5%AD%90"><span class="nav-number">1.3.</span> <span class="nav-text">一个更高级的例子</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Staskaer"
+      src="/imgs/theme_pic/head_img.png">
+  <p class="site-author-name" itemprop="name">Staskaer</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">63</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">10</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">18</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/Staskaer" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;Staskaer" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:liujiaxin011121@gmail.com" title="E-Mail → mailto:liujiaxin011121@gmail.com" rel="noopener" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2023</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Staskaer</span>
+</div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
 
 
   
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+
 <script>
-  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/4.3.1/anchor.min.js', function() {
-    window.anchors.options = {
-      placement: CONFIG.anchorjs.placement,
-      visible  : CONFIG.anchorjs.visible
-    };
-    if (CONFIG.anchorjs.icon) {
-      window.anchors.options.icon = CONFIG.anchorjs.icon;
-    }
-    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
-    var res = [];
-    for (var item of el) {
-      res.push('.markdown-body > ' + item.trim());
-    }
-    if (CONFIG.anchorjs.placement === 'left') {
-      window.anchors.options.class = 'anchorjs-link-left';
-    }
-    window.anchors.add(res.join(', '));
-  });
+NexT.utils.loadComments(document.querySelector('#valine-comments'), () => {
+  NexT.utils.getScript('https://cdn.jsdelivr.net/npm/valine@1.5.1/dist/Valine.min.js', () => {
+    var GUEST = ['nick', 'mail', 'link'];
+    var guest = 'nick,mail,link';
+    guest = guest.split(',').filter(item => {
+      return GUEST.includes(item);
+    });
+    new Valine({
+      el         : '#valine-comments',
+      verify     : false,
+      notify     : false,
+      appId      : 'xH8NDrh9u4SQrUpQOd0lICnX-MdYXbMMI',
+      appKey     : 'jl3JjPS4jsosZG29Zv24Y7LE',
+      placeholder: "Just go go",
+      avatar     : 'mm',
+      meta       : guest,
+      pageSize   : '10' || 10,
+      visitor    : false,
+      lang       : 'zh-Hans' || 'zh-cn',
+      path       : location.pathname,
+      recordIP   : false,
+      serverURLs : ''
+    });
+  }, window.Valine);
+});
 </script>
 
-
-  
-<script>
-  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
-    Fluid.plugins.fancyBox();
-  });
-</script>
-
-
-  <script>Fluid.plugins.imageCaption();</script>
-
-  <script defer src="/js/leancloud.js" ></script>
-
-  <script  src="/js/local-search.js" ></script>
-
-
-
-
-
-<!-- 主题的启动项，将它保持在最底部 -->
-<!-- the boot of the theme, keep it at the bottom -->
-<script  src="/js/boot.js" ></script>
-
-
-  
-
-  <noscript>
-    <div class="noscript-warning">Blog works best with JavaScript enabled</div>
-  </noscript>
 </body>
 </html>
+

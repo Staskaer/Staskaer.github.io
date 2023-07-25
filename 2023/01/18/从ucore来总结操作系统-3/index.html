@@ -1,107 +1,85 @@
-
-
 <!DOCTYPE html>
-<html lang="en" data-default-color-scheme=auto>
-
-
-
+<html lang="en">
 <head>
   <meta charset="UTF-8">
-  <link rel="apple-touch-icon" sizes="76x76" href="/imgs/theme_pic/staskaer.png">
-  <link rel="icon" href="/imgs/theme_pic/staskaer.png">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
-  <meta http-equiv="x-ua-compatible" content="ie=edge">
-  
-  <meta name="theme-color" content="#2f4154">
-  <meta name="author" content="Staskaer">
-  <meta name="keywords" content="">
-  
-    <meta name="description" content="页面置换与Page Fault">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 6.2.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/imgs/theme_pic/staskaer.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/imgs/theme_pic/staskaer.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/imgs/theme_pic/staskaer.png">
+  <link rel="mask-icon" href="/imgs/theme_pic/staskaer.png" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Gemini","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"flat"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"valine","storage":true,"lazyload":false,"nav":null,"activeClass":"valine"},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="页面置换与Page Fault">
 <meta property="og:type" content="article">
 <meta property="og:title" content="从ucore来总结操作系统(3)----页面置换与Page Fault">
 <meta property="og:url" content="http://example.com/2023/01/18/%E4%BB%8Eucore%E6%9D%A5%E6%80%BB%E7%BB%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-3/index.html">
 <meta property="og:site_name" content="Staskaer">
 <meta property="og:description" content="页面置换与Page Fault">
 <meta property="og:locale" content="en_US">
-<meta property="og:image" content="http://example.com/imgs/post_index_img/ucore3.jpg">
+<meta property="og:image" content="http://example.com/2023/01/18/%E4%BB%8Eucore%E6%9D%A5%E6%80%BB%E7%BB%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-3/pic1.png">
 <meta property="article:published_time" content="2023-01-18T06:39:49.000Z">
 <meta property="article:modified_time" content="2023-01-20T13:55:18.624Z">
 <meta property="article:author" content="Staskaer">
 <meta property="article:tag" content="ucore操作系统">
-<meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:image" content="http://example.com/imgs/post_index_img/ucore3.jpg">
-  
-  
-  
-  <title>从ucore来总结操作系统(3)----页面置换与Page Fault - Staskaer</title>
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://example.com/2023/01/18/%E4%BB%8Eucore%E6%9D%A5%E6%80%BB%E7%BB%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-3/pic1.png">
 
-  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+<link rel="canonical" href="http://example.com/2023/01/18/%E4%BB%8Eucore%E6%9D%A5%E6%80%BB%E7%BB%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-3/">
 
 
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'en'
+  };
+</script>
 
-  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
-
-  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
-
-  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
-
-
-
-<!-- 主题依赖的图标库，不要自行修改 -->
-<!-- Do not modify the link that theme dependent icons -->
-
-<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_hj8rtnfg7um.css">
-
-
-
-<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_lbnruvf0jn.css">
-
-
-<link  rel="stylesheet" href="/css/main.css" />
-
-
-  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
-  
-    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  <title>从ucore来总结操作系统(3)----页面置换与Page Fault | Staskaer</title>
   
 
 
 
 
-  <script id="fluid-configs">
-    var Fluid = window.Fluid || {};
-    Fluid.ctx = Object.assign({}, Fluid.ctx)
-    var CONFIG = {"hostname":"example.com","root":"/","version":"1.9.2","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":true,"follow_dnt":false,"baidu":null,"google":null,"gtag":null,"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":"xH8NDrh9u4SQrUpQOd0lICnX-MdYXbMMI","app_key":"jl3JjPS4jsosZG29Zv24Y7LE","server_url":null,"path":"window.location.pathname","ignore_local":false}},"search_path":"/local-search.xml"};
-
-    if (CONFIG.web_analytics.follow_dnt) {
-      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
-      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
-    }
-  </script>
-  <script  src="/js/utils.js" ></script>
-  <script  src="/js/color-schema.js" ></script>
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-    
-  
 
 
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
 
-  
-<meta name="generator" content="Hexo 6.2.0"><style>mjx-container[jax="SVG"] {
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+<style>mjx-container[jax="SVG"] {
   direction: ltr;
 }
 
@@ -215,216 +193,190 @@ mjx-container[display="true"] + br {
 }
 </style></head>
 
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
 
-<body>
-  
-
-  <header>
-    
-
-<div class="header-inner" style="height: 70vh;">
-  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
-  <div class="container">
-    <a class="navbar-brand" href="/">
-      <strong>Staskaer</strong>
-    </a>
-
-    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
-            data-target="#navbarSupportedContent"
-            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
-      <div class="animated-icon"><span></span><span></span><span></span></div>
-    </button>
-
-    <!-- Collapsible content -->
-    <div class="collapse navbar-collapse" id="navbarSupportedContent">
-      <ul class="navbar-nav ml-auto text-center">
-        
-          
-          
-          
-          
-            <li class="nav-item">
-              <a class="nav-link" href="/">
-                <i class="iconfont icon-home-fill"></i>
-                Home
-              </a>
-            </li>
-          
-        
-          
-          
-          
-          
-            <li class="nav-item">
-              <a class="nav-link" href="/archives/">
-                <i class="iconfont icon-archive-fill"></i>
-                Archives
-              </a>
-            </li>
-          
-        
-          
-          
-          
-          
-            <li class="nav-item">
-              <a class="nav-link" href="/categories/">
-                <i class="iconfont icon-category-fill"></i>
-                Categories
-              </a>
-            </li>
-          
-        
-          
-          
-          
-          
-            <li class="nav-item">
-              <a class="nav-link" href="/tags/">
-                <i class="iconfont icon-tags-fill"></i>
-                Tags
-              </a>
-            </li>
-          
-        
-          
-          
-          
-          
-            <li class="nav-item">
-              <a class="nav-link" href="/about/">
-                <i class="iconfont icon-user-fill"></i>
-                About
-              </a>
-            </li>
-          
-        
-          
-          
-          
-          
-            <li class="nav-item">
-              <a class="nav-link" href="/links/">
-                <i class="iconfont icon-link-fill"></i>
-                Links
-              </a>
-            </li>
-          
-        
-        
-          <li class="nav-item" id="search-btn">
-            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
-              &nbsp;<i class="iconfont icon-search"></i>&nbsp;
-            </a>
-          </li>
-          
-        
-        
-          <li class="nav-item" id="color-toggle-btn">
-            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">&nbsp;<i
-                class="iconfont icon-dark" id="color-toggle-icon"></i>&nbsp;</a>
-          </li>
-        
-      </ul>
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
     </div>
   </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Staskaer</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">Hi, this is Staskaer</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
 </nav>
 
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="Searching..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2023/01/18/%E4%BB%8Eucore%E6%9D%A5%E6%80%BB%E7%BB%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-3/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/imgs/theme_pic/head_img.png">
+      <meta itemprop="name" content="Staskaer">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Staskaer">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          从ucore来总结操作系统(3)----页面置换与Page Fault
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2023-01-18 14:39:49" itemprop="dateCreated datePublished" datetime="2023-01-18T14:39:49+08:00">2023-01-18</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2023-01-20 21:55:18" itemprop="dateModified" datetime="2023-01-20T21:55:18+08:00">2023-01-20</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/" itemprop="url" rel="index"><span itemprop="name">操作系统</span></a>
+                </span>
+            </span>
+
+          
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Valine: </span>
+    
+    <a title="valine" href="/2023/01/18/%E4%BB%8Eucore%E6%9D%A5%E6%80%BB%E7%BB%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-3/#valine-comments" itemprop="discussionUrl">
+      <span class="post-comments-count valine-comment-count" data-xid="/2023/01/18/%E4%BB%8Eucore%E6%9D%A5%E6%80%BB%E7%BB%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-3/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
   
 
-<div id="banner" class="banner" parallax=true
-     style="background: url('/imgs/post_index_img/ucore3.jpg') no-repeat center center; background-size: cover;">
-  <div class="full-bg-img">
-    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
-      <div class="banner-text text-center fade-in-up">
-        <div class="h2">
-          
-            <span id="subtitle" data-typed-text="原来你就是操作系统啊！"></span>
-          
         </div>
-
-        
-          
-  <div class="mt-3">
-    
-    
-      <span class="post-meta">
-        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
-        <time datetime="2023-01-18 14:39" pubdate>
-          January 18, 2023 pm
-        </time>
-      </span>
-    
-  </div>
-
-  <div class="mt-1">
-    
-      <span class="post-meta mr-2">
-        <i class="iconfont icon-chart"></i>
-        
-          10k words
-        
-      </span>
-    
-
-    
-      <span class="post-meta mr-2">
-        <i class="iconfont icon-clock-fill"></i>
-        
-        
-        
-          43 mins
-        
-      </span>
-    
+      </header>
 
     
     
-      
-        <span id="leancloud-page-views-container" class="post-meta" style="display: none">
-          <i class="iconfont icon-eye" aria-hidden="true"></i>
-          <span id="leancloud-page-views"></span> views
-        </span>
-        
-      
     
-  </div>
-
-
-        
-      </div>
+    <div class="post-body" itemprop="articleBody">
 
       
-    </div>
-  </div>
-</div>
-
-</div>
-
-  </header>
-
-  <main>
-    
-      
-
-<div class="container-fluid nopadding-x">
-  <div class="row nomargin-x">
-    <div class="side-col d-none d-lg-block col-lg-2">
-      
-
-    </div>
-
-    <div class="col-lg-8 nopadding-x-md">
-      <div class="container nopadding-x-md" id="board-ctn">
-        <div id="board">
-          <article class="post-content mx-auto">
-            <!-- SEO header -->
-            <h1 style="display: none">原来你就是操作系统啊！</h1>
-            
-            
-              <div class="markdown-body">
-                
-                <h2 id="页面置换与page-fault">页面置换与Page Fault</h2>
+        <h2 id="页面置换与page-fault">页面置换与Page Fault</h2>
 <span id="more"></span>
 <p>这篇是lab3的内容，主要就是实操一下页面置换算法和当缺页发生时的处理。</p>
 <h3 id="x00-环境准备">0X00 环境准备</h3>
@@ -436,9 +388,39 @@ fault异常处理来间接完成这二者之间的衔接。因此，在lab3中�
 fault异常来分配(linux下的写时分配)。</p>
 <p>但是<strong>page_fault函数不知道哪些是“合法”的虚拟页</strong>，原因是ucore还缺少一定的数据结构来描述这种不在物理内存中的“合法”虚拟页。为此ucore通过建立<strong>mm_struct</strong>和<strong>vma_struct</strong>数据结构，描述了ucore模拟应用程序运行所需的合法内存空间。当访问内存产生page
 fault异常时，可获得访问的内存的方式（读或写）以及具体的虚拟内存地址，这样ucore就可以查询此地址，看是否属于vma_struct数据结构中描述的合法地址范围中，如果在，则可根据具体情况进行请求调页/页换入换出处理（这就是练习2涉及的部分）；如果不在，则报错。mm_struct和vma_struct数据结构结合页表表示虚拟地址空间和物理地址空间的示意图如下所示：</p>
-<img src="/2023/01/18/%E4%BB%8Eucore%E6%9D%A5%E6%80%BB%E7%BB%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-3/pic1.png" srcset="/img/loading.gif" lazyload class="">
-<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><code class="hljs c"><br><span class="hljs-comment">// 描述一个进程的虚拟地址空间 每个进程的 pcb 中 会有一个指针指向本结构体</span><br><span class="hljs-class"><span class="hljs-keyword">struct</span> <span class="hljs-title">mm_struct</span></span><br><span class="hljs-class">{</span><br>    <span class="hljs-comment">// 链接同一页目录表的虚拟内存空间 的 双向链表的 头节点</span><br>    <span class="hljs-type">list_entry_t</span> mmap_list;<br>    <span class="hljs-comment">// 当前正在使用的虚拟内存空间</span><br>    <span class="hljs-class"><span class="hljs-keyword">struct</span> <span class="hljs-title">vma_struct</span> *<span class="hljs-title">mmap_cache</span>;</span><br>    <span class="hljs-comment">// mm_struct 所维护的页表地址(拿来找 PTE)</span><br>    <span class="hljs-comment">// 通过访问pgdir可以查找某虚拟地址对应的页表项是否存在以及页表项的属性等</span><br>    <span class="hljs-type">pde_t</span> *pgdir;<br>    <span class="hljs-comment">// 虚拟内存块的数目</span><br>    <span class="hljs-type">int</span> map_count;<br>    <span class="hljs-comment">// 记录访问情况链表头地址(用于置换算法)</span><br>    <span class="hljs-type">void</span> *sm_priv;<br>};<br><br><span class="hljs-comment">// 虚拟内存空间</span><br><span class="hljs-class"><span class="hljs-keyword">struct</span> <span class="hljs-title">vma_struct</span></span><br><span class="hljs-class">{</span><br>    <span class="hljs-comment">// 虚拟内存空间属于的进程</span><br>    <span class="hljs-class"><span class="hljs-keyword">struct</span> <span class="hljs-title">mm_struct</span> *<span class="hljs-title">vm_mm</span>;</span><br>    <span class="hljs-comment">// 连续地址的虚拟内存空间的起始位置和结束位置</span><br>    <span class="hljs-type">uintptr_t</span> vm_start;<br>    <span class="hljs-type">uintptr_t</span> vm_end;<br>    <span class="hljs-comment">// 虚拟内存空间的属性 (读/写/执行)</span><br>    <span class="hljs-type">uint32_t</span> vm_flags;<br>    <span class="hljs-comment">// 双向链表 从小到大将虚拟内存空间链接起来</span><br>    <span class="hljs-type">list_entry_t</span> list_link;<br>};<br><br></code></pre></td></tr></table></figure>
-<div class="note note-primary">
+<img src="/2023/01/18/%E4%BB%8Eucore%E6%9D%A5%E6%80%BB%E7%BB%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-3/pic1.png" class="">
+<pre class="line-numbers language-c" data-language="c"><code class="language-c">
+<span class="token comment">// 描述一个进程的虚拟地址空间 每个进程的 pcb 中 会有一个指针指向本结构体</span>
+<span class="token keyword">struct</span> <span class="token class-name">mm_struct</span>
+<span class="token punctuation">{</span>
+    <span class="token comment">// 链接同一页目录表的虚拟内存空间 的 双向链表的 头节点</span>
+    <span class="token class-name">list_entry_t</span> mmap_list<span class="token punctuation">;</span>
+    <span class="token comment">// 当前正在使用的虚拟内存空间</span>
+    <span class="token keyword">struct</span> <span class="token class-name">vma_struct</span> <span class="token operator">*</span>mmap_cache<span class="token punctuation">;</span>
+    <span class="token comment">// mm_struct 所维护的页表地址(拿来找 PTE)</span>
+    <span class="token comment">// 通过访问pgdir可以查找某虚拟地址对应的页表项是否存在以及页表项的属性等</span>
+    <span class="token class-name">pde_t</span> <span class="token operator">*</span>pgdir<span class="token punctuation">;</span>
+    <span class="token comment">// 虚拟内存块的数目</span>
+    <span class="token keyword">int</span> map_count<span class="token punctuation">;</span>
+    <span class="token comment">// 记录访问情况链表头地址(用于置换算法)</span>
+    <span class="token keyword">void</span> <span class="token operator">*</span>sm_priv<span class="token punctuation">;</span>
+<span class="token punctuation">}</span><span class="token punctuation">;</span>
+
+<span class="token comment">// 虚拟内存空间</span>
+<span class="token keyword">struct</span> <span class="token class-name">vma_struct</span>
+<span class="token punctuation">{</span>
+    <span class="token comment">// 虚拟内存空间属于的进程</span>
+    <span class="token keyword">struct</span> <span class="token class-name">mm_struct</span> <span class="token operator">*</span>vm_mm<span class="token punctuation">;</span>
+    <span class="token comment">// 连续地址的虚拟内存空间的起始位置和结束位置</span>
+    <span class="token class-name">uintptr_t</span> vm_start<span class="token punctuation">;</span>
+    <span class="token class-name">uintptr_t</span> vm_end<span class="token punctuation">;</span>
+    <span class="token comment">// 虚拟内存空间的属性 (读/写/执行)</span>
+    <span class="token class-name">uint32_t</span> vm_flags<span class="token punctuation">;</span>
+    <span class="token comment">// 双向链表 从小到大将虚拟内存空间链接起来</span>
+    <span class="token class-name">list_entry_t</span> list_link<span class="token punctuation">;</span>
+<span class="token punctuation">}</span><span class="token punctuation">;</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<div class="note primary">
             <p>mm_struct应该是整个进程的虚拟内存描述表，记录了整个进程所拥有的虚拟地址</p><p>vma_struct是描述了一个有效的虚拟内存空间的信息，比如虚拟内存空间的起始地址、结束地址、属性等。</p><p>由于进程的虚拟空间是固定的，所以只有一个mm_struct；但是进程的占用的虚拟空间是可以是不连续的、分块的，所以一个mm_struct可以包含多个vma_struct。</p>
           </div>
 <p><strong>对于vma_struct</strong>，vm_start和vm_end描述了一个连续地址的虚拟内存空间的起始位置和结束位置，这两个值都应该是PGSIZE
@@ -452,15 +434,205 @@ vma_struct的个数。sm_priv指向用来链接记录页访问情况的链表头
 <p><strong>总而言之就是 mm_struct 描述了整个进程的虚拟地址空间 而
 vma_struct 描述了 进程中的一小部分虚拟内存空间</strong></p>
 <p>除此之外，page页面结构体页新增了两个成员</p>
-<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><code class="hljs c"><br><span class="hljs-class"><span class="hljs-keyword">struct</span> <span class="hljs-title">Page</span> {</span><br>    <span class="hljs-comment">// 引用计数</span><br>    <span class="hljs-type">int</span> ref;                        <span class="hljs-comment">// page frame's reference counter</span><br>    <span class="hljs-comment">// 用两个bit表示两种属性</span><br>    <span class="hljs-comment">// 1. PG_reserved位 此位为1时表示该页是内核保留的，不可分配</span><br>    <span class="hljs-comment">// 2. PG_property位 此位为1时表示可分配，为0表示已分配</span><br>    <span class="hljs-type">uint32_t</span> flags;                 <span class="hljs-comment">// array of flags that describe the status of the page frame</span><br>    <span class="hljs-comment">// 空闲块大小(以物理页位大小)，仅在当前页是空闲块的第一个物理页时有效</span><br>    <span class="hljs-type">unsigned</span> <span class="hljs-type">int</span> property;          <span class="hljs-comment">// the num of free block, used in first fit pm manager</span><br>    <span class="hljs-type">list_entry_t</span> page_link;         <span class="hljs-comment">// free list link</span><br><br>    <span class="hljs-comment">// 下面是新增的成员</span><br>    <span class="hljs-type">list_entry_t</span> pra_page_link;     <span class="hljs-comment">// 用于连接上一个和下一个*可交换已分配*的物理页</span><br>    <span class="hljs-type">uintptr_t</span> pra_vaddr;            <span class="hljs-comment">// 用于保存该物理页所对应的虚拟地址。</span><br>};<br><br></code></pre></td></tr></table></figure>
+<pre class="line-numbers language-c" data-language="c"><code class="language-c">
+<span class="token keyword">struct</span> <span class="token class-name">Page</span> <span class="token punctuation">{</span>
+    <span class="token comment">// 引用计数</span>
+    <span class="token keyword">int</span> ref<span class="token punctuation">;</span>                        <span class="token comment">// page frame's reference counter</span>
+    <span class="token comment">// 用两个bit表示两种属性</span>
+    <span class="token comment">// 1. PG_reserved位 此位为1时表示该页是内核保留的，不可分配</span>
+    <span class="token comment">// 2. PG_property位 此位为1时表示可分配，为0表示已分配</span>
+    <span class="token class-name">uint32_t</span> flags<span class="token punctuation">;</span>                 <span class="token comment">// array of flags that describe the status of the page frame</span>
+    <span class="token comment">// 空闲块大小(以物理页位大小)，仅在当前页是空闲块的第一个物理页时有效</span>
+    <span class="token keyword">unsigned</span> <span class="token keyword">int</span> property<span class="token punctuation">;</span>          <span class="token comment">// the num of free block, used in first fit pm manager</span>
+    <span class="token class-name">list_entry_t</span> page_link<span class="token punctuation">;</span>         <span class="token comment">// free list link</span>
+
+    <span class="token comment">// 下面是新增的成员</span>
+    <span class="token class-name">list_entry_t</span> pra_page_link<span class="token punctuation">;</span>     <span class="token comment">// 用于连接上一个和下一个*可交换已分配*的物理页</span>
+    <span class="token class-name">uintptr_t</span> pra_vaddr<span class="token punctuation">;</span>            <span class="token comment">// 用于保存该物理页所对应的虚拟地址。</span>
+<span class="token punctuation">}</span><span class="token punctuation">;</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <h3 id="x01-缺页中断写时创建和页面置换算法">0X01
 缺页中断、写时创建和页面置换算法</h3>
 <p>此时我们需要完成<code>kern/mm/vmm.c</code>中的，<code>do_pgfault</code>函数，这个函数的作用是处理缺页中断。当缺页发生的时候，CPU会先把产生缺页中断的虚拟地址存放进CR2寄存器，然后把错误码等压入堆栈，并通过<code>__alltraps-&gt;trap-&gt;trap_dispatch-&gt;pgfault_handler-&gt;do_pgfault</code>这样调用栈来最终由do_pgfault函数处理缺页中断。</p>
-<div class="note note-info">
+<div class="note info">
             <p><strong>缺页中断实质上还是需要硬件的支持</strong>。在保护模式下，CPU引用一个段需要查看段描述符，段描述符存在段描述符表中。但有的时候，对应的段并不存在于内存中(CPU允许段描述符表中注册的段不再内存中，这是它提供给软件的策略)，此时硬件产生缺页中断。</p><p><strong>不过，不同体系的处理器产生缺页中断的过程不一致，所以系统如何检测到缺页发生可以当作是硬件黑盒</strong></p>
           </div>
 <p>同样的，这个函数中同样存在大量的注释和已经写好的代码。</p>
-<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br><span class="line">144</span><br><span class="line">145</span><br><span class="line">146</span><br><span class="line">147</span><br><span class="line">148</span><br><span class="line">149</span><br><span class="line">150</span><br><span class="line">151</span><br><span class="line">152</span><br><span class="line">153</span><br><span class="line">154</span><br><span class="line">155</span><br><span class="line">156</span><br><span class="line">157</span><br><span class="line">158</span><br><span class="line">159</span><br><span class="line">160</span><br><span class="line">161</span><br><span class="line">162</span><br><span class="line">163</span><br><span class="line">164</span><br><span class="line">165</span><br><span class="line">166</span><br><span class="line">167</span><br><span class="line">168</span><br><span class="line">169</span><br><span class="line">170</span><br><span class="line">171</span><br><span class="line">172</span><br><span class="line">173</span><br><span class="line">174</span><br><span class="line">175</span><br></pre></td><td class="code"><pre><code class="hljs c"><br><span class="hljs-comment">/* do_pgfault - interrupt handler to process the page fault execption</span><br><span class="hljs-comment"> * @mm         : the control struct for a set of vma using the same PDT</span><br><span class="hljs-comment"> * @error_code : the error code recorded in trapframe-&gt;tf_err which is setted by x86 hardware</span><br><span class="hljs-comment"> * @addr       : the addr which causes a memory access exception, (the contents of the CR2 register)</span><br><span class="hljs-comment"> *</span><br><span class="hljs-comment"> * CALL GRAPH: trap--&gt; trap_dispatch--&gt;pgfault_handler--&gt;do_pgfault</span><br><span class="hljs-comment"> * The processor provides ucore's do_pgfault function with two items of information to aid in diagnosing</span><br><span class="hljs-comment"> * the exception and recovering from it.</span><br><span class="hljs-comment"> *   (1) The contents of the CR2 register. The processor loads the CR2 register with the</span><br><span class="hljs-comment"> *       32-bit linear address that generated the exception. The do_pgfault fun can</span><br><span class="hljs-comment"> *       use this address to locate the corresponding page directory and page-table</span><br><span class="hljs-comment"> *       entries.</span><br><span class="hljs-comment"> *   (2) An error code on the kernel stack. The error code for a page fault has a format different from</span><br><span class="hljs-comment"> *       that for other exceptions. The error code tells the exception handler three things:</span><br><span class="hljs-comment"> *         -- The P flag   (bit 0) indicates whether the exception was due to a not-present page (0)</span><br><span class="hljs-comment"> *            or to either an access rights violation or the use of a reserved bit (1).</span><br><span class="hljs-comment"> *         -- The W/R flag (bit 1) indicates whether the memory access that caused the exception</span><br><span class="hljs-comment"> *            was a read (0) or write (1).</span><br><span class="hljs-comment"> *         -- The U/S flag (bit 2) indicates whether the processor was executing at user mode (1)</span><br><span class="hljs-comment"> *            or supervisor mode (0) at the time of the exception.</span><br><span class="hljs-comment"> */</span><br><span class="hljs-type">int</span> <span class="hljs-title function_">do_pgfault</span><span class="hljs-params">(<span class="hljs-keyword">struct</span> mm_struct *mm, <span class="hljs-type">uint32_t</span> error_code, <span class="hljs-type">uintptr_t</span> addr)</span><br>{<br>    <span class="hljs-type">int</span> ret = -E_INVAL;<br>    <span class="hljs-comment">// try to find a vma which include addr</span><br>    <span class="hljs-comment">// 尝试找到一个包含addr的vma</span><br>    <span class="hljs-comment">// 也就是看一下这个地址是不是在进程某个vma的范围内</span><br>    <span class="hljs-comment">// vma管理的是所有有效地址，所以如果不在vma中，就是不合法的</span><br>    <span class="hljs-class"><span class="hljs-keyword">struct</span> <span class="hljs-title">vma_struct</span> *<span class="hljs-title">vma</span> =</span> find_vma(mm, addr);<br><br>    pgfault_num++;<br>    <span class="hljs-comment">// If the addr is in the range of a mm's vma?</span><br>    <span class="hljs-comment">// 没有vma包含这个地址，不合法</span><br>    <span class="hljs-keyword">if</span> (vma == <span class="hljs-literal">NULL</span> || vma-&gt;vm_start &gt; addr)<br>    {<br>        cprintf(<span class="hljs-string">"not valid addr %x, and  can not find it in vma\n"</span>, addr);<br>        <span class="hljs-keyword">goto</span> failed;<br>    }<br>    <span class="hljs-comment">// check the error_code</span><br>    <span class="hljs-comment">// 下面执行权限检查和判断访问页面是否存在物理页面中</span><br>    <span class="hljs-keyword">switch</span> (error_code &amp; <span class="hljs-number">3</span>)<br>    {<br>    <span class="hljs-keyword">default</span>:<br>        <span class="hljs-comment">// 进到此处，说明对页面是写请求，同时页面存在于物理内存中</span><br>        <span class="hljs-comment">// 但是还没有检查权限，权限的检查是case 2中的代码</span><br>        <span class="hljs-comment">// 如果权限也满足，就可以直接写入了，不需要置换</span><br>        <span class="hljs-comment">/* error code flag : default is 3 ( W/R=1, P=1): write, present */</span><br>    <span class="hljs-keyword">case</span> <span class="hljs-number">2</span>: <span class="hljs-comment">/* error code flag : (W/R=1, P=0): write, not present */</span><br>        <span class="hljs-comment">// 写页面，但是页面不存在</span><br>        <span class="hljs-comment">// 检查下权限，没有写入权限就fail</span><br>        <span class="hljs-keyword">if</span> (!(vma-&gt;vm_flags &amp; VM_WRITE))<br>        {<br>            cprintf(<span class="hljs-string">"do_pgfault failed: error code flag = write AND not present, but the addr's vma cannot write\n"</span>);<br>            <span class="hljs-keyword">goto</span> failed;<br>        }<br>        <span class="hljs-keyword">break</span>;<br>    <span class="hljs-keyword">case</span> <span class="hljs-number">1</span>: <span class="hljs-comment">/* error code flag : (W/R=0, P=1): read, present */</span><br>        <span class="hljs-comment">// 读内存，且内存也存在于物理内存中</span><br>        <span class="hljs-comment">// 肯定是可以直接读的，不应该进入缺页中断中，直接错误</span><br>        cprintf(<span class="hljs-string">"do_pgfault failed: error code flag = read AND present\n"</span>);<br>        <span class="hljs-keyword">goto</span> failed;<br>    <span class="hljs-keyword">case</span> <span class="hljs-number">0</span>: <span class="hljs-comment">/* error code flag : (W/R=0, P=0): read, not present */</span><br>        <span class="hljs-comment">// 读内存，但是内存不存在于物理内存中</span><br>        <span class="hljs-comment">// 检查下权限，没有读权限就fail</span><br>        <span class="hljs-keyword">if</span> (!(vma-&gt;vm_flags &amp; (VM_READ | VM_EXEC)))<br>        {<br>            cprintf(<span class="hljs-string">"do_pgfault failed: error code flag = read AND not present, but the addr's vma cannot read or exec\n"</span>);<br>            <span class="hljs-keyword">goto</span> failed;<br>        }<br>    }<br>    <span class="hljs-comment">/* IF (write an existed addr ) OR</span><br><span class="hljs-comment">     *    (write an non_existed addr &amp;&amp; addr is writable) OR</span><br><span class="hljs-comment">     *    (read  an non_existed addr &amp;&amp; addr is readable)</span><br><span class="hljs-comment">     * THEN</span><br><span class="hljs-comment">     *    continue process</span><br><span class="hljs-comment">     */</span><br>    <span class="hljs-comment">// 检查完权限，下面正式处理</span><br><br>    <span class="hljs-comment">// 设置页表条目所对应的权限</span><br>    <span class="hljs-type">uint32_t</span> perm = PTE_U;<br>    <span class="hljs-keyword">if</span> (vma-&gt;vm_flags &amp; VM_WRITE)<br>    {<br>        perm |= PTE_W;<br>    }<br>    <span class="hljs-comment">// 内存对齐</span><br>    addr = ROUNDDOWN(addr, PGSIZE);<br><br>    ret = -E_NO_MEM;<br>    <span class="hljs-type">pte_t</span> *ptep = <span class="hljs-literal">NULL</span>;<br>    <span class="hljs-comment">/*LAB3 EXERCISE 1: YOUR CODE</span><br><span class="hljs-comment">     * Maybe you want help comment, BELOW comments can help you finish the code</span><br><span class="hljs-comment">     *</span><br><span class="hljs-comment">     * Some Useful MACROs and DEFINEs, you can use them in below implementation.</span><br><span class="hljs-comment">     * MACROs or Functions:</span><br><span class="hljs-comment">     *   get_pte : get an pte and return the kernel virtual address of this pte for la</span><br><span class="hljs-comment">     *             if the PT contians this pte didn't exist, alloc a page for PT (notice the 3th parameter '1')</span><br><span class="hljs-comment">     *   pgdir_alloc_page : call alloc_page &amp; page_insert functions to allocate a page size memory &amp; setup</span><br><span class="hljs-comment">     *             an addr map pa&lt;---&gt;la with linear address la and the PDT pgdir</span><br><span class="hljs-comment">     * DEFINES:</span><br><span class="hljs-comment">     *   VM_WRITE  : If vma-&gt;vm_flags &amp; VM_WRITE == 1/0, then the vma is writable/non writable</span><br><span class="hljs-comment">     *   PTE_W           0x002                   // page table/directory entry flags bit : Writeable</span><br><span class="hljs-comment">     *   PTE_U           0x004                   // page table/directory entry flags bit : User can access</span><br><span class="hljs-comment">     * VARIABLES:</span><br><span class="hljs-comment">     *   mm-&gt;pgdir : the PDT of these vma</span><br><span class="hljs-comment">     *</span><br><span class="hljs-comment">     */</span><br><span class="hljs-meta">#<span class="hljs-keyword">if</span> 1</span><br><br>    <span class="hljs-comment">/*LAB3 EXERCISE 1: YOUR CODE*/</span><br>    <span class="hljs-comment">// 先尝试获取pte，如果不存在，get_pte会自动创建一个pte表项</span><br>    ptep = get_pte(mm-&gt;pgdir, addr, <span class="hljs-number">1</span>); <span class="hljs-comment">//(1) try to find a pte, if pte's PT(Page Table) isn't existed, then create a PT.</span><br>    <span class="hljs-keyword">if</span> (ptep == <span class="hljs-literal">NULL</span>)<br>    {<br>        <span class="hljs-keyword">goto</span> failed;<br>    }<br>    <span class="hljs-comment">// 如果这个表项对应的物理地址不存在，那么就需要分配一个物理页</span><br>    <span class="hljs-keyword">if</span> (*ptep == <span class="hljs-number">0</span>)<br>    {<br>        <span class="hljs-comment">// 分配一个物理页，并让虚拟地址addr映射到这个物理页</span><br>        <span class="hljs-comment">// 就是让之前分配的pte表项指向这个物理页</span><br>        <span class="hljs-keyword">if</span> (pgdir_alloc_page(mm-&gt;pgdir, addr, perm) == <span class="hljs-literal">NULL</span>)<br>            <span class="hljs-keyword">goto</span> failed;<br>        <span class="hljs-comment">//(2) if the phy addr isn't exist, then alloc a page &amp; map the phy addr with logical addr</span><br>    }<br>    <span class="hljs-keyword">else</span><br>    <span class="hljs-comment">// 如果PTE存在，说明该页被置换到外存，需要换回来</span><br>    {<br>        <span class="hljs-comment">/*LAB3 EXERCISE 2: YOUR CODE</span><br><span class="hljs-comment">         * Now we think this pte is a  swap entry, we should load data from disk to a page with phy addr,</span><br><span class="hljs-comment">         * and map the phy addr with logical addr, trigger swap manager to record the access situation of this page.</span><br><span class="hljs-comment">         *</span><br><span class="hljs-comment">         *  Some Useful MACROs and DEFINEs, you can use them in below implementation.</span><br><span class="hljs-comment">         *  MACROs or Functions:</span><br><span class="hljs-comment">         *    swap_in(mm, addr, &amp;page) : alloc a memory page, then according to the swap entry in PTE for addr,</span><br><span class="hljs-comment">         *                               find the addr of disk page, read the content of disk page into this memroy page</span><br><span class="hljs-comment">         *    page_insert ： build the map of phy addr of an Page with the linear addr la</span><br><span class="hljs-comment">         *    swap_map_swappable ： set the page swappable</span><br><span class="hljs-comment">         */</span><br>        <span class="hljs-keyword">if</span> (swap_init_ok)<br>        {<br>            <span class="hljs-keyword">struct</span> Page *page = <span class="hljs-literal">NULL</span>;<br>            <span class="hljs-comment">// 先把目标地址加载到内存page页上</span><br>            ret = swap_in(mm, addr, &amp;page);<br>            <span class="hljs-keyword">if</span> (ret != <span class="hljs-number">0</span>)<br>            {<br>                <span class="hljs-keyword">goto</span> failed;<br>            }<br><br>            <span class="hljs-comment">// 然后把page页映射到虚拟地址addr上，权限为perm</span><br>            ret = page_insert(mm-&gt;pgdir, page, addr, perm);<br><br>            <span class="hljs-comment">// 最后把page页设置为可交换的</span><br>            swap_map_swappable(mm, addr, page, <span class="hljs-number">1</span>);<br><br>            <span class="hljs-comment">// 然后设置一下page页的虚拟地址</span><br>            page-&gt;pra_vaddr = addr;<br>            <span class="hljs-comment">//(1）According to the mm AND addr, try to load the content of right disk page</span><br>            <span class="hljs-comment">//    into the memory which page managed.</span><br>            <span class="hljs-comment">//(2) According to the mm, addr AND page, setup the map of phy addr &lt;---&gt; logical addr</span><br>            <span class="hljs-comment">//(3) make the page swappable.</span><br>        }<br>        <span class="hljs-keyword">else</span><br><br>        {<br>            cprintf(<span class="hljs-string">"no swap_init_ok but ptep is %x, failed\n"</span>, *ptep);<br>            <span class="hljs-keyword">goto</span> failed;<br>        }<br>    }<br><span class="hljs-meta">#<span class="hljs-keyword">endif</span></span><br>    ret = <span class="hljs-number">0</span>;<br>failed:<br>    <span class="hljs-keyword">return</span> ret;<br>}<br><br></code></pre></td></tr></table></figure>
+<pre class="line-numbers language-c" data-language="c"><code class="language-c">
+<span class="token comment">/* do_pgfault - interrupt handler to process the page fault execption
+ * @mm         : the control struct for a set of vma using the same PDT
+ * @error_code : the error code recorded in trapframe-&gt;tf_err which is setted by x86 hardware
+ * @addr       : the addr which causes a memory access exception, (the contents of the CR2 register)
+ *
+ * CALL GRAPH: trap--&gt; trap_dispatch--&gt;pgfault_handler--&gt;do_pgfault
+ * The processor provides ucore's do_pgfault function with two items of information to aid in diagnosing
+ * the exception and recovering from it.
+ *   (1) The contents of the CR2 register. The processor loads the CR2 register with the
+ *       32-bit linear address that generated the exception. The do_pgfault fun can
+ *       use this address to locate the corresponding page directory and page-table
+ *       entries.
+ *   (2) An error code on the kernel stack. The error code for a page fault has a format different from
+ *       that for other exceptions. The error code tells the exception handler three things:
+ *         -- The P flag   (bit 0) indicates whether the exception was due to a not-present page (0)
+ *            or to either an access rights violation or the use of a reserved bit (1).
+ *         -- The W/R flag (bit 1) indicates whether the memory access that caused the exception
+ *            was a read (0) or write (1).
+ *         -- The U/S flag (bit 2) indicates whether the processor was executing at user mode (1)
+ *            or supervisor mode (0) at the time of the exception.
+ */</span>
+<span class="token keyword">int</span> <span class="token function">do_pgfault</span><span class="token punctuation">(</span><span class="token keyword">struct</span> <span class="token class-name">mm_struct</span> <span class="token operator">*</span>mm<span class="token punctuation">,</span> <span class="token class-name">uint32_t</span> error_code<span class="token punctuation">,</span> <span class="token class-name">uintptr_t</span> addr<span class="token punctuation">)</span>
+<span class="token punctuation">{</span>
+    <span class="token keyword">int</span> ret <span class="token operator">=</span> <span class="token operator">-</span>E_INVAL<span class="token punctuation">;</span>
+    <span class="token comment">// try to find a vma which include addr</span>
+    <span class="token comment">// 尝试找到一个包含addr的vma</span>
+    <span class="token comment">// 也就是看一下这个地址是不是在进程某个vma的范围内</span>
+    <span class="token comment">// vma管理的是所有有效地址，所以如果不在vma中，就是不合法的</span>
+    <span class="token keyword">struct</span> <span class="token class-name">vma_struct</span> <span class="token operator">*</span>vma <span class="token operator">=</span> <span class="token function">find_vma</span><span class="token punctuation">(</span>mm<span class="token punctuation">,</span> addr<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    pgfault_num<span class="token operator">++</span><span class="token punctuation">;</span>
+    <span class="token comment">// If the addr is in the range of a mm's vma?</span>
+    <span class="token comment">// 没有vma包含这个地址，不合法</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>vma <span class="token operator">==</span> <span class="token constant">NULL</span> <span class="token operator">||</span> vma<span class="token operator">-&gt;</span>vm_start <span class="token operator">&gt;</span> addr<span class="token punctuation">)</span>
+    <span class="token punctuation">{</span>
+        <span class="token function">cprintf</span><span class="token punctuation">(</span><span class="token string">"not valid addr %x, and  can not find it in vma\n"</span><span class="token punctuation">,</span> addr<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">goto</span> failed<span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+    <span class="token comment">// check the error_code</span>
+    <span class="token comment">// 下面执行权限检查和判断访问页面是否存在物理页面中</span>
+    <span class="token keyword">switch</span> <span class="token punctuation">(</span>error_code <span class="token operator">&amp;</span> <span class="token number">3</span><span class="token punctuation">)</span>
+    <span class="token punctuation">{</span>
+    <span class="token keyword">default</span><span class="token operator">:</span>
+        <span class="token comment">// 进到此处，说明对页面是写请求，同时页面存在于物理内存中</span>
+        <span class="token comment">// 但是还没有检查权限，权限的检查是case 2中的代码</span>
+        <span class="token comment">// 如果权限也满足，就可以直接写入了，不需要置换</span>
+        <span class="token comment">/* error code flag : default is 3 ( W/R=1, P=1): write, present */</span>
+    <span class="token keyword">case</span> <span class="token number">2</span><span class="token operator">:</span> <span class="token comment">/* error code flag : (W/R=1, P=0): write, not present */</span>
+        <span class="token comment">// 写页面，但是页面不存在</span>
+        <span class="token comment">// 检查下权限，没有写入权限就fail</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span><span class="token punctuation">(</span>vma<span class="token operator">-&gt;</span>vm_flags <span class="token operator">&amp;</span> VM_WRITE<span class="token punctuation">)</span><span class="token punctuation">)</span>
+        <span class="token punctuation">{</span>
+            <span class="token function">cprintf</span><span class="token punctuation">(</span><span class="token string">"do_pgfault failed: error code flag = write AND not present, but the addr's vma cannot write\n"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token keyword">goto</span> failed<span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+        <span class="token keyword">break</span><span class="token punctuation">;</span>
+    <span class="token keyword">case</span> <span class="token number">1</span><span class="token operator">:</span> <span class="token comment">/* error code flag : (W/R=0, P=1): read, present */</span>
+        <span class="token comment">// 读内存，且内存也存在于物理内存中</span>
+        <span class="token comment">// 肯定是可以直接读的，不应该进入缺页中断中，直接错误</span>
+        <span class="token function">cprintf</span><span class="token punctuation">(</span><span class="token string">"do_pgfault failed: error code flag = read AND present\n"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">goto</span> failed<span class="token punctuation">;</span>
+    <span class="token keyword">case</span> <span class="token number">0</span><span class="token operator">:</span> <span class="token comment">/* error code flag : (W/R=0, P=0): read, not present */</span>
+        <span class="token comment">// 读内存，但是内存不存在于物理内存中</span>
+        <span class="token comment">// 检查下权限，没有读权限就fail</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span><span class="token punctuation">(</span>vma<span class="token operator">-&gt;</span>vm_flags <span class="token operator">&amp;</span> <span class="token punctuation">(</span>VM_READ <span class="token operator">|</span> VM_EXEC<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+        <span class="token punctuation">{</span>
+            <span class="token function">cprintf</span><span class="token punctuation">(</span><span class="token string">"do_pgfault failed: error code flag = read AND not present, but the addr's vma cannot read or exec\n"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token keyword">goto</span> failed<span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+    <span class="token punctuation">}</span>
+    <span class="token comment">/* IF (write an existed addr ) OR
+     *    (write an non_existed addr &amp;&amp; addr is writable) OR
+     *    (read  an non_existed addr &amp;&amp; addr is readable)
+     * THEN
+     *    continue process
+     */</span>
+    <span class="token comment">// 检查完权限，下面正式处理</span>
+
+    <span class="token comment">// 设置页表条目所对应的权限</span>
+    <span class="token class-name">uint32_t</span> perm <span class="token operator">=</span> PTE_U<span class="token punctuation">;</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>vma<span class="token operator">-&gt;</span>vm_flags <span class="token operator">&amp;</span> VM_WRITE<span class="token punctuation">)</span>
+    <span class="token punctuation">{</span>
+        perm <span class="token operator">|=</span> PTE_W<span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+    <span class="token comment">// 内存对齐</span>
+    addr <span class="token operator">=</span> <span class="token function">ROUNDDOWN</span><span class="token punctuation">(</span>addr<span class="token punctuation">,</span> PGSIZE<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    ret <span class="token operator">=</span> <span class="token operator">-</span>E_NO_MEM<span class="token punctuation">;</span>
+    <span class="token class-name">pte_t</span> <span class="token operator">*</span>ptep <span class="token operator">=</span> <span class="token constant">NULL</span><span class="token punctuation">;</span>
+    <span class="token comment">/*LAB3 EXERCISE 1: YOUR CODE
+     * Maybe you want help comment, BELOW comments can help you finish the code
+     *
+     * Some Useful MACROs and DEFINEs, you can use them in below implementation.
+     * MACROs or Functions:
+     *   get_pte : get an pte and return the kernel virtual address of this pte for la
+     *             if the PT contians this pte didn't exist, alloc a page for PT (notice the 3th parameter '1')
+     *   pgdir_alloc_page : call alloc_page &amp; page_insert functions to allocate a page size memory &amp; setup
+     *             an addr map pa&lt;---&gt;la with linear address la and the PDT pgdir
+     * DEFINES:
+     *   VM_WRITE  : If vma-&gt;vm_flags &amp; VM_WRITE == 1/0, then the vma is writable/non writable
+     *   PTE_W           0x002                   // page table/directory entry flags bit : Writeable
+     *   PTE_U           0x004                   // page table/directory entry flags bit : User can access
+     * VARIABLES:
+     *   mm-&gt;pgdir : the PDT of these vma
+     *
+     */</span>
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">if</span> <span class="token expression"><span class="token number">1</span></span></span>
+
+    <span class="token comment">/*LAB3 EXERCISE 1: YOUR CODE*/</span>
+    <span class="token comment">// 先尝试获取pte，如果不存在，get_pte会自动创建一个pte表项</span>
+    ptep <span class="token operator">=</span> <span class="token function">get_pte</span><span class="token punctuation">(</span>mm<span class="token operator">-&gt;</span>pgdir<span class="token punctuation">,</span> addr<span class="token punctuation">,</span> <span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token comment">//(1) try to find a pte, if pte's PT(Page Table) isn't existed, then create a PT.</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>ptep <span class="token operator">==</span> <span class="token constant">NULL</span><span class="token punctuation">)</span>
+    <span class="token punctuation">{</span>
+        <span class="token keyword">goto</span> failed<span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+    <span class="token comment">// 如果这个表项对应的物理地址不存在，那么就需要分配一个物理页</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">*</span>ptep <span class="token operator">==</span> <span class="token number">0</span><span class="token punctuation">)</span>
+    <span class="token punctuation">{</span>
+        <span class="token comment">// 分配一个物理页，并让虚拟地址addr映射到这个物理页</span>
+        <span class="token comment">// 就是让之前分配的pte表项指向这个物理页</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token function">pgdir_alloc_page</span><span class="token punctuation">(</span>mm<span class="token operator">-&gt;</span>pgdir<span class="token punctuation">,</span> addr<span class="token punctuation">,</span> perm<span class="token punctuation">)</span> <span class="token operator">==</span> <span class="token constant">NULL</span><span class="token punctuation">)</span>
+            <span class="token keyword">goto</span> failed<span class="token punctuation">;</span>
+        <span class="token comment">//(2) if the phy addr isn't exist, then alloc a page &amp; map the phy addr with logical addr</span>
+    <span class="token punctuation">}</span>
+    <span class="token keyword">else</span>
+    <span class="token comment">// 如果PTE存在，说明该页被置换到外存，需要换回来</span>
+    <span class="token punctuation">{</span>
+        <span class="token comment">/*LAB3 EXERCISE 2: YOUR CODE
+         * Now we think this pte is a  swap entry, we should load data from disk to a page with phy addr,
+         * and map the phy addr with logical addr, trigger swap manager to record the access situation of this page.
+         *
+         *  Some Useful MACROs and DEFINEs, you can use them in below implementation.
+         *  MACROs or Functions:
+         *    swap_in(mm, addr, &amp;page) : alloc a memory page, then according to the swap entry in PTE for addr,
+         *                               find the addr of disk page, read the content of disk page into this memroy page
+         *    page_insert ： build the map of phy addr of an Page with the linear addr la
+         *    swap_map_swappable ： set the page swappable
+         */</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span>swap_init_ok<span class="token punctuation">)</span>
+        <span class="token punctuation">{</span>
+            <span class="token keyword">struct</span> <span class="token class-name">Page</span> <span class="token operator">*</span>page <span class="token operator">=</span> <span class="token constant">NULL</span><span class="token punctuation">;</span>
+            <span class="token comment">// 先把目标地址加载到内存page页上</span>
+            ret <span class="token operator">=</span> <span class="token function">swap_in</span><span class="token punctuation">(</span>mm<span class="token punctuation">,</span> addr<span class="token punctuation">,</span> <span class="token operator">&amp;</span>page<span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token keyword">if</span> <span class="token punctuation">(</span>ret <span class="token operator">!=</span> <span class="token number">0</span><span class="token punctuation">)</span>
+            <span class="token punctuation">{</span>
+                <span class="token keyword">goto</span> failed<span class="token punctuation">;</span>
+            <span class="token punctuation">}</span>
+
+            <span class="token comment">// 然后把page页映射到虚拟地址addr上，权限为perm</span>
+            ret <span class="token operator">=</span> <span class="token function">page_insert</span><span class="token punctuation">(</span>mm<span class="token operator">-&gt;</span>pgdir<span class="token punctuation">,</span> page<span class="token punctuation">,</span> addr<span class="token punctuation">,</span> perm<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+            <span class="token comment">// 最后把page页设置为可交换的</span>
+            <span class="token function">swap_map_swappable</span><span class="token punctuation">(</span>mm<span class="token punctuation">,</span> addr<span class="token punctuation">,</span> page<span class="token punctuation">,</span> <span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+            <span class="token comment">// 然后设置一下page页的虚拟地址</span>
+            page<span class="token operator">-&gt;</span>pra_vaddr <span class="token operator">=</span> addr<span class="token punctuation">;</span>
+            <span class="token comment">//(1）According to the mm AND addr, try to load the content of right disk page</span>
+            <span class="token comment">//    into the memory which page managed.</span>
+            <span class="token comment">//(2) According to the mm, addr AND page, setup the map of phy addr &lt;---&gt; logical addr</span>
+            <span class="token comment">//(3) make the page swappable.</span>
+        <span class="token punctuation">}</span>
+        <span class="token keyword">else</span>
+
+        <span class="token punctuation">{</span>
+            <span class="token function">cprintf</span><span class="token punctuation">(</span><span class="token string">"no swap_init_ok but ptep is %x, failed\n"</span><span class="token punctuation">,</span> <span class="token operator">*</span>ptep<span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token keyword">goto</span> failed<span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+    <span class="token punctuation">}</span>
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">endif</span></span>
+    ret <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span>
+failed<span class="token operator">:</span>
+    <span class="token keyword">return</span> ret<span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <p>这个函数就是处理缺页中断的函数，它做的事情很简单：</p>
 <ul>
 <li>检查访问是否合法(vma、权限)</li>
@@ -468,7 +640,43 @@ vma_struct 描述了 进程中的一小部分虚拟内存空间</strong></p>
 <li>如果PTE存在，那么说明物理页面之前被换出去了，那么再调用页面置换算法换回来</li>
 </ul>
 <p>然后实现一下FIFO页面置换算法，主要是实现<code>kern/mm/swap_fifo.c</code>中完成map_swappable和swap_out_victim函数。</p>
-<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br></pre></td><td class="code"><pre><code class="hljs c"><br><span class="hljs-type">static</span> <span class="hljs-type">int</span> _fifo_map_swappable(<span class="hljs-keyword">struct</span> mm_struct *mm, <span class="hljs-type">uintptr_t</span> addr, <span class="hljs-keyword">struct</span> Page *page, <span class="hljs-type">int</span> swap_in)<br>{<br>    <span class="hljs-type">list_entry_t</span> *head = (<span class="hljs-type">list_entry_t</span> *)mm-&gt;sm_priv;<br>    <span class="hljs-type">list_entry_t</span> *entry = &amp;(page-&gt;pra_page_link);<br><br>    assert(entry != <span class="hljs-literal">NULL</span> &amp;&amp; head != <span class="hljs-literal">NULL</span>);<br>    <span class="hljs-comment">// record the page access situlation</span><br>    <span class="hljs-comment">/*LAB3 EXERCISE 2: YOUR CODE*/</span><br>    <span class="hljs-comment">// 就是将这一页加入到链表头中(最近访问过的放前面) 使其可以被置换算法使用到</span><br>    list_add(head, entry);<br>    <span class="hljs-comment">//(1)link the most recent arrival page at the back of the pra_list_head qeueue.</span><br>    <span class="hljs-keyword">return</span> <span class="hljs-number">0</span>;<br>}<br><span class="hljs-comment">/*</span><br><span class="hljs-comment"> *  (4)_fifo_swap_out_victim: According FIFO PRA, we should unlink the  earliest arrival page in front of pra_list_head qeueue,</span><br><span class="hljs-comment"> *                            then set the addr of addr of this page to ptr_page.</span><br><span class="hljs-comment"> */</span><br><span class="hljs-comment">// 选择页面置换出去</span><br><span class="hljs-type">static</span> <span class="hljs-type">int</span> _fifo_swap_out_victim(<span class="hljs-keyword">struct</span> mm_struct *mm, <span class="hljs-keyword">struct</span> Page **ptr_page, <span class="hljs-type">int</span> in_tick)<br>{<br>    <span class="hljs-type">list_entry_t</span> *head = (<span class="hljs-type">list_entry_t</span> *)mm-&gt;sm_priv;<br>    assert(head != <span class="hljs-literal">NULL</span>);<br>    assert(in_tick == <span class="hljs-number">0</span>);<br>    <span class="hljs-comment">/* Select the victim */</span><br>    <span class="hljs-comment">/*LAB3 EXERCISE 2: YOUR CODE*/</span><br>    <span class="hljs-comment">// 选择最早的页面作为置换出去的页面</span><br>    <span class="hljs-type">list_entry_t</span> *victim = head-&gt;prev;<br>    <span class="hljs-comment">// 查找到该页面的链表项</span><br>    *ptr_page = le2page(victim, pra_page_link);<br>    <span class="hljs-comment">// 将该页面从链表中删除</span><br>    list_del(victim);<br>    <span class="hljs-comment">//(1)  unlink the  earliest arrival page in front of pra_list_head qeueue</span><br>    <span class="hljs-comment">//(2)  set the addr of addr of this page to ptr_page</span><br>    <span class="hljs-keyword">return</span> <span class="hljs-number">0</span>;<br>}<br><br></code></pre></td></tr></table></figure>
+<pre class="line-numbers language-c" data-language="c"><code class="language-c">
+<span class="token keyword">static</span> <span class="token keyword">int</span> <span class="token function">_fifo_map_swappable</span><span class="token punctuation">(</span><span class="token keyword">struct</span> <span class="token class-name">mm_struct</span> <span class="token operator">*</span>mm<span class="token punctuation">,</span> <span class="token class-name">uintptr_t</span> addr<span class="token punctuation">,</span> <span class="token keyword">struct</span> <span class="token class-name">Page</span> <span class="token operator">*</span>page<span class="token punctuation">,</span> <span class="token keyword">int</span> swap_in<span class="token punctuation">)</span>
+<span class="token punctuation">{</span>
+    <span class="token class-name">list_entry_t</span> <span class="token operator">*</span>head <span class="token operator">=</span> <span class="token punctuation">(</span><span class="token class-name">list_entry_t</span> <span class="token operator">*</span><span class="token punctuation">)</span>mm<span class="token operator">-&gt;</span>sm_priv<span class="token punctuation">;</span>
+    <span class="token class-name">list_entry_t</span> <span class="token operator">*</span>entry <span class="token operator">=</span> <span class="token operator">&amp;</span><span class="token punctuation">(</span>page<span class="token operator">-&gt;</span>pra_page_link<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token function">assert</span><span class="token punctuation">(</span>entry <span class="token operator">!=</span> <span class="token constant">NULL</span> <span class="token operator">&amp;&amp;</span> head <span class="token operator">!=</span> <span class="token constant">NULL</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token comment">// record the page access situlation</span>
+    <span class="token comment">/*LAB3 EXERCISE 2: YOUR CODE*/</span>
+    <span class="token comment">// 就是将这一页加入到链表头中(最近访问过的放前面) 使其可以被置换算法使用到</span>
+    <span class="token function">list_add</span><span class="token punctuation">(</span>head<span class="token punctuation">,</span> entry<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token comment">//(1)link the most recent arrival page at the back of the pra_list_head qeueue.</span>
+    <span class="token keyword">return</span> <span class="token number">0</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+<span class="token comment">/*
+ *  (4)_fifo_swap_out_victim: According FIFO PRA, we should unlink the  earliest arrival page in front of pra_list_head qeueue,
+ *                            then set the addr of addr of this page to ptr_page.
+ */</span>
+<span class="token comment">// 选择页面置换出去</span>
+<span class="token keyword">static</span> <span class="token keyword">int</span> <span class="token function">_fifo_swap_out_victim</span><span class="token punctuation">(</span><span class="token keyword">struct</span> <span class="token class-name">mm_struct</span> <span class="token operator">*</span>mm<span class="token punctuation">,</span> <span class="token keyword">struct</span> <span class="token class-name">Page</span> <span class="token operator">*</span><span class="token operator">*</span>ptr_page<span class="token punctuation">,</span> <span class="token keyword">int</span> in_tick<span class="token punctuation">)</span>
+<span class="token punctuation">{</span>
+    <span class="token class-name">list_entry_t</span> <span class="token operator">*</span>head <span class="token operator">=</span> <span class="token punctuation">(</span><span class="token class-name">list_entry_t</span> <span class="token operator">*</span><span class="token punctuation">)</span>mm<span class="token operator">-&gt;</span>sm_priv<span class="token punctuation">;</span>
+    <span class="token function">assert</span><span class="token punctuation">(</span>head <span class="token operator">!=</span> <span class="token constant">NULL</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token function">assert</span><span class="token punctuation">(</span>in_tick <span class="token operator">==</span> <span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token comment">/* Select the victim */</span>
+    <span class="token comment">/*LAB3 EXERCISE 2: YOUR CODE*/</span>
+    <span class="token comment">// 选择最早的页面作为置换出去的页面</span>
+    <span class="token class-name">list_entry_t</span> <span class="token operator">*</span>victim <span class="token operator">=</span> head<span class="token operator">-&gt;</span>prev<span class="token punctuation">;</span>
+    <span class="token comment">// 查找到该页面的链表项</span>
+    <span class="token operator">*</span>ptr_page <span class="token operator">=</span> <span class="token function">le2page</span><span class="token punctuation">(</span>victim<span class="token punctuation">,</span> pra_page_link<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token comment">// 将该页面从链表中删除</span>
+    <span class="token function">list_del</span><span class="token punctuation">(</span>victim<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token comment">//(1)  unlink the  earliest arrival page in front of pra_list_head qeueue</span>
+    <span class="token comment">//(2)  set the addr of addr of this page to ptr_page</span>
+    <span class="token keyword">return</span> <span class="token number">0</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <p>由于mm_struct中维护了访问的页面的顺序，所以通过其可以轻松的找出需要置换的页面并删除。</p>
 <h3 id="x02-总结">0X02 总结</h3>
 <p>通过这个lab3，我们学习了以下内容:</p>
@@ -477,330 +685,245 @@ vma_struct 描述了 进程中的一小部分虚拟内存空间</strong></p>
 <li>使用FIFO算法实现页面置换</li>
 </ul>
 
-                
-              </div>
-            
-            <hr/>
-            <div>
-              <div class="post-metas my-3">
-  
-    <div class="post-meta mr-3 d-flex align-items-center">
-      <i class="iconfont icon-category"></i>
-      
+    </div>
 
-<span class="category-chains">
-  
-  
     
-      <span class="category-chain">
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/ucore%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/" rel="tag"># ucore操作系统</a>
+          </div>
+
         
-  <a href="/categories/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/" class="category-chain-item">操作系统</a>
-  
-  
 
-      </span>
-    
-  
-</span>
 
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2023/01/16/%E4%BB%8Eucore%E6%9D%A5%E6%80%BB%E7%BB%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-2/" rel="prev" title="从ucore来总结操作系统(2)----物理内存、虚拟内存、转换">
+      <i class="fa fa-chevron-left"></i> 从ucore来总结操作系统(2)----物理内存、虚拟内存、转换
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2023/01/20/%E4%BB%8Eucore%E6%9D%A5%E6%80%BB%E7%BB%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-4/" rel="next" title="从ucore来总结操作系统(4)----内核线程">
+      从ucore来总结操作系统(4)----内核线程 <i class="fa fa-chevron-right"></i>
+    </a></div>
     </div>
-  
-  
-    <div class="post-meta">
-      <i class="iconfont icon-tags"></i>
-      
-        <a href="/tags/ucore%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/">#ucore操作系统</a>
-      
-    </div>
-  
-</div>
-
-
-              
-
-              
-                <div class="post-prevnext my-3">
-                  <article class="post-prev col-6">
-                    
-                    
-                      <a href="/2023/01/20/%E4%BB%8Eucore%E6%9D%A5%E6%80%BB%E7%BB%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-4/" title="从ucore来总结操作系统(4)----内核线程">
-                        <i class="iconfont icon-arrowleft"></i>
-                        <span class="hidden-mobile">从ucore来总结操作系统(4)----内核线程</span>
-                        <span class="visible-mobile">Previous</span>
-                      </a>
-                    
-                  </article>
-                  <article class="post-next col-6">
-                    
-                    
-                      <a href="/2023/01/16/%E4%BB%8Eucore%E6%9D%A5%E6%80%BB%E7%BB%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-2/" title="从ucore来总结操作系统(2)----物理内存、虚拟内存、转换">
-                        <span class="hidden-mobile">从ucore来总结操作系统(2)----物理内存、虚拟内存、转换</span>
-                        <span class="visible-mobile">Next</span>
-                        <i class="iconfont icon-arrowright"></i>
-                      </a>
-                    
-                  </article>
-                </div>
-              
-            </div>
-
-            
-  <article id="comments" lazyload>
+      </footer>
     
-  <div id="waline"></div>
-  <script type="text/javascript">
-    Fluid.utils.loadComments('#waline', function() {
-      Fluid.utils.createCssLink('https://lib.baomitu.com/waline/2.5.1/waline.min.css')
-      Fluid.utils.createScript('https://lib.baomitu.com/waline/2.5.1/waline.min.js', function() {
-        var options = Object.assign(
-          {"serverURL":"https://waline-tau.vercel.app/","path":"window.location.pathname","meta":["nick","mail","link"],"requiredMeta":["nick"],"lang":"zh-CN","emoji":["https://emoji.shojo.cn/bili/src/大航海嘉然","https://emoji.shojo.cn/bili/src/永雏塔菲","https://emoji.shojo.cn/bili/src/東雪蓮","https://unpkg.com/@waline/emojis@1.1.0/tieba","https://emoji.shojo.cn/bili/src/嘉然今天吃什么","https://emoji.shojo.cn/bili/src/小黄脸"],"dark":"html[data-user-color-scheme=\"dark\"]","wordLimit":0,"pageSize":10},
-          {
-            el: '#waline',
-            path: window.location.pathname
-          }
-        )
-        Waline.init(options);
-        Fluid.utils.waitElementVisible('#waline .vcontent', () => {
-          var imgSelector = '#waline .vcontent img:not(.vemoji)';
-          Fluid.plugins.imageCaption(imgSelector);
-          Fluid.plugins.fancyBox(imgSelector);
-        })
-      });
-    });
-  </script>
-  <noscript>Please enable JavaScript to view the comments</noscript>
-
-
   </article>
-
-
-          </article>
-        </div>
-      </div>
-    </div>
-
-    <div class="side-col d-none d-lg-block col-lg-2">
-      
-  <aside class="sidebar" style="margin-left: -1rem">
-    <div id="toc">
-  <p class="toc-header"><i class="iconfont icon-list"></i>&nbsp;Table of Contents</p>
-  <div class="toc-body" id="toc-body"></div>
-</div>
-
-
-
-  </aside>
-
-
-    </div>
-  </div>
-</div>
-
-
-
-
-
-  
-
-
-
-  
-
-
-
-  
-
-
-
-  
-
-
-
-  
-
-
-
-
-
-
-
-    
-
-    
-      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
-        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
-      </a>
-    
-
-    
-      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
-     aria-hidden="true">
-  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
-    <div class="modal-content">
-      <div class="modal-header text-center">
-        <h4 class="modal-title w-100 font-weight-bold">Search</h4>
-        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
-          <span aria-hidden="true">&times;</span>
-        </button>
-      </div>
-      <div class="modal-body mx-3">
-        <div class="md-form mb-5">
-          <input type="text" id="local-search-input" class="form-control validate">
-          <label data-error="x" data-success="v" for="local-search-input">Keyword</label>
-        </div>
-        <div class="list-group" id="local-search-result"></div>
-      </div>
-    </div>
-  </div>
-</div>
-
-    
-
-    
-  </main>
-
-  <footer>
-    <div class="footer-inner">
-  
-    <div class="footer-content">
-       <a href="https://github.com/staskaer" target="_blank" rel="nofollow noopener"><span>Staskaer</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
-    </div>
   
   
   
-  
-</div>
-
-  </footer>
-
-  <!-- Scripts -->
-  
-  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
-  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
-
-  <script>
-    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
-    NProgress.start()
-    window.addEventListener('load', function() {
-      NProgress.done();
-    })
-  </script>
 
 
-<script  src="https://lib.baomitu.com/jquery/3.6.0/jquery.min.js" ></script>
-<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
-<script  src="/js/events.js" ></script>
-<script  src="/js/plugins.js" ></script>
 
+          </div>
+          
+    <div class="comments" id="valine-comments"></div>
 
-  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
-  <script>
-    (function (window, document) {
-      var typing = Fluid.plugins.typing;
-      var subtitle = document.getElementById('subtitle');
-      if (!subtitle || !typing) {
-        return;
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
       }
-      var text = subtitle.getAttribute('data-typed-text');
-      
-        typing(text);
-      
-    })(window, document);
-  </script>
-
-
-
-
-  
-    <script  src="/js/img-lazyload.js" ></script>
-  
-
-
-
-
-  
-<script>
-  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.18.2/tocbot.min.js', function() {
-    var toc = jQuery('#toc');
-    if (toc.length === 0 || !window.tocbot) { return; }
-    var boardCtn = jQuery('#board-ctn');
-    var boardTop = boardCtn.offset().top;
-
-    window.tocbot.init({
-      tocSelector     : '#toc-body',
-      contentSelector : '.markdown-body',
-      headingSelector : CONFIG.toc.headingSelector || 'h1,h2,h3,h4,h5,h6',
-      linkClass       : 'tocbot-link',
-      activeLinkClass : 'tocbot-active-link',
-      listClass       : 'tocbot-list',
-      isCollapsedClass: 'tocbot-is-collapsed',
-      collapsibleClass: 'tocbot-is-collapsible',
-      collapseDepth   : CONFIG.toc.collapseDepth || 0,
-      scrollSmooth    : true,
-      headingsOffset  : -boardTop
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
     });
-    if (toc.find('.toc-list-item').length > 0) {
-      toc.css('visibility', 'visible');
-    }
-  });
+  }
 </script>
 
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
 
-  <script src=https://lib.baomitu.com/clipboard.js/2.0.10/clipboard.min.js></script>
+  <aside class="sidebar">
+    <div class="sidebar-inner">
 
-  <script>Fluid.plugins.codeWidget();</script>
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%A1%B5%E9%9D%A2%E7%BD%AE%E6%8D%A2%E4%B8%8Epage-fault"><span class="nav-number">1.</span> <span class="nav-text">页面置换与Page Fault</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#x00-%E7%8E%AF%E5%A2%83%E5%87%86%E5%A4%87"><span class="nav-number">1.1.</span> <span class="nav-text">0X00 环境准备</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#x01-%E7%BC%BA%E9%A1%B5%E4%B8%AD%E6%96%AD%E5%86%99%E6%97%B6%E5%88%9B%E5%BB%BA%E5%92%8C%E9%A1%B5%E9%9D%A2%E7%BD%AE%E6%8D%A2%E7%AE%97%E6%B3%95"><span class="nav-number">1.2.</span> <span class="nav-text">0X01
+缺页中断、写时创建和页面置换算法</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#x02-%E6%80%BB%E7%BB%93"><span class="nav-number">1.3.</span> <span class="nav-text">0X02 总结</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Staskaer"
+      src="/imgs/theme_pic/head_img.png">
+  <p class="site-author-name" itemprop="name">Staskaer</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">63</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">10</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">18</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/Staskaer" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;Staskaer" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:liujiaxin011121@gmail.com" title="E-Mail → mailto:liujiaxin011121@gmail.com" rel="noopener" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2023</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Staskaer</span>
+</div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
 
 
   
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+
 <script>
-  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/4.3.1/anchor.min.js', function() {
-    window.anchors.options = {
-      placement: CONFIG.anchorjs.placement,
-      visible  : CONFIG.anchorjs.visible
-    };
-    if (CONFIG.anchorjs.icon) {
-      window.anchors.options.icon = CONFIG.anchorjs.icon;
-    }
-    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
-    var res = [];
-    for (var item of el) {
-      res.push('.markdown-body > ' + item.trim());
-    }
-    if (CONFIG.anchorjs.placement === 'left') {
-      window.anchors.options.class = 'anchorjs-link-left';
-    }
-    window.anchors.add(res.join(', '));
-  });
+NexT.utils.loadComments(document.querySelector('#valine-comments'), () => {
+  NexT.utils.getScript('https://cdn.jsdelivr.net/npm/valine@1.5.1/dist/Valine.min.js', () => {
+    var GUEST = ['nick', 'mail', 'link'];
+    var guest = 'nick,mail,link';
+    guest = guest.split(',').filter(item => {
+      return GUEST.includes(item);
+    });
+    new Valine({
+      el         : '#valine-comments',
+      verify     : false,
+      notify     : false,
+      appId      : 'xH8NDrh9u4SQrUpQOd0lICnX-MdYXbMMI',
+      appKey     : 'jl3JjPS4jsosZG29Zv24Y7LE',
+      placeholder: "Just go go",
+      avatar     : 'mm',
+      meta       : guest,
+      pageSize   : '10' || 10,
+      visitor    : false,
+      lang       : 'zh-Hans' || 'zh-cn',
+      path       : location.pathname,
+      recordIP   : false,
+      serverURLs : ''
+    });
+  }, window.Valine);
+});
 </script>
 
-
-  
-<script>
-  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
-    Fluid.plugins.fancyBox();
-  });
-</script>
-
-
-  <script>Fluid.plugins.imageCaption();</script>
-
-  <script defer src="/js/leancloud.js" ></script>
-
-  <script  src="/js/local-search.js" ></script>
-
-
-
-
-
-<!-- 主题的启动项，将它保持在最底部 -->
-<!-- the boot of the theme, keep it at the bottom -->
-<script  src="/js/boot.js" ></script>
-
-
-  
-
-  <noscript>
-    <div class="noscript-warning">Blog works best with JavaScript enabled</div>
-  </noscript>
 </body>
 </html>
+

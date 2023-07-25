@@ -1,108 +1,86 @@
-
-
 <!DOCTYPE html>
-<html lang="en" data-default-color-scheme=auto>
-
-
-
+<html lang="en">
 <head>
   <meta charset="UTF-8">
-  <link rel="apple-touch-icon" sizes="76x76" href="/imgs/theme_pic/staskaer.png">
-  <link rel="icon" href="/imgs/theme_pic/staskaer.png">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
-  <meta http-equiv="x-ua-compatible" content="ie=edge">
-  
-  <meta name="theme-color" content="#2f4154">
-  <meta name="author" content="Staskaer">
-  <meta name="keywords" content="">
-  
-    <meta name="description" content="Recover">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 6.2.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/imgs/theme_pic/staskaer.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/imgs/theme_pic/staskaer.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/imgs/theme_pic/staskaer.png">
+  <link rel="mask-icon" href="/imgs/theme_pic/staskaer.png" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Gemini","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"flat"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"valine","storage":true,"lazyload":false,"nav":null,"activeClass":"valine"},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="Recover">
 <meta property="og:type" content="article">
 <meta property="og:title" content="levelDB源码剖析(17)--Recover">
 <meta property="og:url" content="http://example.com/2022/12/23/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-17/index.html">
 <meta property="og:site_name" content="Staskaer">
 <meta property="og:description" content="Recover">
 <meta property="og:locale" content="en_US">
-<meta property="og:image" content="http://example.com/imgs/post_index_img/leveldb17.jpg">
+<meta property="og:image" content="http://example.com/2022/12/23/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-17/pic1.jpg">
 <meta property="article:published_time" content="2022-12-23T03:17:59.000Z">
 <meta property="article:modified_time" content="2022-12-23T12:52:58.211Z">
 <meta property="article:author" content="Staskaer">
 <meta property="article:tag" content="C++">
 <meta property="article:tag" content="levelDB">
-<meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:image" content="http://example.com/imgs/post_index_img/leveldb17.jpg">
-  
-  
-  
-  <title>levelDB源码剖析(17)--Recover - Staskaer</title>
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://example.com/2022/12/23/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-17/pic1.jpg">
 
-  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+<link rel="canonical" href="http://example.com/2022/12/23/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-17/">
 
 
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'en'
+  };
+</script>
 
-  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
-
-  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
-
-  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
-
-
-
-<!-- 主题依赖的图标库，不要自行修改 -->
-<!-- Do not modify the link that theme dependent icons -->
-
-<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_hj8rtnfg7um.css">
-
-
-
-<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_lbnruvf0jn.css">
-
-
-<link  rel="stylesheet" href="/css/main.css" />
-
-
-  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
-  
-    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  <title>levelDB源码剖析(17)--Recover | Staskaer</title>
   
 
 
 
 
-  <script id="fluid-configs">
-    var Fluid = window.Fluid || {};
-    Fluid.ctx = Object.assign({}, Fluid.ctx)
-    var CONFIG = {"hostname":"example.com","root":"/","version":"1.9.2","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":true,"follow_dnt":false,"baidu":null,"google":null,"gtag":null,"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":"xH8NDrh9u4SQrUpQOd0lICnX-MdYXbMMI","app_key":"jl3JjPS4jsosZG29Zv24Y7LE","server_url":null,"path":"window.location.pathname","ignore_local":false}},"search_path":"/local-search.xml"};
-
-    if (CONFIG.web_analytics.follow_dnt) {
-      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
-      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
-    }
-  </script>
-  <script  src="/js/utils.js" ></script>
-  <script  src="/js/color-schema.js" ></script>
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-    
-  
 
 
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
 
-  
-<meta name="generator" content="Hexo 6.2.0"><style>mjx-container[jax="SVG"] {
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+<style>mjx-container[jax="SVG"] {
   direction: ltr;
 }
 
@@ -216,216 +194,184 @@ mjx-container[display="true"] + br {
 }
 </style></head>
 
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
 
-<body>
-  
-
-  <header>
-    
-
-<div class="header-inner" style="height: 70vh;">
-  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
-  <div class="container">
-    <a class="navbar-brand" href="/">
-      <strong>Staskaer</strong>
-    </a>
-
-    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
-            data-target="#navbarSupportedContent"
-            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
-      <div class="animated-icon"><span></span><span></span><span></span></div>
-    </button>
-
-    <!-- Collapsible content -->
-    <div class="collapse navbar-collapse" id="navbarSupportedContent">
-      <ul class="navbar-nav ml-auto text-center">
-        
-          
-          
-          
-          
-            <li class="nav-item">
-              <a class="nav-link" href="/">
-                <i class="iconfont icon-home-fill"></i>
-                Home
-              </a>
-            </li>
-          
-        
-          
-          
-          
-          
-            <li class="nav-item">
-              <a class="nav-link" href="/archives/">
-                <i class="iconfont icon-archive-fill"></i>
-                Archives
-              </a>
-            </li>
-          
-        
-          
-          
-          
-          
-            <li class="nav-item">
-              <a class="nav-link" href="/categories/">
-                <i class="iconfont icon-category-fill"></i>
-                Categories
-              </a>
-            </li>
-          
-        
-          
-          
-          
-          
-            <li class="nav-item">
-              <a class="nav-link" href="/tags/">
-                <i class="iconfont icon-tags-fill"></i>
-                Tags
-              </a>
-            </li>
-          
-        
-          
-          
-          
-          
-            <li class="nav-item">
-              <a class="nav-link" href="/about/">
-                <i class="iconfont icon-user-fill"></i>
-                About
-              </a>
-            </li>
-          
-        
-          
-          
-          
-          
-            <li class="nav-item">
-              <a class="nav-link" href="/links/">
-                <i class="iconfont icon-link-fill"></i>
-                Links
-              </a>
-            </li>
-          
-        
-        
-          <li class="nav-item" id="search-btn">
-            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
-              &nbsp;<i class="iconfont icon-search"></i>&nbsp;
-            </a>
-          </li>
-          
-        
-        
-          <li class="nav-item" id="color-toggle-btn">
-            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">&nbsp;<i
-                class="iconfont icon-dark" id="color-toggle-icon"></i>&nbsp;</a>
-          </li>
-        
-      </ul>
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
     </div>
   </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Staskaer</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">Hi, this is Staskaer</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
 </nav>
 
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="Searching..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2022/12/23/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-17/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/imgs/theme_pic/head_img.png">
+      <meta itemprop="name" content="Staskaer">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Staskaer">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          levelDB源码剖析(17)--Recover
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              
+
+              <time title="Created: 2022-12-23 11:17:59 / Modified: 20:52:58" itemprop="dateCreated datePublished" datetime="2022-12-23T11:17:59+08:00">2022-12-23</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/" itemprop="url" rel="index"><span itemprop="name">levelDB源码剖析</span></a>
+                </span>
+            </span>
+
+          
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Valine: </span>
+    
+    <a title="valine" href="/2022/12/23/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-17/#valine-comments" itemprop="discussionUrl">
+      <span class="post-comments-count valine-comment-count" data-xid="/2022/12/23/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-17/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
   
 
-<div id="banner" class="banner" parallax=true
-     style="background: url('/imgs/post_index_img/leveldb17.jpg') no-repeat center center; background-size: cover;">
-  <div class="full-bg-img">
-    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
-      <div class="banner-text text-center fade-in-up">
-        <div class="h2">
-          
-            <span id="subtitle" data-typed-text="levelDB源码剖析，剖析源码，掌握技术"></span>
-          
         </div>
-
-        
-          
-  <div class="mt-3">
-    
-    
-      <span class="post-meta">
-        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
-        <time datetime="2022-12-23 11:17" pubdate>
-          December 23, 2022 am
-        </time>
-      </span>
-    
-  </div>
-
-  <div class="mt-1">
-    
-      <span class="post-meta mr-2">
-        <i class="iconfont icon-chart"></i>
-        
-          6.4k words
-        
-      </span>
-    
-
-    
-      <span class="post-meta mr-2">
-        <i class="iconfont icon-clock-fill"></i>
-        
-        
-        
-          27 mins
-        
-      </span>
-    
+      </header>
 
     
     
-      
-        <span id="leancloud-page-views-container" class="post-meta" style="display: none">
-          <i class="iconfont icon-eye" aria-hidden="true"></i>
-          <span id="leancloud-page-views"></span> views
-        </span>
-        
-      
     
-  </div>
-
-
-        
-      </div>
+    <div class="post-body" itemprop="articleBody">
 
       
-    </div>
-  </div>
-</div>
-
-</div>
-
-  </header>
-
-  <main>
-    
-      
-
-<div class="container-fluid nopadding-x">
-  <div class="row nomargin-x">
-    <div class="side-col d-none d-lg-block col-lg-2">
-      
-
-    </div>
-
-    <div class="col-lg-8 nopadding-x-md">
-      <div class="container nopadding-x-md" id="board-ctn">
-        <div id="board">
-          <article class="post-content mx-auto">
-            <!-- SEO header -->
-            <h1 style="display: none">levelDB源码剖析，剖析源码，掌握技术</h1>
-            
-            
-              <div class="markdown-body">
-                
-                <h2 id="recover">Recover</h2>
+        <h2 id="recover">Recover</h2>
 <span id="more"></span>
 <p>LevelDB打开需要做以下事情：</p>
 <ul>
@@ -436,7 +382,7 @@ mjx-container[display="true"] + br {
 MemTable写入到SSTable未完成，那么需要做数据恢复，从WAL恢复数据</li>
 <li>创建数据库相关的内存数据结构，如Version、VersionSet等</li>
 </ul>
-<img src="/2022/12/23/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-17/pic1.jpg" srcset="/img/loading.gif" lazyload class="">
+<img src="/2022/12/23/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-17/pic1.jpg" class="">
 <p>打开数据库的接口是DB::Open，在其中调用DBImpl::Recover来完成主要的工作，如果调用成功，则创建MemTable和WAL相关的数据结构，重写MANIFEST文件。</p>
 <p>而DBImpl::Recover做了以下事情：</p>
 <ul>
@@ -446,9 +392,224 @@ MemTable写入到SSTable未完成，那么需要做数据恢复，从WAL恢复�
 <li>调用VersionSet::Recover来读取MANIFEST，恢复版本信息</li>
 <li>根据版本信息，搜索数据库目录，找到关闭时没有写入到SSTable的日志，按日志写入顺序逐个恢复日志数据。DBImpl::RecoverLogFile会创建一个MemTable，开始读取日志信息，将日志的数据插入到MemTable，并根据需要调用DBImpl::WriteLevel0Table将MemTable写入到SSTable中，这里不过多介绍</li>
 </ul>
-<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br><span class="line">144</span><br><span class="line">145</span><br><span class="line">146</span><br><span class="line">147</span><br><span class="line">148</span><br><span class="line">149</span><br><span class="line">150</span><br><span class="line">151</span><br><span class="line">152</span><br><span class="line">153</span><br><span class="line">154</span><br><span class="line">155</span><br><span class="line">156</span><br><span class="line">157</span><br><span class="line">158</span><br><span class="line">159</span><br><span class="line">160</span><br><span class="line">161</span><br><span class="line">162</span><br><span class="line">163</span><br><span class="line">164</span><br><span class="line">165</span><br><span class="line">166</span><br><span class="line">167</span><br><span class="line">168</span><br><span class="line">169</span><br><span class="line">170</span><br><span class="line">171</span><br></pre></td><td class="code"><pre><code class="hljs cpp"><br><span class="hljs-function">Status <span class="hljs-title">DB::Open</span><span class="hljs-params">(<span class="hljs-type">const</span> Options &amp;options, <span class="hljs-type">const</span> std::string &amp;dbname, DB **dbptr)</span></span><br><span class="hljs-function"></span>{<br>    *dbptr = <span class="hljs-literal">nullptr</span>;<br><br>    DBImpl *impl = <span class="hljs-keyword">new</span> <span class="hljs-built_in">DBImpl</span>(options, dbname);<br>    impl-&gt;mutex_.<span class="hljs-built_in">Lock</span>();<br>    VersionEdit edit;<br>    <span class="hljs-comment">// Recover handles create_if_missing, error_if_exists</span><br>    <span class="hljs-type">bool</span> save_manifest = <span class="hljs-literal">false</span>;<br>    Status s = impl-&gt;<span class="hljs-built_in">Recover</span>(&amp;edit, &amp;save_manifest);<br>    <span class="hljs-keyword">if</span> (s.<span class="hljs-built_in">ok</span>() &amp;&amp; impl-&gt;mem_ == <span class="hljs-literal">nullptr</span>)<br>    {<br>        <span class="hljs-comment">// Create new log and a corresponding memtable.</span><br>        <span class="hljs-comment">// 如果需要重写MANIFEST文件，那么做一个版本变更，这里面会创建一个新的MANIFEST</span><br>        <span class="hljs-comment">// 将当前的版本信息写入，然后将edit的内容写入。</span><br>        <span class="hljs-type">uint64_t</span> new_log_number = impl-&gt;versions_-&gt;<span class="hljs-built_in">NewFileNumber</span>();<br>        WritableFile *lfile;<br>        s = options.env-&gt;<span class="hljs-built_in">NewWritableFile</span>(<span class="hljs-built_in">LogFileName</span>(dbname, new_log_number),<br>                                         &amp;lfile);<br>        <span class="hljs-keyword">if</span> (s.<span class="hljs-built_in">ok</span>())<br>        {<br>            edit.<span class="hljs-built_in">SetLogNumber</span>(new_log_number);<br>            impl-&gt;logfile_ = lfile;<br>            impl-&gt;logfile_number_ = new_log_number;<br>            impl-&gt;log_ = <span class="hljs-keyword">new</span> log::<span class="hljs-built_in">Writer</span>(lfile);<br>            impl-&gt;mem_ = <span class="hljs-keyword">new</span> <span class="hljs-built_in">MemTable</span>(impl-&gt;internal_comparator_);<br>            impl-&gt;mem_-&gt;<span class="hljs-built_in">Ref</span>();<br>        }<br>    }<br>    <span class="hljs-keyword">if</span> (s.<span class="hljs-built_in">ok</span>() &amp;&amp; save_manifest)<br>    {<br>        edit.<span class="hljs-built_in">SetPrevLogNumber</span>(<span class="hljs-number">0</span>); <span class="hljs-comment">// No older logs needed after recovery.</span><br>        edit.<span class="hljs-built_in">SetLogNumber</span>(impl-&gt;logfile_number_);<br>        s = impl-&gt;versions_-&gt;<span class="hljs-built_in">LogAndApply</span>(&amp;edit, &amp;impl-&gt;mutex_);<br>    }<br>    <span class="hljs-keyword">if</span> (s.<span class="hljs-built_in">ok</span>())<br>    {<br>        impl-&gt;<span class="hljs-built_in">RemoveObsoleteFiles</span>();<br>        impl-&gt;<span class="hljs-built_in">MaybeScheduleCompaction</span>();<br>    }<br>    impl-&gt;mutex_.<span class="hljs-built_in">Unlock</span>();<br>    <span class="hljs-keyword">if</span> (s.<span class="hljs-built_in">ok</span>())<br>    {<br>        <span class="hljs-built_in">assert</span>(impl-&gt;mem_ != <span class="hljs-literal">nullptr</span>);<br>        *dbptr = impl;<br>    }<br>    <span class="hljs-keyword">else</span><br>    {<br>        <span class="hljs-keyword">delete</span> impl;<br>    }<br>    <span class="hljs-keyword">return</span> s;<br>}<br><br><span class="hljs-function">Status <span class="hljs-title">DBImpl::Recover</span><span class="hljs-params">(VersionEdit *edit, <span class="hljs-type">bool</span> *save_manifest)</span></span><br><span class="hljs-function"></span>{<br>    mutex_.<span class="hljs-built_in">AssertHeld</span>();<br><br>    <span class="hljs-comment">// Ignore error from CreateDir since the creation of the DB is</span><br>    <span class="hljs-comment">// committed only when the descriptor is created, and this directory</span><br>    <span class="hljs-comment">// may already exist from a previous failed creation attempt.</span><br>    env_-&gt;<span class="hljs-built_in">CreateDir</span>(dbname_); <span class="hljs-comment">// 创建数据库目录</span><br>    <span class="hljs-built_in">assert</span>(db_lock_ == <span class="hljs-literal">nullptr</span>);<br>    <span class="hljs-comment">// 加文件锁，防止其他进程进入</span><br>    Status s = env_-&gt;<span class="hljs-built_in">LockFile</span>(<span class="hljs-built_in">LockFileName</span>(dbname_), &amp;db_lock_);<br>    <span class="hljs-keyword">if</span> (!s.<span class="hljs-built_in">ok</span>())<br>    {<br>        <span class="hljs-keyword">return</span> s;<br>    }<br>    <span class="hljs-comment">// 如果CURRENT文件不存在，说明需要新创建数据库</span><br>    <span class="hljs-keyword">if</span> (!env_-&gt;<span class="hljs-built_in">FileExists</span>(<span class="hljs-built_in">CurrentFileName</span>(dbname_)))<br>    {<br>        <span class="hljs-keyword">if</span> (options_.create_if_missing)<br>        {<br>            <span class="hljs-built_in">Log</span>(options_.info_log, <span class="hljs-string">"Creating DB %s since it was missing."</span>,<br>                dbname_.<span class="hljs-built_in">c_str</span>());<br>            s = <span class="hljs-built_in">NewDB</span>();<br>            <span class="hljs-keyword">if</span> (!s.<span class="hljs-built_in">ok</span>())<br>            {<br>                <span class="hljs-keyword">return</span> s;<br>            }<br>        }<br>        <span class="hljs-keyword">else</span><br>        {<br>            <span class="hljs-keyword">return</span> Status::<span class="hljs-built_in">InvalidArgument</span>(<br>                dbname_, <span class="hljs-string">"does not exist (create_if_missing is false)"</span>);<br>        }<br>    }<br>    <span class="hljs-keyword">else</span><br>    {<br>        <span class="hljs-keyword">if</span> (options_.error_if_exists)<br>        {<br>            <span class="hljs-keyword">return</span> Status::<span class="hljs-built_in">InvalidArgument</span>(dbname_,<br>                                           <span class="hljs-string">"exists (error_if_exists is true)"</span>);<br>        }<br>    }<br>    <span class="hljs-comment">// 读取MANIFEST文件进行版本信息的恢复</span><br>    s = versions_-&gt;<span class="hljs-built_in">Recover</span>(save_manifest);<br>    <span class="hljs-keyword">if</span> (!s.<span class="hljs-built_in">ok</span>())<br>    {<br>        <span class="hljs-keyword">return</span> s;<br>    }<br>    <span class="hljs-function">SequenceNumber <span class="hljs-title">max_sequence</span><span class="hljs-params">(<span class="hljs-number">0</span>)</span></span>;<br><br>    <span class="hljs-comment">// Recover from all newer log files than the ones named in the</span><br>    <span class="hljs-comment">// descriptor (new log files may have been added by the previous</span><br>    <span class="hljs-comment">// incarnation without registering them in the descriptor).</span><br>    <span class="hljs-comment">//</span><br>    <span class="hljs-comment">// Note that PrevLogNumber() is no longer used, but we pay</span><br>    <span class="hljs-comment">// attention to it in case we are recovering a database</span><br>    <span class="hljs-comment">// produced by an older version of leveldb.</span><br>    <span class="hljs-type">const</span> <span class="hljs-type">uint64_t</span> min_log = versions_-&gt;<span class="hljs-built_in">LogNumber</span>();<br>    <span class="hljs-type">const</span> <span class="hljs-type">uint64_t</span> prev_log = versions_-&gt;<span class="hljs-built_in">PrevLogNumber</span>();<br>    std::vector&lt;std::string&gt; filenames;<br>    s = env_-&gt;<span class="hljs-built_in">GetChildren</span>(dbname_, &amp;filenames);<br>    <span class="hljs-keyword">if</span> (!s.<span class="hljs-built_in">ok</span>())<br>    {<br>        <span class="hljs-keyword">return</span> s;<br>    }<br>    std::set&lt;<span class="hljs-type">uint64_t</span>&gt; expected;<br>    versions_-&gt;<span class="hljs-built_in">AddLiveFiles</span>(&amp;expected);<br>    <span class="hljs-type">uint64_t</span> number;<br>    FileType type;<br>    std::vector&lt;<span class="hljs-type">uint64_t</span>&gt; logs;<br>    <span class="hljs-comment">// 之前的MANIFEST恢复，会得到版本信息，里面包含了之前的log number</span><br>    <span class="hljs-comment">// 搜索文件系统里的log，如果这些日志的编号 &gt;= 这个log number，那么这些</span><br>    <span class="hljs-comment">// 日志都是关闭时丢失的数据，需要恢复，这里将日志按顺序存储在logs里面</span><br><br>    <span class="hljs-comment">// 逐个恢复日志的内容</span><br>    <span class="hljs-keyword">for</span> (<span class="hljs-type">size_t</span> i = <span class="hljs-number">0</span>; i &lt; filenames.<span class="hljs-built_in">size</span>(); i++)<br>    {<br>        <span class="hljs-keyword">if</span> (<span class="hljs-built_in">ParseFileName</span>(filenames[i], &amp;number, &amp;type))<br>        {<br>            expected.<span class="hljs-built_in">erase</span>(number);<br>            <span class="hljs-keyword">if</span> (type == kLogFile &amp;&amp; ((number &gt;= min_log) || (number == prev_log)))<br>                logs.<span class="hljs-built_in">push_back</span>(number);<br>        }<br>    }<br>    <span class="hljs-keyword">if</span> (!expected.<span class="hljs-built_in">empty</span>())<br>    {<br>        <span class="hljs-type">char</span> buf[<span class="hljs-number">50</span>];<br>        std::<span class="hljs-built_in">snprintf</span>(buf, <span class="hljs-built_in">sizeof</span>(buf), <span class="hljs-string">"%d missing files; e.g."</span>,<br>                      <span class="hljs-built_in">static_cast</span>&lt;<span class="hljs-type">int</span>&gt;(expected.<span class="hljs-built_in">size</span>()));<br>        <span class="hljs-keyword">return</span> Status::<span class="hljs-built_in">Corruption</span>(buf, <span class="hljs-built_in">TableFileName</span>(dbname_, *(expected.<span class="hljs-built_in">begin</span>())));<br>    }<br><br>    <span class="hljs-comment">// Recover in the order in which the logs were generated</span><br>    std::<span class="hljs-built_in">sort</span>(logs.<span class="hljs-built_in">begin</span>(), logs.<span class="hljs-built_in">end</span>());<br>    <span class="hljs-keyword">for</span> (<span class="hljs-type">size_t</span> i = <span class="hljs-number">0</span>; i &lt; logs.<span class="hljs-built_in">size</span>(); i++)<br>    {<br>        s = <span class="hljs-built_in">RecoverLogFile</span>(logs[i], (i == logs.<span class="hljs-built_in">size</span>() - <span class="hljs-number">1</span>), save_manifest, edit,<br>                           &amp;max_sequence);<br>        <span class="hljs-keyword">if</span> (!s.<span class="hljs-built_in">ok</span>())<br>        {<br>            <span class="hljs-keyword">return</span> s;<br>        }<br><br>        <span class="hljs-comment">// The previous incarnation may not have written any MANIFEST</span><br>        <span class="hljs-comment">// records after allocating this log number.  So we manually</span><br>        <span class="hljs-comment">// update the file number allocation counter in VersionSet.</span><br>        versions_-&gt;<span class="hljs-built_in">MarkFileNumberUsed</span>(logs[i]);<br>    }<br><br>    <span class="hljs-keyword">if</span> (versions_-&gt;<span class="hljs-built_in">LastSequence</span>() &lt; max_sequence)<br>    {<br>        versions_-&gt;<span class="hljs-built_in">SetLastSequence</span>(max_sequence);<br>    }<br><br>    <span class="hljs-keyword">return</span> Status::<span class="hljs-built_in">OK</span>();<br>}<br><br></code></pre></td></tr></table></figure>
+<pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp">
+Status <span class="token class-name">DB</span><span class="token double-colon punctuation">::</span><span class="token function">Open</span><span class="token punctuation">(</span><span class="token keyword">const</span> Options <span class="token operator">&amp;</span>options<span class="token punctuation">,</span> <span class="token keyword">const</span> std<span class="token double-colon punctuation">::</span>string <span class="token operator">&amp;</span>dbname<span class="token punctuation">,</span> DB <span class="token operator">*</span><span class="token operator">*</span>dbptr<span class="token punctuation">)</span>
+<span class="token punctuation">{</span>
+    <span class="token operator">*</span>dbptr <span class="token operator">=</span> <span class="token keyword">nullptr</span><span class="token punctuation">;</span>
+
+    DBImpl <span class="token operator">*</span>impl <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token function">DBImpl</span><span class="token punctuation">(</span>options<span class="token punctuation">,</span> dbname<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    impl<span class="token operator">-&gt;</span>mutex_<span class="token punctuation">.</span><span class="token function">Lock</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    VersionEdit edit<span class="token punctuation">;</span>
+    <span class="token comment">// Recover handles create_if_missing, error_if_exists</span>
+    <span class="token keyword">bool</span> save_manifest <span class="token operator">=</span> <span class="token boolean">false</span><span class="token punctuation">;</span>
+    Status s <span class="token operator">=</span> impl<span class="token operator">-&gt;</span><span class="token function">Recover</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>edit<span class="token punctuation">,</span> <span class="token operator">&amp;</span>save_manifest<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>s<span class="token punctuation">.</span><span class="token function">ok</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">&amp;&amp;</span> impl<span class="token operator">-&gt;</span>mem_ <span class="token operator">==</span> <span class="token keyword">nullptr</span><span class="token punctuation">)</span>
+    <span class="token punctuation">{</span>
+        <span class="token comment">// Create new log and a corresponding memtable.</span>
+        <span class="token comment">// 如果需要重写MANIFEST文件，那么做一个版本变更，这里面会创建一个新的MANIFEST</span>
+        <span class="token comment">// 将当前的版本信息写入，然后将edit的内容写入。</span>
+        <span class="token keyword">uint64_t</span> new_log_number <span class="token operator">=</span> impl<span class="token operator">-&gt;</span>versions_<span class="token operator">-&gt;</span><span class="token function">NewFileNumber</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        WritableFile <span class="token operator">*</span>lfile<span class="token punctuation">;</span>
+        s <span class="token operator">=</span> options<span class="token punctuation">.</span>env<span class="token operator">-&gt;</span><span class="token function">NewWritableFile</span><span class="token punctuation">(</span><span class="token function">LogFileName</span><span class="token punctuation">(</span>dbname<span class="token punctuation">,</span> new_log_number<span class="token punctuation">)</span><span class="token punctuation">,</span>
+                                         <span class="token operator">&amp;</span>lfile<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span>s<span class="token punctuation">.</span><span class="token function">ok</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+        <span class="token punctuation">{</span>
+            edit<span class="token punctuation">.</span><span class="token function">SetLogNumber</span><span class="token punctuation">(</span>new_log_number<span class="token punctuation">)</span><span class="token punctuation">;</span>
+            impl<span class="token operator">-&gt;</span>logfile_ <span class="token operator">=</span> lfile<span class="token punctuation">;</span>
+            impl<span class="token operator">-&gt;</span>logfile_number_ <span class="token operator">=</span> new_log_number<span class="token punctuation">;</span>
+            impl<span class="token operator">-&gt;</span>log_ <span class="token operator">=</span> <span class="token keyword">new</span> log<span class="token double-colon punctuation">::</span><span class="token function">Writer</span><span class="token punctuation">(</span>lfile<span class="token punctuation">)</span><span class="token punctuation">;</span>
+            impl<span class="token operator">-&gt;</span>mem_ <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token function">MemTable</span><span class="token punctuation">(</span>impl<span class="token operator">-&gt;</span>internal_comparator_<span class="token punctuation">)</span><span class="token punctuation">;</span>
+            impl<span class="token operator">-&gt;</span>mem_<span class="token operator">-&gt;</span><span class="token function">Ref</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+    <span class="token punctuation">}</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>s<span class="token punctuation">.</span><span class="token function">ok</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">&amp;&amp;</span> save_manifest<span class="token punctuation">)</span>
+    <span class="token punctuation">{</span>
+        edit<span class="token punctuation">.</span><span class="token function">SetPrevLogNumber</span><span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token comment">// No older logs needed after recovery.</span>
+        edit<span class="token punctuation">.</span><span class="token function">SetLogNumber</span><span class="token punctuation">(</span>impl<span class="token operator">-&gt;</span>logfile_number_<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        s <span class="token operator">=</span> impl<span class="token operator">-&gt;</span>versions_<span class="token operator">-&gt;</span><span class="token function">LogAndApply</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>edit<span class="token punctuation">,</span> <span class="token operator">&amp;</span>impl<span class="token operator">-&gt;</span>mutex_<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>s<span class="token punctuation">.</span><span class="token function">ok</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+    <span class="token punctuation">{</span>
+        impl<span class="token operator">-&gt;</span><span class="token function">RemoveObsoleteFiles</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        impl<span class="token operator">-&gt;</span><span class="token function">MaybeScheduleCompaction</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+    impl<span class="token operator">-&gt;</span>mutex_<span class="token punctuation">.</span><span class="token function">Unlock</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>s<span class="token punctuation">.</span><span class="token function">ok</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+    <span class="token punctuation">{</span>
+        <span class="token function">assert</span><span class="token punctuation">(</span>impl<span class="token operator">-&gt;</span>mem_ <span class="token operator">!=</span> <span class="token keyword">nullptr</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token operator">*</span>dbptr <span class="token operator">=</span> impl<span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+    <span class="token keyword">else</span>
+    <span class="token punctuation">{</span>
+        <span class="token keyword">delete</span> impl<span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+    <span class="token keyword">return</span> s<span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+
+Status <span class="token class-name">DBImpl</span><span class="token double-colon punctuation">::</span><span class="token function">Recover</span><span class="token punctuation">(</span>VersionEdit <span class="token operator">*</span>edit<span class="token punctuation">,</span> <span class="token keyword">bool</span> <span class="token operator">*</span>save_manifest<span class="token punctuation">)</span>
+<span class="token punctuation">{</span>
+    mutex_<span class="token punctuation">.</span><span class="token function">AssertHeld</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token comment">// Ignore error from CreateDir since the creation of the DB is</span>
+    <span class="token comment">// committed only when the descriptor is created, and this directory</span>
+    <span class="token comment">// may already exist from a previous failed creation attempt.</span>
+    env_<span class="token operator">-&gt;</span><span class="token function">CreateDir</span><span class="token punctuation">(</span>dbname_<span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token comment">// 创建数据库目录</span>
+    <span class="token function">assert</span><span class="token punctuation">(</span>db_lock_ <span class="token operator">==</span> <span class="token keyword">nullptr</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token comment">// 加文件锁，防止其他进程进入</span>
+    Status s <span class="token operator">=</span> env_<span class="token operator">-&gt;</span><span class="token function">LockFile</span><span class="token punctuation">(</span><span class="token function">LockFileName</span><span class="token punctuation">(</span>dbname_<span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token operator">&amp;</span>db_lock_<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span>s<span class="token punctuation">.</span><span class="token function">ok</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+    <span class="token punctuation">{</span>
+        <span class="token keyword">return</span> s<span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+    <span class="token comment">// 如果CURRENT文件不存在，说明需要新创建数据库</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span>env_<span class="token operator">-&gt;</span><span class="token function">FileExists</span><span class="token punctuation">(</span><span class="token function">CurrentFileName</span><span class="token punctuation">(</span>dbname_<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+    <span class="token punctuation">{</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span>options_<span class="token punctuation">.</span>create_if_missing<span class="token punctuation">)</span>
+        <span class="token punctuation">{</span>
+            <span class="token function">Log</span><span class="token punctuation">(</span>options_<span class="token punctuation">.</span>info_log<span class="token punctuation">,</span> <span class="token string">"Creating DB %s since it was missing."</span><span class="token punctuation">,</span>
+                dbname_<span class="token punctuation">.</span><span class="token function">c_str</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            s <span class="token operator">=</span> <span class="token function">NewDB</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span>s<span class="token punctuation">.</span><span class="token function">ok</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+            <span class="token punctuation">{</span>
+                <span class="token keyword">return</span> s<span class="token punctuation">;</span>
+            <span class="token punctuation">}</span>
+        <span class="token punctuation">}</span>
+        <span class="token keyword">else</span>
+        <span class="token punctuation">{</span>
+            <span class="token keyword">return</span> <span class="token class-name">Status</span><span class="token double-colon punctuation">::</span><span class="token function">InvalidArgument</span><span class="token punctuation">(</span>
+                dbname_<span class="token punctuation">,</span> <span class="token string">"does not exist (create_if_missing is false)"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+    <span class="token punctuation">}</span>
+    <span class="token keyword">else</span>
+    <span class="token punctuation">{</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span>options_<span class="token punctuation">.</span>error_if_exists<span class="token punctuation">)</span>
+        <span class="token punctuation">{</span>
+            <span class="token keyword">return</span> <span class="token class-name">Status</span><span class="token double-colon punctuation">::</span><span class="token function">InvalidArgument</span><span class="token punctuation">(</span>dbname_<span class="token punctuation">,</span>
+                                           <span class="token string">"exists (error_if_exists is true)"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+    <span class="token punctuation">}</span>
+    <span class="token comment">// 读取MANIFEST文件进行版本信息的恢复</span>
+    s <span class="token operator">=</span> versions_<span class="token operator">-&gt;</span><span class="token function">Recover</span><span class="token punctuation">(</span>save_manifest<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span>s<span class="token punctuation">.</span><span class="token function">ok</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+    <span class="token punctuation">{</span>
+        <span class="token keyword">return</span> s<span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+    SequenceNumber <span class="token function">max_sequence</span><span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token comment">// Recover from all newer log files than the ones named in the</span>
+    <span class="token comment">// descriptor (new log files may have been added by the previous</span>
+    <span class="token comment">// incarnation without registering them in the descriptor).</span>
+    <span class="token comment">//</span>
+    <span class="token comment">// Note that PrevLogNumber() is no longer used, but we pay</span>
+    <span class="token comment">// attention to it in case we are recovering a database</span>
+    <span class="token comment">// produced by an older version of leveldb.</span>
+    <span class="token keyword">const</span> <span class="token keyword">uint64_t</span> min_log <span class="token operator">=</span> versions_<span class="token operator">-&gt;</span><span class="token function">LogNumber</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">const</span> <span class="token keyword">uint64_t</span> prev_log <span class="token operator">=</span> versions_<span class="token operator">-&gt;</span><span class="token function">PrevLogNumber</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    std<span class="token double-colon punctuation">::</span>vector<span class="token operator">&lt;</span>std<span class="token double-colon punctuation">::</span>string<span class="token operator">&gt;</span> filenames<span class="token punctuation">;</span>
+    s <span class="token operator">=</span> env_<span class="token operator">-&gt;</span><span class="token function">GetChildren</span><span class="token punctuation">(</span>dbname_<span class="token punctuation">,</span> <span class="token operator">&amp;</span>filenames<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span>s<span class="token punctuation">.</span><span class="token function">ok</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+    <span class="token punctuation">{</span>
+        <span class="token keyword">return</span> s<span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+    std<span class="token double-colon punctuation">::</span>set<span class="token operator">&lt;</span><span class="token keyword">uint64_t</span><span class="token operator">&gt;</span> expected<span class="token punctuation">;</span>
+    versions_<span class="token operator">-&gt;</span><span class="token function">AddLiveFiles</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>expected<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">uint64_t</span> number<span class="token punctuation">;</span>
+    FileType type<span class="token punctuation">;</span>
+    std<span class="token double-colon punctuation">::</span>vector<span class="token operator">&lt;</span><span class="token keyword">uint64_t</span><span class="token operator">&gt;</span> logs<span class="token punctuation">;</span>
+    <span class="token comment">// 之前的MANIFEST恢复，会得到版本信息，里面包含了之前的log number</span>
+    <span class="token comment">// 搜索文件系统里的log，如果这些日志的编号 &gt;= 这个log number，那么这些</span>
+    <span class="token comment">// 日志都是关闭时丢失的数据，需要恢复，这里将日志按顺序存储在logs里面</span>
+
+    <span class="token comment">// 逐个恢复日志的内容</span>
+    <span class="token keyword">for</span> <span class="token punctuation">(</span>size_t i <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span> i <span class="token operator">&lt;</span> filenames<span class="token punctuation">.</span><span class="token function">size</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span> i<span class="token operator">++</span><span class="token punctuation">)</span>
+    <span class="token punctuation">{</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token function">ParseFileName</span><span class="token punctuation">(</span>filenames<span class="token punctuation">[</span>i<span class="token punctuation">]</span><span class="token punctuation">,</span> <span class="token operator">&amp;</span>number<span class="token punctuation">,</span> <span class="token operator">&amp;</span>type<span class="token punctuation">)</span><span class="token punctuation">)</span>
+        <span class="token punctuation">{</span>
+            expected<span class="token punctuation">.</span><span class="token function">erase</span><span class="token punctuation">(</span>number<span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token keyword">if</span> <span class="token punctuation">(</span>type <span class="token operator">==</span> kLogFile <span class="token operator">&amp;&amp;</span> <span class="token punctuation">(</span><span class="token punctuation">(</span>number <span class="token operator">&gt;=</span> min_log<span class="token punctuation">)</span> <span class="token operator">||</span> <span class="token punctuation">(</span>number <span class="token operator">==</span> prev_log<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+                logs<span class="token punctuation">.</span><span class="token function">push_back</span><span class="token punctuation">(</span>number<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+    <span class="token punctuation">}</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span>expected<span class="token punctuation">.</span><span class="token function">empty</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+    <span class="token punctuation">{</span>
+        <span class="token keyword">char</span> buf<span class="token punctuation">[</span><span class="token number">50</span><span class="token punctuation">]</span><span class="token punctuation">;</span>
+        std<span class="token double-colon punctuation">::</span><span class="token function">snprintf</span><span class="token punctuation">(</span>buf<span class="token punctuation">,</span> <span class="token keyword">sizeof</span><span class="token punctuation">(</span>buf<span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token string">"%d missing files; e.g."</span><span class="token punctuation">,</span>
+                      <span class="token generic-function"><span class="token function">static_cast</span><span class="token generic class-name"><span class="token operator">&lt;</span><span class="token keyword">int</span><span class="token operator">&gt;</span></span></span><span class="token punctuation">(</span>expected<span class="token punctuation">.</span><span class="token function">size</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">return</span> <span class="token class-name">Status</span><span class="token double-colon punctuation">::</span><span class="token function">Corruption</span><span class="token punctuation">(</span>buf<span class="token punctuation">,</span> <span class="token function">TableFileName</span><span class="token punctuation">(</span>dbname_<span class="token punctuation">,</span> <span class="token operator">*</span><span class="token punctuation">(</span>expected<span class="token punctuation">.</span><span class="token function">begin</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+
+    <span class="token comment">// Recover in the order in which the logs were generated</span>
+    std<span class="token double-colon punctuation">::</span><span class="token function">sort</span><span class="token punctuation">(</span>logs<span class="token punctuation">.</span><span class="token function">begin</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> logs<span class="token punctuation">.</span><span class="token function">end</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">for</span> <span class="token punctuation">(</span>size_t i <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span> i <span class="token operator">&lt;</span> logs<span class="token punctuation">.</span><span class="token function">size</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span> i<span class="token operator">++</span><span class="token punctuation">)</span>
+    <span class="token punctuation">{</span>
+        s <span class="token operator">=</span> <span class="token function">RecoverLogFile</span><span class="token punctuation">(</span>logs<span class="token punctuation">[</span>i<span class="token punctuation">]</span><span class="token punctuation">,</span> <span class="token punctuation">(</span>i <span class="token operator">==</span> logs<span class="token punctuation">.</span><span class="token function">size</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">-</span> <span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">,</span> save_manifest<span class="token punctuation">,</span> edit<span class="token punctuation">,</span>
+                           <span class="token operator">&amp;</span>max_sequence<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span>s<span class="token punctuation">.</span><span class="token function">ok</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+        <span class="token punctuation">{</span>
+            <span class="token keyword">return</span> s<span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+
+        <span class="token comment">// The previous incarnation may not have written any MANIFEST</span>
+        <span class="token comment">// records after allocating this log number.  So we manually</span>
+        <span class="token comment">// update the file number allocation counter in VersionSet.</span>
+        versions_<span class="token operator">-&gt;</span><span class="token function">MarkFileNumberUsed</span><span class="token punctuation">(</span>logs<span class="token punctuation">[</span>i<span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>versions_<span class="token operator">-&gt;</span><span class="token function">LastSequence</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">&lt;</span> max_sequence<span class="token punctuation">)</span>
+    <span class="token punctuation">{</span>
+        versions_<span class="token operator">-&gt;</span><span class="token function">SetLastSequence</span><span class="token punctuation">(</span>max_sequence<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+
+    <span class="token keyword">return</span> <span class="token class-name">Status</span><span class="token double-colon punctuation">::</span><span class="token function">OK</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <p>而新建数据库时，会调用DBImpl::NewDB，一个新的数据库没有任何数据，所以不需要日志和SSTable，只需要有一个MANIFEST文件，包含一些元数据。</p>
-<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br></pre></td><td class="code"><pre><code class="hljs cpp"><br><span class="hljs-function">Status <span class="hljs-title">DBImpl::NewDB</span><span class="hljs-params">()</span></span><br><span class="hljs-function"></span>{<br>    VersionEdit new_db;<br>    <span class="hljs-comment">// 保存比较器的名称，下次打开时需要用相同的名称打开</span><br>    new_db.<span class="hljs-built_in">SetComparatorName</span>(<span class="hljs-built_in">user_comparator</span>()-&gt;<span class="hljs-built_in">Name</span>());<br>    new_db.<span class="hljs-built_in">SetLogNumber</span>(<span class="hljs-number">0</span>); <span class="hljs-comment">// 分配日志文件的编号为0</span><br>    new_db.<span class="hljs-built_in">SetNextFile</span>(<span class="hljs-number">2</span>);  <span class="hljs-comment">// 下一个待分配的文件编号是2，因为1分配给了MANIFEST文件</span><br>    new_db.<span class="hljs-built_in">SetLastSequence</span>(<span class="hljs-number">0</span>);<br><br>    <span class="hljs-comment">// 创建MANIFEST文件，将VersionEdit写入</span><br>    <span class="hljs-type">const</span> std::string manifest = <span class="hljs-built_in">DescriptorFileName</span>(dbname_, <span class="hljs-number">1</span>);<br>    WritableFile *file;<br>    Status s = env_-&gt;<span class="hljs-built_in">NewWritableFile</span>(manifest, &amp;file);<br>    <span class="hljs-keyword">if</span> (!s.<span class="hljs-built_in">ok</span>())<br>    {<br>        <span class="hljs-keyword">return</span> s;<br>    }<br>    {<br>        <span class="hljs-function">log::Writer <span class="hljs-title">log</span><span class="hljs-params">(file)</span></span>;<br>        std::string record;<br>        new_db.<span class="hljs-built_in">EncodeTo</span>(&amp;record);<br>        s = log.<span class="hljs-built_in">AddRecord</span>(record);<br>        <span class="hljs-keyword">if</span> (s.<span class="hljs-built_in">ok</span>())<br>        {<br>            s = file-&gt;<span class="hljs-built_in">Sync</span>();<br>        }<br>        <span class="hljs-keyword">if</span> (s.<span class="hljs-built_in">ok</span>())<br>        {<br>            s = file-&gt;<span class="hljs-built_in">Close</span>();<br>        }<br>    }<br>    <span class="hljs-keyword">delete</span> file;<br>    <span class="hljs-keyword">if</span> (s.<span class="hljs-built_in">ok</span>())<br>    {<br>        <span class="hljs-comment">// Make "CURRENT" file that points to the new manifest file.</span><br>        <span class="hljs-comment">// 让CURRENT文件指向这个MANIFEST文件</span><br>        s = <span class="hljs-built_in">SetCurrentFile</span>(env_, dbname_, <span class="hljs-number">1</span>);<br>    }<br>    <span class="hljs-keyword">else</span><br>    {<br>        env_-&gt;<span class="hljs-built_in">RemoveFile</span>(manifest);<br>    }<br>    <span class="hljs-keyword">return</span> s;<br>}<br><br></code></pre></td></tr></table></figure>
+<pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp">
+Status <span class="token class-name">DBImpl</span><span class="token double-colon punctuation">::</span><span class="token function">NewDB</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+<span class="token punctuation">{</span>
+    VersionEdit new_db<span class="token punctuation">;</span>
+    <span class="token comment">// 保存比较器的名称，下次打开时需要用相同的名称打开</span>
+    new_db<span class="token punctuation">.</span><span class="token function">SetComparatorName</span><span class="token punctuation">(</span><span class="token function">user_comparator</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator">-&gt;</span><span class="token function">Name</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    new_db<span class="token punctuation">.</span><span class="token function">SetLogNumber</span><span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token comment">// 分配日志文件的编号为0</span>
+    new_db<span class="token punctuation">.</span><span class="token function">SetNextFile</span><span class="token punctuation">(</span><span class="token number">2</span><span class="token punctuation">)</span><span class="token punctuation">;</span>  <span class="token comment">// 下一个待分配的文件编号是2，因为1分配给了MANIFEST文件</span>
+    new_db<span class="token punctuation">.</span><span class="token function">SetLastSequence</span><span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token comment">// 创建MANIFEST文件，将VersionEdit写入</span>
+    <span class="token keyword">const</span> std<span class="token double-colon punctuation">::</span>string manifest <span class="token operator">=</span> <span class="token function">DescriptorFileName</span><span class="token punctuation">(</span>dbname_<span class="token punctuation">,</span> <span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    WritableFile <span class="token operator">*</span>file<span class="token punctuation">;</span>
+    Status s <span class="token operator">=</span> env_<span class="token operator">-&gt;</span><span class="token function">NewWritableFile</span><span class="token punctuation">(</span>manifest<span class="token punctuation">,</span> <span class="token operator">&amp;</span>file<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span>s<span class="token punctuation">.</span><span class="token function">ok</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+    <span class="token punctuation">{</span>
+        <span class="token keyword">return</span> s<span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+    <span class="token punctuation">{</span>
+        log<span class="token double-colon punctuation">::</span>Writer <span class="token function">log</span><span class="token punctuation">(</span>file<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        std<span class="token double-colon punctuation">::</span>string record<span class="token punctuation">;</span>
+        new_db<span class="token punctuation">.</span><span class="token function">EncodeTo</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>record<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        s <span class="token operator">=</span> log<span class="token punctuation">.</span><span class="token function">AddRecord</span><span class="token punctuation">(</span>record<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span>s<span class="token punctuation">.</span><span class="token function">ok</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+        <span class="token punctuation">{</span>
+            s <span class="token operator">=</span> file<span class="token operator">-&gt;</span><span class="token function">Sync</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span>s<span class="token punctuation">.</span><span class="token function">ok</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+        <span class="token punctuation">{</span>
+            s <span class="token operator">=</span> file<span class="token operator">-&gt;</span><span class="token function">Close</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+    <span class="token punctuation">}</span>
+    <span class="token keyword">delete</span> file<span class="token punctuation">;</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>s<span class="token punctuation">.</span><span class="token function">ok</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+    <span class="token punctuation">{</span>
+        <span class="token comment">// Make "CURRENT" file that points to the new manifest file.</span>
+        <span class="token comment">// 让CURRENT文件指向这个MANIFEST文件</span>
+        s <span class="token operator">=</span> <span class="token function">SetCurrentFile</span><span class="token punctuation">(</span>env_<span class="token punctuation">,</span> dbname_<span class="token punctuation">,</span> <span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+    <span class="token keyword">else</span>
+    <span class="token punctuation">{</span>
+        env_<span class="token operator">-&gt;</span><span class="token function">RemoveFile</span><span class="token punctuation">(</span>manifest<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+    <span class="token keyword">return</span> s<span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <p>可以看到DBImpl::NewDB非常简单，就是创建一个MANIFEST文件，将以下信息写入到MANIFEST文件：</p>
 <ul>
 <li>比较器名称</li>
@@ -459,332 +620,245 @@ MemTable写入到SSTable未完成，那么需要做数据恢复，从WAL恢复�
 </ul>
 <p>而VersionSet::Recover完成MANIFEST文件的读取和版本的构造，需要知道数据库里有哪些SSTable文件，每个文件处于哪个Level，当前日志的编号等等信息。</p>
 
-                
-              </div>
-            
-            <hr/>
-            <div>
-              <div class="post-metas my-3">
-  
-    <div class="post-meta mr-3 d-flex align-items-center">
-      <i class="iconfont icon-category"></i>
-      
+    </div>
 
-<span class="category-chains">
-  
-  
     
-      <span class="category-chain">
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/C/" rel="tag"># C++</a>
+              <a href="/tags/levelDB/" rel="tag"># levelDB</a>
+          </div>
+
         
-  <a href="/categories/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/" class="category-chain-item">levelDB源码剖析</a>
-  
-  
 
-      </span>
-    
-  
-</span>
 
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2022/12/21/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-16/" rel="prev" title="levelDB源码剖析(16)--Compaction">
+      <i class="fa fa-chevron-left"></i> levelDB源码剖析(16)--Compaction
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2022/12/25/Python%E5%B0%8F%E6%8A%80%E5%B7%A7-9/" rel="next" title="Python小技巧(9)--元编程">
+      Python小技巧(9)--元编程 <i class="fa fa-chevron-right"></i>
+    </a></div>
     </div>
-  
-  
-    <div class="post-meta">
-      <i class="iconfont icon-tags"></i>
-      
-        <a href="/tags/C/">#C++</a>
-      
-        <a href="/tags/levelDB/">#levelDB</a>
-      
-    </div>
-  
-</div>
-
-
-              
-
-              
-                <div class="post-prevnext my-3">
-                  <article class="post-prev col-6">
-                    
-                    
-                      <a href="/2022/12/25/Python%E5%B0%8F%E6%8A%80%E5%B7%A7-9/" title="Python小技巧(9)--元编程">
-                        <i class="iconfont icon-arrowleft"></i>
-                        <span class="hidden-mobile">Python小技巧(9)--元编程</span>
-                        <span class="visible-mobile">Previous</span>
-                      </a>
-                    
-                  </article>
-                  <article class="post-next col-6">
-                    
-                    
-                      <a href="/2022/12/21/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-16/" title="levelDB源码剖析(16)--Compaction">
-                        <span class="hidden-mobile">levelDB源码剖析(16)--Compaction</span>
-                        <span class="visible-mobile">Next</span>
-                        <i class="iconfont icon-arrowright"></i>
-                      </a>
-                    
-                  </article>
-                </div>
-              
-            </div>
-
-            
-  <article id="comments" lazyload>
+      </footer>
     
-  <div id="waline"></div>
-  <script type="text/javascript">
-    Fluid.utils.loadComments('#waline', function() {
-      Fluid.utils.createCssLink('https://lib.baomitu.com/waline/2.5.1/waline.min.css')
-      Fluid.utils.createScript('https://lib.baomitu.com/waline/2.5.1/waline.min.js', function() {
-        var options = Object.assign(
-          {"serverURL":"https://waline-tau.vercel.app/","path":"window.location.pathname","meta":["nick","mail","link"],"requiredMeta":["nick"],"lang":"zh-CN","emoji":["https://emoji.shojo.cn/bili/src/大航海嘉然","https://emoji.shojo.cn/bili/src/永雏塔菲","https://emoji.shojo.cn/bili/src/東雪蓮","https://unpkg.com/@waline/emojis@1.1.0/tieba","https://emoji.shojo.cn/bili/src/嘉然今天吃什么","https://emoji.shojo.cn/bili/src/小黄脸"],"dark":"html[data-user-color-scheme=\"dark\"]","wordLimit":0,"pageSize":10},
-          {
-            el: '#waline',
-            path: window.location.pathname
-          }
-        )
-        Waline.init(options);
-        Fluid.utils.waitElementVisible('#waline .vcontent', () => {
-          var imgSelector = '#waline .vcontent img:not(.vemoji)';
-          Fluid.plugins.imageCaption(imgSelector);
-          Fluid.plugins.fancyBox(imgSelector);
-        })
-      });
-    });
-  </script>
-  <noscript>Please enable JavaScript to view the comments</noscript>
-
-
   </article>
-
-
-          </article>
-        </div>
-      </div>
-    </div>
-
-    <div class="side-col d-none d-lg-block col-lg-2">
-      
-  <aside class="sidebar" style="margin-left: -1rem">
-    <div id="toc">
-  <p class="toc-header"><i class="iconfont icon-list"></i>&nbsp;Table of Contents</p>
-  <div class="toc-body" id="toc-body"></div>
-</div>
-
-
-
-  </aside>
-
-
-    </div>
-  </div>
-</div>
-
-
-
-
-
-  
-
-
-
-  
-
-
-
-  
-
-
-
-  
-
-
-
-  
-
-
-
-
-
-
-
-    
-
-    
-      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
-        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
-      </a>
-    
-
-    
-      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
-     aria-hidden="true">
-  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
-    <div class="modal-content">
-      <div class="modal-header text-center">
-        <h4 class="modal-title w-100 font-weight-bold">Search</h4>
-        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
-          <span aria-hidden="true">&times;</span>
-        </button>
-      </div>
-      <div class="modal-body mx-3">
-        <div class="md-form mb-5">
-          <input type="text" id="local-search-input" class="form-control validate">
-          <label data-error="x" data-success="v" for="local-search-input">Keyword</label>
-        </div>
-        <div class="list-group" id="local-search-result"></div>
-      </div>
-    </div>
-  </div>
-</div>
-
-    
-
-    
-  </main>
-
-  <footer>
-    <div class="footer-inner">
-  
-    <div class="footer-content">
-       <a href="https://github.com/staskaer" target="_blank" rel="nofollow noopener"><span>Staskaer</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
-    </div>
   
   
   
-  
-</div>
-
-  </footer>
-
-  <!-- Scripts -->
-  
-  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
-  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
-
-  <script>
-    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
-    NProgress.start()
-    window.addEventListener('load', function() {
-      NProgress.done();
-    })
-  </script>
 
 
-<script  src="https://lib.baomitu.com/jquery/3.6.0/jquery.min.js" ></script>
-<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
-<script  src="/js/events.js" ></script>
-<script  src="/js/plugins.js" ></script>
 
+          </div>
+          
+    <div class="comments" id="valine-comments"></div>
 
-  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
-  <script>
-    (function (window, document) {
-      var typing = Fluid.plugins.typing;
-      var subtitle = document.getElementById('subtitle');
-      if (!subtitle || !typing) {
-        return;
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
       }
-      var text = subtitle.getAttribute('data-typed-text');
-      
-        typing(text);
-      
-    })(window, document);
-  </script>
-
-
-
-
-  
-    <script  src="/js/img-lazyload.js" ></script>
-  
-
-
-
-
-  
-<script>
-  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.18.2/tocbot.min.js', function() {
-    var toc = jQuery('#toc');
-    if (toc.length === 0 || !window.tocbot) { return; }
-    var boardCtn = jQuery('#board-ctn');
-    var boardTop = boardCtn.offset().top;
-
-    window.tocbot.init({
-      tocSelector     : '#toc-body',
-      contentSelector : '.markdown-body',
-      headingSelector : CONFIG.toc.headingSelector || 'h1,h2,h3,h4,h5,h6',
-      linkClass       : 'tocbot-link',
-      activeLinkClass : 'tocbot-active-link',
-      listClass       : 'tocbot-list',
-      isCollapsedClass: 'tocbot-is-collapsed',
-      collapsibleClass: 'tocbot-is-collapsible',
-      collapseDepth   : CONFIG.toc.collapseDepth || 0,
-      scrollSmooth    : true,
-      headingsOffset  : -boardTop
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
     });
-    if (toc.find('.toc-list-item').length > 0) {
-      toc.css('visibility', 'visible');
-    }
-  });
+  }
 </script>
 
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
 
-  <script src=https://lib.baomitu.com/clipboard.js/2.0.10/clipboard.min.js></script>
+  <aside class="sidebar">
+    <div class="sidebar-inner">
 
-  <script>Fluid.plugins.codeWidget();</script>
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#recover"><span class="nav-number">1.</span> <span class="nav-text">Recover</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Staskaer"
+      src="/imgs/theme_pic/head_img.png">
+  <p class="site-author-name" itemprop="name">Staskaer</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">63</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">10</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">18</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/Staskaer" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;Staskaer" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:liujiaxin011121@gmail.com" title="E-Mail → mailto:liujiaxin011121@gmail.com" rel="noopener" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2023</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Staskaer</span>
+</div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
 
 
   
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+
 <script>
-  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/4.3.1/anchor.min.js', function() {
-    window.anchors.options = {
-      placement: CONFIG.anchorjs.placement,
-      visible  : CONFIG.anchorjs.visible
-    };
-    if (CONFIG.anchorjs.icon) {
-      window.anchors.options.icon = CONFIG.anchorjs.icon;
-    }
-    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
-    var res = [];
-    for (var item of el) {
-      res.push('.markdown-body > ' + item.trim());
-    }
-    if (CONFIG.anchorjs.placement === 'left') {
-      window.anchors.options.class = 'anchorjs-link-left';
-    }
-    window.anchors.add(res.join(', '));
-  });
+NexT.utils.loadComments(document.querySelector('#valine-comments'), () => {
+  NexT.utils.getScript('https://cdn.jsdelivr.net/npm/valine@1.5.1/dist/Valine.min.js', () => {
+    var GUEST = ['nick', 'mail', 'link'];
+    var guest = 'nick,mail,link';
+    guest = guest.split(',').filter(item => {
+      return GUEST.includes(item);
+    });
+    new Valine({
+      el         : '#valine-comments',
+      verify     : false,
+      notify     : false,
+      appId      : 'xH8NDrh9u4SQrUpQOd0lICnX-MdYXbMMI',
+      appKey     : 'jl3JjPS4jsosZG29Zv24Y7LE',
+      placeholder: "Just go go",
+      avatar     : 'mm',
+      meta       : guest,
+      pageSize   : '10' || 10,
+      visitor    : false,
+      lang       : 'zh-Hans' || 'zh-cn',
+      path       : location.pathname,
+      recordIP   : false,
+      serverURLs : ''
+    });
+  }, window.Valine);
+});
 </script>
 
-
-  
-<script>
-  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
-    Fluid.plugins.fancyBox();
-  });
-</script>
-
-
-  <script>Fluid.plugins.imageCaption();</script>
-
-  <script defer src="/js/leancloud.js" ></script>
-
-  <script  src="/js/local-search.js" ></script>
-
-
-
-
-
-<!-- 主题的启动项，将它保持在最底部 -->
-<!-- the boot of the theme, keep it at the bottom -->
-<script  src="/js/boot.js" ></script>
-
-
-  
-
-  <noscript>
-    <div class="noscript-warning">Blog works best with JavaScript enabled</div>
-  </noscript>
 </body>
 </html>
+

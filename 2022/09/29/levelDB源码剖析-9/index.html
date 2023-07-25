@@ -1,108 +1,87 @@
-
-
 <!DOCTYPE html>
-<html lang="en" data-default-color-scheme=auto>
-
-
-
+<html lang="en">
 <head>
   <meta charset="UTF-8">
-  <link rel="apple-touch-icon" sizes="76x76" href="/imgs/theme_pic/staskaer.png">
-  <link rel="icon" href="/imgs/theme_pic/staskaer.png">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
-  <meta http-equiv="x-ua-compatible" content="ie=edge">
-  
-  <meta name="theme-color" content="#2f4154">
-  <meta name="author" content="Staskaer">
-  <meta name="keywords" content="">
-  
-    <meta name="description" content="WAL日志的格式与构建">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 6.2.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/imgs/theme_pic/staskaer.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/imgs/theme_pic/staskaer.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/imgs/theme_pic/staskaer.png">
+  <link rel="mask-icon" href="/imgs/theme_pic/staskaer.png" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Gemini","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"flat"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"valine","storage":true,"lazyload":false,"nav":null,"activeClass":"valine"},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="WAL日志的格式与构建">
 <meta property="og:type" content="article">
 <meta property="og:title" content="levelDB源码剖析(9)--WAL日志">
 <meta property="og:url" content="http://example.com/2022/09/29/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-9/index.html">
 <meta property="og:site_name" content="Staskaer">
 <meta property="og:description" content="WAL日志的格式与构建">
 <meta property="og:locale" content="en_US">
-<meta property="og:image" content="http://example.com/imgs/post_index_img/leveldb9.jpg">
+<meta property="og:image" content="http://example.com/2022/09/29/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-9/pic1.jpg">
+<meta property="og:image" content="http://example.com/2022/09/29/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-9/pic2.png">
 <meta property="article:published_time" content="2022-09-29T06:05:36.000Z">
 <meta property="article:modified_time" content="2022-11-04T06:02:44.019Z">
 <meta property="article:author" content="Staskaer">
 <meta property="article:tag" content="C++">
 <meta property="article:tag" content="levelDB">
-<meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:image" content="http://example.com/imgs/post_index_img/leveldb9.jpg">
-  
-  
-  
-  <title>levelDB源码剖析(9)--WAL日志 - Staskaer</title>
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://example.com/2022/09/29/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-9/pic1.jpg">
 
-  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+<link rel="canonical" href="http://example.com/2022/09/29/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-9/">
 
 
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'en'
+  };
+</script>
 
-  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
-
-  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
-
-  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
-
-
-
-<!-- 主题依赖的图标库，不要自行修改 -->
-<!-- Do not modify the link that theme dependent icons -->
-
-<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_hj8rtnfg7um.css">
-
-
-
-<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_lbnruvf0jn.css">
-
-
-<link  rel="stylesheet" href="/css/main.css" />
-
-
-  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
-  
-    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  <title>levelDB源码剖析(9)--WAL日志 | Staskaer</title>
   
 
 
 
 
-  <script id="fluid-configs">
-    var Fluid = window.Fluid || {};
-    Fluid.ctx = Object.assign({}, Fluid.ctx)
-    var CONFIG = {"hostname":"example.com","root":"/","version":"1.9.2","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":true,"follow_dnt":false,"baidu":null,"google":null,"gtag":null,"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":"xH8NDrh9u4SQrUpQOd0lICnX-MdYXbMMI","app_key":"jl3JjPS4jsosZG29Zv24Y7LE","server_url":null,"path":"window.location.pathname","ignore_local":false}},"search_path":"/local-search.xml"};
-
-    if (CONFIG.web_analytics.follow_dnt) {
-      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
-      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
-    }
-  </script>
-  <script  src="/js/utils.js" ></script>
-  <script  src="/js/color-schema.js" ></script>
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-    
-  
 
 
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
 
-  
-<meta name="generator" content="Hexo 6.2.0"><style>mjx-container[jax="SVG"] {
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+<style>mjx-container[jax="SVG"] {
   direction: ltr;
 }
 
@@ -216,218 +195,192 @@ mjx-container[display="true"] + br {
 }
 </style></head>
 
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
 
-<body>
-  
-
-  <header>
-    
-
-<div class="header-inner" style="height: 70vh;">
-  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
-  <div class="container">
-    <a class="navbar-brand" href="/">
-      <strong>Staskaer</strong>
-    </a>
-
-    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
-            data-target="#navbarSupportedContent"
-            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
-      <div class="animated-icon"><span></span><span></span><span></span></div>
-    </button>
-
-    <!-- Collapsible content -->
-    <div class="collapse navbar-collapse" id="navbarSupportedContent">
-      <ul class="navbar-nav ml-auto text-center">
-        
-          
-          
-          
-          
-            <li class="nav-item">
-              <a class="nav-link" href="/">
-                <i class="iconfont icon-home-fill"></i>
-                Home
-              </a>
-            </li>
-          
-        
-          
-          
-          
-          
-            <li class="nav-item">
-              <a class="nav-link" href="/archives/">
-                <i class="iconfont icon-archive-fill"></i>
-                Archives
-              </a>
-            </li>
-          
-        
-          
-          
-          
-          
-            <li class="nav-item">
-              <a class="nav-link" href="/categories/">
-                <i class="iconfont icon-category-fill"></i>
-                Categories
-              </a>
-            </li>
-          
-        
-          
-          
-          
-          
-            <li class="nav-item">
-              <a class="nav-link" href="/tags/">
-                <i class="iconfont icon-tags-fill"></i>
-                Tags
-              </a>
-            </li>
-          
-        
-          
-          
-          
-          
-            <li class="nav-item">
-              <a class="nav-link" href="/about/">
-                <i class="iconfont icon-user-fill"></i>
-                About
-              </a>
-            </li>
-          
-        
-          
-          
-          
-          
-            <li class="nav-item">
-              <a class="nav-link" href="/links/">
-                <i class="iconfont icon-link-fill"></i>
-                Links
-              </a>
-            </li>
-          
-        
-        
-          <li class="nav-item" id="search-btn">
-            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
-              &nbsp;<i class="iconfont icon-search"></i>&nbsp;
-            </a>
-          </li>
-          
-        
-        
-          <li class="nav-item" id="color-toggle-btn">
-            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">&nbsp;<i
-                class="iconfont icon-dark" id="color-toggle-icon"></i>&nbsp;</a>
-          </li>
-        
-      </ul>
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
     </div>
   </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Staskaer</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">Hi, this is Staskaer</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
 </nav>
 
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="Searching..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2022/09/29/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-9/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/imgs/theme_pic/head_img.png">
+      <meta itemprop="name" content="Staskaer">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Staskaer">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          levelDB源码剖析(9)--WAL日志
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2022-09-29 14:05:36" itemprop="dateCreated datePublished" datetime="2022-09-29T14:05:36+08:00">2022-09-29</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2022-11-04 14:02:44" itemprop="dateModified" datetime="2022-11-04T14:02:44+08:00">2022-11-04</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/" itemprop="url" rel="index"><span itemprop="name">levelDB源码剖析</span></a>
+                </span>
+            </span>
+
+          
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Valine: </span>
+    
+    <a title="valine" href="/2022/09/29/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-9/#valine-comments" itemprop="discussionUrl">
+      <span class="post-comments-count valine-comment-count" data-xid="/2022/09/29/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-9/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
   
 
-<div id="banner" class="banner" parallax=true
-     style="background: url('/imgs/post_index_img/leveldb9.jpg') no-repeat center center; background-size: cover;">
-  <div class="full-bg-img">
-    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
-      <div class="banner-text text-center fade-in-up">
-        <div class="h2">
-          
-            <span id="subtitle" data-typed-text="levelDB源码剖析，剖析源码，掌握技术"></span>
-          
         </div>
-
-        
-          
-  <div class="mt-3">
-    
-    
-      <span class="post-meta">
-        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
-        <time datetime="2022-09-29 14:05" pubdate>
-          September 29, 2022 pm
-        </time>
-      </span>
-    
-  </div>
-
-  <div class="mt-1">
-    
-      <span class="post-meta mr-2">
-        <i class="iconfont icon-chart"></i>
-        
-          4.7k words
-        
-      </span>
-    
-
-    
-      <span class="post-meta mr-2">
-        <i class="iconfont icon-clock-fill"></i>
-        
-        
-        
-          20 mins
-        
-      </span>
-    
+      </header>
 
     
     
-      
-        <span id="leancloud-page-views-container" class="post-meta" style="display: none">
-          <i class="iconfont icon-eye" aria-hidden="true"></i>
-          <span id="leancloud-page-views"></span> views
-        </span>
-        
-      
     
-  </div>
-
-
-        
-      </div>
+    <div class="post-body" itemprop="articleBody">
 
       
-    </div>
-  </div>
-</div>
-
-</div>
-
-  </header>
-
-  <main>
-    
-      
-
-<div class="container-fluid nopadding-x">
-  <div class="row nomargin-x">
-    <div class="side-col d-none d-lg-block col-lg-2">
-      
-
-    </div>
-
-    <div class="col-lg-8 nopadding-x-md">
-      <div class="container nopadding-x-md" id="board-ctn">
-        <div id="board">
-          <article class="post-content mx-auto">
-            <!-- SEO header -->
-            <h1 style="display: none">levelDB源码剖析，剖析源码，掌握技术</h1>
-            
-            
-              <div class="markdown-body">
-                
-                <h2 id="wal日志的格式与构建">WAL日志的格式与构建</h2>
+        <h2 id="wal日志的格式与构建">WAL日志的格式与构建</h2>
 <span id="more"></span>
-<div class="note note-primary">
+<div class="note primary">
             <p>源码位置与说明</p><p>db/log_format.h : 定义了RecordType和一些常量<br>db/log_writer.h db/log_writer.cc :主要实现Writer::AddRecord，写一条记录到日志中<br>db/log_reader.h db/log_reader.cc :主要实现Reader::ReadRecord，读取一条日志记录</p>
           </div>
 <p>LevelDB写入一个kv时，都会先向日志里写入一条记录，这种日志一般称为WAL，也就是Write
@@ -435,7 +388,7 @@ Ahead
 Log。这种日志最大的作用就是将对磁盘的随机写转换成了顺序写。当故障宕机时，可以通过WAL进行故障恢复。控制每次WAL写入磁盘的方式，可以控制最多可能丢失的数据量。</p>
 <p>WAL里的内容实际就是内存里MemTable内容的持久化，当一个MemTable写满后，开启一个新的MemTable时，也同时会开启一个新的WAL，当MemTable被Dump到磁盘后，相应的WAL可以被删除。</p>
 <p>WAL的格式很简单，由一系列32KB的Block组成，当然最后一个块可能是不满的，正在写入中。</p>
-<img src="/2022/09/29/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-9/pic1.jpg" srcset="/img/loading.gif" lazyload class="">
+<img src="/2022/09/29/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-9/pic1.jpg" class="">
 <p>而每个Block包含连续的Record，其中每个Record的格式为crc+长度+类型+value。一条记录可能全部写到一个块上，也可能跨几个块。且其中每个Record可以是不同的类型的，有以下几种类型。</p>
 <ul>
 <li>kZeroType：为预分配的文件保留。</li>
@@ -445,346 +398,410 @@ Log。这种日志最大的作用就是将对磁盘的随机写转换成了顺�
 <li>kLastType：表示该条记录的最后一部分。</li>
 </ul>
 <p>可能感觉为什么需要设置这么多Record类型，原因很简单。因为WAL是由Block组成的，<strong>注意这个Block不是前面SSTable中的Block类，这里的Block指的是一种逻辑上的结构</strong>，为了便于读取，WAL中的Block大小都是固定的，为<code>kBlockSize = 32768</code>。而每条Record的大小不是固定的，因此可能会出现当前Block中放不下插入的Record，所以需要将Record进行分块插入到不同的Block中，这个类型就是为了标识出这条Record是不是被拆分之后的结果，如果是的话，那么这条Record位于未被拆分的Record中的哪部分。</p>
-<img src="/2022/09/29/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-9/pic2.png" srcset="/img/loading.gif" lazyload class="">
-<div class="note note-info">
+<img src="/2022/09/29/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-9/pic2.png" class="">
+<div class="note info">
             <p>这部分可以在<code>doc/log_format.md</code>中找到</p>
           </div>
 <h4 id="源码部分">源码部分</h4>
 <p>我们先来看一下头文件</p>
-<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><code class="hljs cpp"><br><span class="hljs-keyword">class</span> <span class="hljs-title class_">Writer</span><br>{<br><span class="hljs-keyword">private</span>:<br>    <span class="hljs-comment">// 执行的操作就是构造Header，</span><br>    <span class="hljs-comment">// 调用WritableFile的append和flush，将record刷到物理磁盘上</span><br>    <span class="hljs-function">Status <span class="hljs-title">EmitPhysicalRecord</span><span class="hljs-params">(RecordType type, <span class="hljs-type">const</span> <span class="hljs-type">char</span> *ptr, <span class="hljs-type">size_t</span> length)</span></span>;<br><br>    WritableFile *dest_;                    <span class="hljs-comment">// 可写入的WAL文件</span><br>    <span class="hljs-type">int</span> block_offset_;                      <span class="hljs-comment">// 当前的偏移值</span><br>    <span class="hljs-type">uint32_t</span> type_crc_[kMaxRecordType + <span class="hljs-number">1</span>]; <span class="hljs-comment">// CRC校验</span><br><br><span class="hljs-keyword">public</span>:<br>    <span class="hljs-comment">// 构造函数，此时要求dest是空的或存在dest_length长度的内容</span><br>    <span class="hljs-function"><span class="hljs-keyword">explicit</span> <span class="hljs-title">Writer</span><span class="hljs-params">(WritableFile *dest)</span></span>;<br>    <span class="hljs-built_in">Writer</span>(WritableFile *dest, <span class="hljs-type">uint64_t</span> dest_length);<br>    <span class="hljs-built_in">Writer</span>(<span class="hljs-type">const</span> Writer &amp;) = <span class="hljs-keyword">delete</span>;<br>    Writer &amp;<span class="hljs-keyword">operator</span>=(<span class="hljs-type">const</span> Writer &amp;) = <span class="hljs-keyword">delete</span>;<br>    ~<span class="hljs-built_in">Writer</span>();<br><br>    <span class="hljs-comment">// 添加一条记录</span><br>    <span class="hljs-function">Status <span class="hljs-title">AddRecord</span><span class="hljs-params">(<span class="hljs-type">const</span> Slice &amp;slice)</span></span>;<br>};<br><br></code></pre></td></tr></table></figure>
+<pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp">
+<span class="token keyword">class</span> <span class="token class-name">Writer</span>
+<span class="token punctuation">{</span>
+<span class="token keyword">private</span><span class="token operator">:</span>
+    <span class="token comment">// 执行的操作就是构造Header，</span>
+    <span class="token comment">// 调用WritableFile的append和flush，将record刷到物理磁盘上</span>
+    Status <span class="token function">EmitPhysicalRecord</span><span class="token punctuation">(</span>RecordType type<span class="token punctuation">,</span> <span class="token keyword">const</span> <span class="token keyword">char</span> <span class="token operator">*</span>ptr<span class="token punctuation">,</span> size_t length<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    WritableFile <span class="token operator">*</span>dest_<span class="token punctuation">;</span>                    <span class="token comment">// 可写入的WAL文件</span>
+    <span class="token keyword">int</span> block_offset_<span class="token punctuation">;</span>                      <span class="token comment">// 当前的偏移值</span>
+    <span class="token keyword">uint32_t</span> type_crc_<span class="token punctuation">[</span>kMaxRecordType <span class="token operator">+</span> <span class="token number">1</span><span class="token punctuation">]</span><span class="token punctuation">;</span> <span class="token comment">// CRC校验</span>
+
+<span class="token keyword">public</span><span class="token operator">:</span>
+    <span class="token comment">// 构造函数，此时要求dest是空的或存在dest_length长度的内容</span>
+    <span class="token keyword">explicit</span> <span class="token function">Writer</span><span class="token punctuation">(</span>WritableFile <span class="token operator">*</span>dest<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token function">Writer</span><span class="token punctuation">(</span>WritableFile <span class="token operator">*</span>dest<span class="token punctuation">,</span> <span class="token keyword">uint64_t</span> dest_length<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token function">Writer</span><span class="token punctuation">(</span><span class="token keyword">const</span> Writer <span class="token operator">&amp;</span><span class="token punctuation">)</span> <span class="token operator">=</span> <span class="token keyword">delete</span><span class="token punctuation">;</span>
+    Writer <span class="token operator">&amp;</span><span class="token keyword">operator</span><span class="token operator">=</span><span class="token punctuation">(</span><span class="token keyword">const</span> Writer <span class="token operator">&amp;</span><span class="token punctuation">)</span> <span class="token operator">=</span> <span class="token keyword">delete</span><span class="token punctuation">;</span>
+    <span class="token operator">~</span><span class="token function">Writer</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token comment">// 添加一条记录</span>
+    Status <span class="token function">AddRecord</span><span class="token punctuation">(</span><span class="token keyword">const</span> Slice <span class="token operator">&amp;</span>slice<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span><span class="token punctuation">;</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <p>其实这个Writer接口还是非常简单的，只有一个AddRecord函数可以用来添加日志。我们来看一下它的具体实现是什么样的。</p>
-<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br></pre></td><td class="code"><pre><code class="hljs cpp"><br><span class="hljs-comment">// 初始化CRC，每个构造函数都调用这个函数</span><br><span class="hljs-function"><span class="hljs-type">static</span> <span class="hljs-type">void</span> <span class="hljs-title">InitTypeCrc</span><span class="hljs-params">(<span class="hljs-type">uint32_t</span> *type_crc)</span></span><br><span class="hljs-function"></span>{<br>    <span class="hljs-keyword">for</span> (<span class="hljs-type">int</span> i = <span class="hljs-number">0</span>; i &lt;= kMaxRecordType; i++)<br>    {<br>        <span class="hljs-type">char</span> t = <span class="hljs-built_in">static_cast</span>&lt;<span class="hljs-type">char</span>&gt;(i);<br>        type_crc[i] = crc32c::<span class="hljs-built_in">Value</span>(&amp;t, <span class="hljs-number">1</span>);<br>    }<br>}<br><br><span class="hljs-comment">// 构造函数</span><br>Writer::<span class="hljs-built_in">Writer</span>(WritableFile *dest) : <span class="hljs-built_in">dest_</span>(dest), <span class="hljs-built_in">block_offset_</span>(<span class="hljs-number">0</span>)<br>{<br>    <span class="hljs-built_in">InitTypeCrc</span>(type_crc_);<br>}<br><br><span class="hljs-comment">// 构造函数2</span><br>Writer::<span class="hljs-built_in">Writer</span>(WritableFile *dest, <span class="hljs-type">uint64_t</span> dest_length)<br>    : <span class="hljs-built_in">dest_</span>(dest), <span class="hljs-built_in">block_offset_</span>(dest_length % kBlockSize)<br>{<br>    <span class="hljs-built_in">InitTypeCrc</span>(type_crc_);<br>}<br><br><span class="hljs-comment">// 析构函数</span><br>Writer::~<span class="hljs-built_in">Writer</span>() = <span class="hljs-keyword">default</span>;<br><br><span class="hljs-comment">// 接口，添加一个Record</span><br><span class="hljs-function">Status <span class="hljs-title">Writer::AddRecord</span><span class="hljs-params">(<span class="hljs-type">const</span> Slice &amp;slice)</span></span><br><span class="hljs-function"></span>{<br>    <span class="hljs-type">const</span> <span class="hljs-type">char</span> *ptr = slice.<span class="hljs-built_in">data</span>(); <span class="hljs-comment">// 获取record的数据和长度</span><br>    <span class="hljs-type">size_t</span> left = slice.<span class="hljs-built_in">size</span>();<br><br>    Status s;<br>    <span class="hljs-comment">// begin表明本条记录是第一次写入，即当前块中第一条记录</span><br>    <span class="hljs-type">bool</span> begin = <span class="hljs-literal">true</span>;<br>    <span class="hljs-keyword">do</span><br>    {<br>        <span class="hljs-comment">// 当前块剩余空间，用于判断头部能否完整写入</span><br>        <span class="hljs-type">const</span> <span class="hljs-type">int</span> leftover = kBlockSize - block_offset_;<br>        <span class="hljs-built_in">assert</span>(leftover &gt;= <span class="hljs-number">0</span>);<br>        <span class="hljs-keyword">if</span> (leftover &lt; kHeaderSize)<br>        {<br>            <span class="hljs-comment">// 如果块剩余空间小于七个字节且不等于0，说明当前无法完整写入数据</span><br>            <span class="hljs-comment">// 此时填充\x00，从下一个块写入</span><br>            <span class="hljs-keyword">if</span> (leftover &gt; <span class="hljs-number">0</span>)<br>            {<br>                <span class="hljs-built_in">static_assert</span>(kHeaderSize == <span class="hljs-number">7</span>, <span class="hljs-string">""</span>);<br>                dest_-&gt;<span class="hljs-built_in">Append</span>(<span class="hljs-built_in">Slice</span>(<span class="hljs-string">"\x00\x00\x00\x00\x00\x00"</span>, leftover));<br>            }<br>            <span class="hljs-comment">// 此时块正好写满，将block_offset_置为0，表明开始写入新的块</span><br>            block_offset_ = <span class="hljs-number">0</span>;<br>        }<br><br>        <span class="hljs-comment">// Invariant: we never leave &lt; kHeaderSize bytes in a block.</span><br>        <span class="hljs-built_in">assert</span>(kBlockSize - block_offset_ - kHeaderSize &gt;= <span class="hljs-number">0</span>);<br><br>        <span class="hljs-comment">// 计算块剩余空间</span><br>        <span class="hljs-type">const</span> <span class="hljs-type">size_t</span> avail = kBlockSize - block_offset_ - kHeaderSize;<br>        <span class="hljs-comment">// 计算当前块能够写入的数据大小（块剩余空间和记录剩余内容中最小的）</span><br>        <span class="hljs-type">const</span> <span class="hljs-type">size_t</span> fragment_length = (left &lt; avail) ? left : avail;<br><br>        RecordType type;<br>        <span class="hljs-comment">// end表明该记录是否已经完整写入，即最后一条记录</span><br>        <span class="hljs-type">const</span> <span class="hljs-type">bool</span> end = (left == fragment_length);<br><br>        <span class="hljs-comment">// 下面判断是哪一种类型</span><br>        <span class="hljs-keyword">if</span> (begin &amp;&amp; end)<br>        {<br>            <span class="hljs-comment">// 记录为第一条且同时又是最后一条，说明当前是完整的记录，状态为kFullType</span><br>            type = kFullType;<br>        }<br>        <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (begin)<br>        {<br>            <span class="hljs-comment">// 只有头部</span><br>            type = kFirstType;<br>        }<br>        <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (end)<br>        {<br>            <span class="hljs-comment">// 只有结尾</span><br>            type = kLastType;<br>        }<br>        <span class="hljs-keyword">else</span><br>        {<br>            <span class="hljs-comment">// 既不是头也不是结尾</span><br>            type = kMiddleType;<br>        }<br><br>        <span class="hljs-comment">// 把已经写入的Record部分发射到物理磁盘中</span><br>        s = <span class="hljs-built_in">EmitPhysicalRecord</span>(type, ptr, fragment_length);<br>        ptr += fragment_length;<br>        left -= fragment_length;<br>        begin = <span class="hljs-literal">false</span>;<br>    } <span class="hljs-keyword">while</span> (s.<span class="hljs-built_in">ok</span>() &amp;&amp; left &gt; <span class="hljs-number">0</span>);<br>    <span class="hljs-keyword">return</span> s;<br>}<br><br><span class="hljs-comment">// 把一条Record发射保存到物理磁盘中</span><br><span class="hljs-function">Status <span class="hljs-title">Writer::EmitPhysicalRecord</span><span class="hljs-params">(RecordType t, <span class="hljs-type">const</span> <span class="hljs-type">char</span> *ptr,</span></span><br><span class="hljs-params"><span class="hljs-function">                                  <span class="hljs-type">size_t</span> length)</span></span><br><span class="hljs-function"></span>{<br>    <span class="hljs-built_in">assert</span>(length &lt;= <span class="hljs-number">0xffff</span>); <span class="hljs-comment">// Must fit in two bytes</span><br>    <span class="hljs-built_in">assert</span>(block_offset_ + kHeaderSize + length &lt;= kBlockSize);<br><br>    <span class="hljs-comment">// 缓存header并计算出crc</span><br>    <span class="hljs-type">char</span> buf[kHeaderSize];<br>    buf[<span class="hljs-number">4</span>] = <span class="hljs-built_in">static_cast</span>&lt;<span class="hljs-type">char</span>&gt;(length &amp; <span class="hljs-number">0xff</span>);<br>    buf[<span class="hljs-number">5</span>] = <span class="hljs-built_in">static_cast</span>&lt;<span class="hljs-type">char</span>&gt;(length &gt;&gt; <span class="hljs-number">8</span>);<br>    buf[<span class="hljs-number">6</span>] = <span class="hljs-built_in">static_cast</span>&lt;<span class="hljs-type">char</span>&gt;(t);<br><br>    <span class="hljs-comment">// 计算crc</span><br>    <span class="hljs-type">uint32_t</span> crc = crc32c::<span class="hljs-built_in">Extend</span>(type_crc_[t], ptr, length);<br>    crc = crc32c::<span class="hljs-built_in">Mask</span>(crc);<br>    <span class="hljs-built_in">EncodeFixed32</span>(buf, crc); <span class="hljs-comment">// 编码</span><br><br>    <span class="hljs-comment">// 调用文件的相关方法来把header写入磁盘，然后把剩余部分也写入文件</span><br>    Status s = dest_-&gt;<span class="hljs-built_in">Append</span>(<span class="hljs-built_in">Slice</span>(buf, kHeaderSize));<br>    <span class="hljs-keyword">if</span> (s.<span class="hljs-built_in">ok</span>())<br>    {<br>        s = dest_-&gt;<span class="hljs-built_in">Append</span>(<span class="hljs-built_in">Slice</span>(ptr, length));<br>        <span class="hljs-keyword">if</span> (s.<span class="hljs-built_in">ok</span>())<br>        {<br>            s = dest_-&gt;<span class="hljs-built_in">Flush</span>();<br>        }<br>    }<br>    block_offset_ += kHeaderSize + length; <span class="hljs-comment">// 更新block的偏移位置</span><br>    <span class="hljs-keyword">return</span> s;<br>}<br><br></code></pre></td></tr></table></figure>
+<pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp">
+<span class="token comment">// 初始化CRC，每个构造函数都调用这个函数</span>
+<span class="token keyword">static</span> <span class="token keyword">void</span> <span class="token function">InitTypeCrc</span><span class="token punctuation">(</span><span class="token keyword">uint32_t</span> <span class="token operator">*</span>type_crc<span class="token punctuation">)</span>
+<span class="token punctuation">{</span>
+    <span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token keyword">int</span> i <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span> i <span class="token operator">&lt;=</span> kMaxRecordType<span class="token punctuation">;</span> i<span class="token operator">++</span><span class="token punctuation">)</span>
+    <span class="token punctuation">{</span>
+        <span class="token keyword">char</span> t <span class="token operator">=</span> <span class="token generic-function"><span class="token function">static_cast</span><span class="token generic class-name"><span class="token operator">&lt;</span><span class="token keyword">char</span><span class="token operator">&gt;</span></span></span><span class="token punctuation">(</span>i<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        type_crc<span class="token punctuation">[</span>i<span class="token punctuation">]</span> <span class="token operator">=</span> crc32c<span class="token double-colon punctuation">::</span><span class="token function">Value</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>t<span class="token punctuation">,</span> <span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+
+<span class="token comment">// 构造函数</span>
+<span class="token class-name">Writer</span><span class="token double-colon punctuation">::</span><span class="token function">Writer</span><span class="token punctuation">(</span>WritableFile <span class="token operator">*</span>dest<span class="token punctuation">)</span> <span class="token operator">:</span> <span class="token function">dest_</span><span class="token punctuation">(</span>dest<span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token function">block_offset_</span><span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">)</span>
+<span class="token punctuation">{</span>
+    <span class="token function">InitTypeCrc</span><span class="token punctuation">(</span>type_crc_<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+
+<span class="token comment">// 构造函数2</span>
+<span class="token class-name">Writer</span><span class="token double-colon punctuation">::</span><span class="token function">Writer</span><span class="token punctuation">(</span>WritableFile <span class="token operator">*</span>dest<span class="token punctuation">,</span> <span class="token keyword">uint64_t</span> dest_length<span class="token punctuation">)</span>
+    <span class="token operator">:</span> <span class="token function">dest_</span><span class="token punctuation">(</span>dest<span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token function">block_offset_</span><span class="token punctuation">(</span>dest_length <span class="token operator">%</span> kBlockSize<span class="token punctuation">)</span>
+<span class="token punctuation">{</span>
+    <span class="token function">InitTypeCrc</span><span class="token punctuation">(</span>type_crc_<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+
+<span class="token comment">// 析构函数</span>
+<span class="token class-name">Writer</span><span class="token double-colon punctuation">::</span><span class="token operator">~</span><span class="token function">Writer</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">=</span> <span class="token keyword">default</span><span class="token punctuation">;</span>
+
+<span class="token comment">// 接口，添加一个Record</span>
+Status <span class="token class-name">Writer</span><span class="token double-colon punctuation">::</span><span class="token function">AddRecord</span><span class="token punctuation">(</span><span class="token keyword">const</span> Slice <span class="token operator">&amp;</span>slice<span class="token punctuation">)</span>
+<span class="token punctuation">{</span>
+    <span class="token keyword">const</span> <span class="token keyword">char</span> <span class="token operator">*</span>ptr <span class="token operator">=</span> slice<span class="token punctuation">.</span><span class="token function">data</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token comment">// 获取record的数据和长度</span>
+    size_t left <span class="token operator">=</span> slice<span class="token punctuation">.</span><span class="token function">size</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    Status s<span class="token punctuation">;</span>
+    <span class="token comment">// begin表明本条记录是第一次写入，即当前块中第一条记录</span>
+    <span class="token keyword">bool</span> begin <span class="token operator">=</span> <span class="token boolean">true</span><span class="token punctuation">;</span>
+    <span class="token keyword">do</span>
+    <span class="token punctuation">{</span>
+        <span class="token comment">// 当前块剩余空间，用于判断头部能否完整写入</span>
+        <span class="token keyword">const</span> <span class="token keyword">int</span> leftover <span class="token operator">=</span> kBlockSize <span class="token operator">-</span> block_offset_<span class="token punctuation">;</span>
+        <span class="token function">assert</span><span class="token punctuation">(</span>leftover <span class="token operator">&gt;=</span> <span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span>leftover <span class="token operator">&lt;</span> kHeaderSize<span class="token punctuation">)</span>
+        <span class="token punctuation">{</span>
+            <span class="token comment">// 如果块剩余空间小于七个字节且不等于0，说明当前无法完整写入数据</span>
+            <span class="token comment">// 此时填充\x00，从下一个块写入</span>
+            <span class="token keyword">if</span> <span class="token punctuation">(</span>leftover <span class="token operator">&gt;</span> <span class="token number">0</span><span class="token punctuation">)</span>
+            <span class="token punctuation">{</span>
+                <span class="token keyword">static_assert</span><span class="token punctuation">(</span>kHeaderSize <span class="token operator">==</span> <span class="token number">7</span><span class="token punctuation">,</span> <span class="token string">""</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+                dest_<span class="token operator">-&gt;</span><span class="token function">Append</span><span class="token punctuation">(</span><span class="token function">Slice</span><span class="token punctuation">(</span><span class="token string">"\x00\x00\x00\x00\x00\x00"</span><span class="token punctuation">,</span> leftover<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token punctuation">}</span>
+            <span class="token comment">// 此时块正好写满，将block_offset_置为0，表明开始写入新的块</span>
+            block_offset_ <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+
+        <span class="token comment">// Invariant: we never leave &lt; kHeaderSize bytes in a block.</span>
+        <span class="token function">assert</span><span class="token punctuation">(</span>kBlockSize <span class="token operator">-</span> block_offset_ <span class="token operator">-</span> kHeaderSize <span class="token operator">&gt;=</span> <span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+        <span class="token comment">// 计算块剩余空间</span>
+        <span class="token keyword">const</span> size_t avail <span class="token operator">=</span> kBlockSize <span class="token operator">-</span> block_offset_ <span class="token operator">-</span> kHeaderSize<span class="token punctuation">;</span>
+        <span class="token comment">// 计算当前块能够写入的数据大小（块剩余空间和记录剩余内容中最小的）</span>
+        <span class="token keyword">const</span> size_t fragment_length <span class="token operator">=</span> <span class="token punctuation">(</span>left <span class="token operator">&lt;</span> avail<span class="token punctuation">)</span> <span class="token operator">?</span> left <span class="token operator">:</span> avail<span class="token punctuation">;</span>
+
+        RecordType type<span class="token punctuation">;</span>
+        <span class="token comment">// end表明该记录是否已经完整写入，即最后一条记录</span>
+        <span class="token keyword">const</span> <span class="token keyword">bool</span> end <span class="token operator">=</span> <span class="token punctuation">(</span>left <span class="token operator">==</span> fragment_length<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+        <span class="token comment">// 下面判断是哪一种类型</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span>begin <span class="token operator">&amp;&amp;</span> end<span class="token punctuation">)</span>
+        <span class="token punctuation">{</span>
+            <span class="token comment">// 记录为第一条且同时又是最后一条，说明当前是完整的记录，状态为kFullType</span>
+            type <span class="token operator">=</span> kFullType<span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+        <span class="token keyword">else</span> <span class="token keyword">if</span> <span class="token punctuation">(</span>begin<span class="token punctuation">)</span>
+        <span class="token punctuation">{</span>
+            <span class="token comment">// 只有头部</span>
+            type <span class="token operator">=</span> kFirstType<span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+        <span class="token keyword">else</span> <span class="token keyword">if</span> <span class="token punctuation">(</span>end<span class="token punctuation">)</span>
+        <span class="token punctuation">{</span>
+            <span class="token comment">// 只有结尾</span>
+            type <span class="token operator">=</span> kLastType<span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+        <span class="token keyword">else</span>
+        <span class="token punctuation">{</span>
+            <span class="token comment">// 既不是头也不是结尾</span>
+            type <span class="token operator">=</span> kMiddleType<span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+
+        <span class="token comment">// 把已经写入的Record部分发射到物理磁盘中</span>
+        s <span class="token operator">=</span> <span class="token function">EmitPhysicalRecord</span><span class="token punctuation">(</span>type<span class="token punctuation">,</span> ptr<span class="token punctuation">,</span> fragment_length<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        ptr <span class="token operator">+=</span> fragment_length<span class="token punctuation">;</span>
+        left <span class="token operator">-=</span> fragment_length<span class="token punctuation">;</span>
+        begin <span class="token operator">=</span> <span class="token boolean">false</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span> <span class="token keyword">while</span> <span class="token punctuation">(</span>s<span class="token punctuation">.</span><span class="token function">ok</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">&amp;&amp;</span> left <span class="token operator">&gt;</span> <span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">return</span> s<span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+
+<span class="token comment">// 把一条Record发射保存到物理磁盘中</span>
+Status <span class="token class-name">Writer</span><span class="token double-colon punctuation">::</span><span class="token function">EmitPhysicalRecord</span><span class="token punctuation">(</span>RecordType t<span class="token punctuation">,</span> <span class="token keyword">const</span> <span class="token keyword">char</span> <span class="token operator">*</span>ptr<span class="token punctuation">,</span>
+                                  size_t length<span class="token punctuation">)</span>
+<span class="token punctuation">{</span>
+    <span class="token function">assert</span><span class="token punctuation">(</span>length <span class="token operator">&lt;=</span> <span class="token number">0xffff</span><span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token comment">// Must fit in two bytes</span>
+    <span class="token function">assert</span><span class="token punctuation">(</span>block_offset_ <span class="token operator">+</span> kHeaderSize <span class="token operator">+</span> length <span class="token operator">&lt;=</span> kBlockSize<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token comment">// 缓存header并计算出crc</span>
+    <span class="token keyword">char</span> buf<span class="token punctuation">[</span>kHeaderSize<span class="token punctuation">]</span><span class="token punctuation">;</span>
+    buf<span class="token punctuation">[</span><span class="token number">4</span><span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token generic-function"><span class="token function">static_cast</span><span class="token generic class-name"><span class="token operator">&lt;</span><span class="token keyword">char</span><span class="token operator">&gt;</span></span></span><span class="token punctuation">(</span>length <span class="token operator">&amp;</span> <span class="token number">0xff</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    buf<span class="token punctuation">[</span><span class="token number">5</span><span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token generic-function"><span class="token function">static_cast</span><span class="token generic class-name"><span class="token operator">&lt;</span><span class="token keyword">char</span><span class="token operator">&gt;</span></span></span><span class="token punctuation">(</span>length <span class="token operator">&gt;&gt;</span> <span class="token number">8</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    buf<span class="token punctuation">[</span><span class="token number">6</span><span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token generic-function"><span class="token function">static_cast</span><span class="token generic class-name"><span class="token operator">&lt;</span><span class="token keyword">char</span><span class="token operator">&gt;</span></span></span><span class="token punctuation">(</span>t<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token comment">// 计算crc</span>
+    <span class="token keyword">uint32_t</span> crc <span class="token operator">=</span> crc32c<span class="token double-colon punctuation">::</span><span class="token function">Extend</span><span class="token punctuation">(</span>type_crc_<span class="token punctuation">[</span>t<span class="token punctuation">]</span><span class="token punctuation">,</span> ptr<span class="token punctuation">,</span> length<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    crc <span class="token operator">=</span> crc32c<span class="token double-colon punctuation">::</span><span class="token function">Mask</span><span class="token punctuation">(</span>crc<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token function">EncodeFixed32</span><span class="token punctuation">(</span>buf<span class="token punctuation">,</span> crc<span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token comment">// 编码</span>
+
+    <span class="token comment">// 调用文件的相关方法来把header写入磁盘，然后把剩余部分也写入文件</span>
+    Status s <span class="token operator">=</span> dest_<span class="token operator">-&gt;</span><span class="token function">Append</span><span class="token punctuation">(</span><span class="token function">Slice</span><span class="token punctuation">(</span>buf<span class="token punctuation">,</span> kHeaderSize<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>s<span class="token punctuation">.</span><span class="token function">ok</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+    <span class="token punctuation">{</span>
+        s <span class="token operator">=</span> dest_<span class="token operator">-&gt;</span><span class="token function">Append</span><span class="token punctuation">(</span><span class="token function">Slice</span><span class="token punctuation">(</span>ptr<span class="token punctuation">,</span> length<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span>s<span class="token punctuation">.</span><span class="token function">ok</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+        <span class="token punctuation">{</span>
+            s <span class="token operator">=</span> dest_<span class="token operator">-&gt;</span><span class="token function">Flush</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+    <span class="token punctuation">}</span>
+    block_offset_ <span class="token operator">+=</span> kHeaderSize <span class="token operator">+</span> length<span class="token punctuation">;</span> <span class="token comment">// 更新block的偏移位置</span>
+    <span class="token keyword">return</span> s<span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <p>其实写入逻辑也是很简单的，就是看一下当前的Block够不够，如果够的话就直接把Record写入并将类型设置为kFullType。如果当前块剩余空间小于7字节(小于header需要的字节数目)就新开一个块，并重复执行上述操作。如果当前块能够写下一部分，就把Record的一部分写入到这个块中，并设置类型为kFirstType，剩余的部分继续执行上述操作，可能会被设置为kMiddleType、kLastType这些类型，直到一条Record写完。</p>
 <h2 id="总结">总结</h2>
 <p>WAL日志部分的写入还是很简单的，这个类的设计的接口其实只有一个，使用起来非常方便。</p>
 <p>另外AddRecord这个函数中的循环写入部分也是非常有意思的。</p>
 
-                
-              </div>
-            
-            <hr/>
-            <div>
-              <div class="post-metas my-3">
-  
-    <div class="post-meta mr-3 d-flex align-items-center">
-      <i class="iconfont icon-category"></i>
-      
+    </div>
 
-<span class="category-chains">
-  
-  
     
-      <span class="category-chain">
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/C/" rel="tag"># C++</a>
+              <a href="/tags/levelDB/" rel="tag"># levelDB</a>
+          </div>
+
         
-  <a href="/categories/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/" class="category-chain-item">levelDB源码剖析</a>
-  
-  
 
-      </span>
-    
-  
-</span>
 
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2022/09/27/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-8/" rel="prev" title="levelDB源码剖析(8)--Block和SSTable的构建">
+      <i class="fa fa-chevron-left"></i> levelDB源码剖析(8)--Block和SSTable的构建
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2022/09/30/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-10/" rel="next" title="levelDB源码剖析(10)--MemTable结构">
+      levelDB源码剖析(10)--MemTable结构 <i class="fa fa-chevron-right"></i>
+    </a></div>
     </div>
-  
-  
-    <div class="post-meta">
-      <i class="iconfont icon-tags"></i>
-      
-        <a href="/tags/C/">#C++</a>
-      
-        <a href="/tags/levelDB/">#levelDB</a>
-      
-    </div>
-  
-</div>
-
-
-              
-
-              
-                <div class="post-prevnext my-3">
-                  <article class="post-prev col-6">
-                    
-                    
-                      <a href="/2022/09/30/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-10/" title="levelDB源码剖析(10)--MemTable结构">
-                        <i class="iconfont icon-arrowleft"></i>
-                        <span class="hidden-mobile">levelDB源码剖析(10)--MemTable结构</span>
-                        <span class="visible-mobile">Previous</span>
-                      </a>
-                    
-                  </article>
-                  <article class="post-next col-6">
-                    
-                    
-                      <a href="/2022/09/27/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-8/" title="levelDB源码剖析(8)--Block和SSTable的构建">
-                        <span class="hidden-mobile">levelDB源码剖析(8)--Block和SSTable的构建</span>
-                        <span class="visible-mobile">Next</span>
-                        <i class="iconfont icon-arrowright"></i>
-                      </a>
-                    
-                  </article>
-                </div>
-              
-            </div>
-
-            
-  <article id="comments" lazyload>
+      </footer>
     
-  <div id="waline"></div>
-  <script type="text/javascript">
-    Fluid.utils.loadComments('#waline', function() {
-      Fluid.utils.createCssLink('https://lib.baomitu.com/waline/2.5.1/waline.min.css')
-      Fluid.utils.createScript('https://lib.baomitu.com/waline/2.5.1/waline.min.js', function() {
-        var options = Object.assign(
-          {"serverURL":"https://waline-tau.vercel.app/","path":"window.location.pathname","meta":["nick","mail","link"],"requiredMeta":["nick"],"lang":"zh-CN","emoji":["https://emoji.shojo.cn/bili/src/大航海嘉然","https://emoji.shojo.cn/bili/src/永雏塔菲","https://emoji.shojo.cn/bili/src/東雪蓮","https://unpkg.com/@waline/emojis@1.1.0/tieba","https://emoji.shojo.cn/bili/src/嘉然今天吃什么","https://emoji.shojo.cn/bili/src/小黄脸"],"dark":"html[data-user-color-scheme=\"dark\"]","wordLimit":0,"pageSize":10},
-          {
-            el: '#waline',
-            path: window.location.pathname
-          }
-        )
-        Waline.init(options);
-        Fluid.utils.waitElementVisible('#waline .vcontent', () => {
-          var imgSelector = '#waline .vcontent img:not(.vemoji)';
-          Fluid.plugins.imageCaption(imgSelector);
-          Fluid.plugins.fancyBox(imgSelector);
-        })
-      });
-    });
-  </script>
-  <noscript>Please enable JavaScript to view the comments</noscript>
-
-
   </article>
-
-
-          </article>
-        </div>
-      </div>
-    </div>
-
-    <div class="side-col d-none d-lg-block col-lg-2">
-      
-  <aside class="sidebar" style="margin-left: -1rem">
-    <div id="toc">
-  <p class="toc-header"><i class="iconfont icon-list"></i>&nbsp;Table of Contents</p>
-  <div class="toc-body" id="toc-body"></div>
-</div>
-
-
-
-  </aside>
-
-
-    </div>
-  </div>
-</div>
-
-
-
-
-
-  
-
-
-
-  
-
-
-
-  
-
-
-
-  
-
-
-
-  
-
-
-
-
-
-
-
-    
-
-    
-      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
-        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
-      </a>
-    
-
-    
-      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
-     aria-hidden="true">
-  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
-    <div class="modal-content">
-      <div class="modal-header text-center">
-        <h4 class="modal-title w-100 font-weight-bold">Search</h4>
-        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
-          <span aria-hidden="true">&times;</span>
-        </button>
-      </div>
-      <div class="modal-body mx-3">
-        <div class="md-form mb-5">
-          <input type="text" id="local-search-input" class="form-control validate">
-          <label data-error="x" data-success="v" for="local-search-input">Keyword</label>
-        </div>
-        <div class="list-group" id="local-search-result"></div>
-      </div>
-    </div>
-  </div>
-</div>
-
-    
-
-    
-  </main>
-
-  <footer>
-    <div class="footer-inner">
-  
-    <div class="footer-content">
-       <a href="https://github.com/staskaer" target="_blank" rel="nofollow noopener"><span>Staskaer</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
-    </div>
   
   
   
-  
-</div>
-
-  </footer>
-
-  <!-- Scripts -->
-  
-  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
-  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
-
-  <script>
-    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
-    NProgress.start()
-    window.addEventListener('load', function() {
-      NProgress.done();
-    })
-  </script>
 
 
-<script  src="https://lib.baomitu.com/jquery/3.6.0/jquery.min.js" ></script>
-<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
-<script  src="/js/events.js" ></script>
-<script  src="/js/plugins.js" ></script>
 
+          </div>
+          
+    <div class="comments" id="valine-comments"></div>
 
-  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
-  <script>
-    (function (window, document) {
-      var typing = Fluid.plugins.typing;
-      var subtitle = document.getElementById('subtitle');
-      if (!subtitle || !typing) {
-        return;
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
       }
-      var text = subtitle.getAttribute('data-typed-text');
-      
-        typing(text);
-      
-    })(window, document);
-  </script>
-
-
-
-
-  
-    <script  src="/js/img-lazyload.js" ></script>
-  
-
-
-
-
-  
-<script>
-  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.18.2/tocbot.min.js', function() {
-    var toc = jQuery('#toc');
-    if (toc.length === 0 || !window.tocbot) { return; }
-    var boardCtn = jQuery('#board-ctn');
-    var boardTop = boardCtn.offset().top;
-
-    window.tocbot.init({
-      tocSelector     : '#toc-body',
-      contentSelector : '.markdown-body',
-      headingSelector : CONFIG.toc.headingSelector || 'h1,h2,h3,h4,h5,h6',
-      linkClass       : 'tocbot-link',
-      activeLinkClass : 'tocbot-active-link',
-      listClass       : 'tocbot-list',
-      isCollapsedClass: 'tocbot-is-collapsed',
-      collapsibleClass: 'tocbot-is-collapsible',
-      collapseDepth   : CONFIG.toc.collapseDepth || 0,
-      scrollSmooth    : true,
-      headingsOffset  : -boardTop
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
     });
-    if (toc.find('.toc-list-item').length > 0) {
-      toc.css('visibility', 'visible');
-    }
-  });
+  }
 </script>
 
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
 
-  <script src=https://lib.baomitu.com/clipboard.js/2.0.10/clipboard.min.js></script>
+  <aside class="sidebar">
+    <div class="sidebar-inner">
 
-  <script>Fluid.plugins.codeWidget();</script>
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#wal%E6%97%A5%E5%BF%97%E7%9A%84%E6%A0%BC%E5%BC%8F%E4%B8%8E%E6%9E%84%E5%BB%BA"><span class="nav-number">1.</span> <span class="nav-text">WAL日志的格式与构建</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%BA%90%E7%A0%81%E9%83%A8%E5%88%86"><span class="nav-number">1.0.1.</span> <span class="nav-text">源码部分</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%80%BB%E7%BB%93"><span class="nav-number">2.</span> <span class="nav-text">总结</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Staskaer"
+      src="/imgs/theme_pic/head_img.png">
+  <p class="site-author-name" itemprop="name">Staskaer</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">63</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">10</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">18</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/Staskaer" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;Staskaer" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:liujiaxin011121@gmail.com" title="E-Mail → mailto:liujiaxin011121@gmail.com" rel="noopener" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2023</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Staskaer</span>
+</div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
 
 
   
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+
 <script>
-  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/4.3.1/anchor.min.js', function() {
-    window.anchors.options = {
-      placement: CONFIG.anchorjs.placement,
-      visible  : CONFIG.anchorjs.visible
-    };
-    if (CONFIG.anchorjs.icon) {
-      window.anchors.options.icon = CONFIG.anchorjs.icon;
-    }
-    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
-    var res = [];
-    for (var item of el) {
-      res.push('.markdown-body > ' + item.trim());
-    }
-    if (CONFIG.anchorjs.placement === 'left') {
-      window.anchors.options.class = 'anchorjs-link-left';
-    }
-    window.anchors.add(res.join(', '));
-  });
+NexT.utils.loadComments(document.querySelector('#valine-comments'), () => {
+  NexT.utils.getScript('https://cdn.jsdelivr.net/npm/valine@1.5.1/dist/Valine.min.js', () => {
+    var GUEST = ['nick', 'mail', 'link'];
+    var guest = 'nick,mail,link';
+    guest = guest.split(',').filter(item => {
+      return GUEST.includes(item);
+    });
+    new Valine({
+      el         : '#valine-comments',
+      verify     : false,
+      notify     : false,
+      appId      : 'xH8NDrh9u4SQrUpQOd0lICnX-MdYXbMMI',
+      appKey     : 'jl3JjPS4jsosZG29Zv24Y7LE',
+      placeholder: "Just go go",
+      avatar     : 'mm',
+      meta       : guest,
+      pageSize   : '10' || 10,
+      visitor    : false,
+      lang       : 'zh-Hans' || 'zh-cn',
+      path       : location.pathname,
+      recordIP   : false,
+      serverURLs : ''
+    });
+  }, window.Valine);
+});
 </script>
 
-
-  
-<script>
-  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
-    Fluid.plugins.fancyBox();
-  });
-</script>
-
-
-  <script>Fluid.plugins.imageCaption();</script>
-
-  <script defer src="/js/leancloud.js" ></script>
-
-  <script  src="/js/local-search.js" ></script>
-
-
-
-
-
-<!-- 主题的启动项，将它保持在最底部 -->
-<!-- the boot of the theme, keep it at the bottom -->
-<script  src="/js/boot.js" ></script>
-
-
-  
-
-  <noscript>
-    <div class="noscript-warning">Blog works best with JavaScript enabled</div>
-  </noscript>
 </body>
 </html>
+
