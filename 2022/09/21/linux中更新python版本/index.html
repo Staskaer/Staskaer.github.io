@@ -17,7 +17,7 @@
 
 <script id="hexo-configurations">
     var NexT = window.NexT || {};
-    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Gemini","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"flat"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"valine","storage":true,"lazyload":false,"nav":null,"activeClass":"valine"},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Gemini","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"mac"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"valine","storage":true,"lazyload":false,"nav":null,"activeClass":"valine"},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
   </script>
 
   <meta name="description" content="在linux中更新python3的版本。">
@@ -378,14 +378,9 @@ server后下一步打算配置一下环境，于是就有了这篇踩坑记录�
 <h3 id="下载工具与python源码">下载工具与python源码</h3>
 <p>首先我们先安装好<code>gcc</code>, <code>make</code>, <code>git</code>
 这些基础工具以做好准备。</p>
-<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">
-<span class="token function">sudo</span> <span class="token function">apt</span> <span class="token function">install</span> gcc <span class="token function">make</span> <span class="token function">git</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">sudo apt install gcc make git</span><br><span class="line"></span><br></pre></td></tr></table></figure>
 <p>然后我们把python3.8.1的源码下载下来并解压，因为我们需要从源码来编译python3。</p>
-<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">
-<span class="token function">wget</span> https://www.python.org/ftp/python/3.8.1/Python-3.8.1.tgz
-<span class="token function">tar</span> <span class="token parameter variable">-zxvf</span> Python-3.8.1.tgz
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">wget https://www.python.org/ftp/python/3.8.1/Python-3.8.1.tgz</span><br><span class="line">tar -zxvf Python-3.8.1.tgz</span><br><span class="line"></span><br></pre></td></tr></table></figure>
 <h3 id="编译前准备">编译前准备</h3>
 <p>但是此时我们是不能直接去python的源码下构建然后编译的，原因有以下几点</p>
 <ul>
@@ -394,59 +389,27 @@ server后下一步打算配置一下环境，于是就有了这篇踩坑记录�
 <li>还有一些前置的包没有安装。</li>
 </ul>
 <p>由于第二个好解决我们先来解决第二个。</p>
-<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">
-<span class="token function">sudo</span> <span class="token function">apt</span> <span class="token function">install</span> libffi-devel <span class="token parameter variable">-y</span>
-
-<span class="token comment"># 也许还需要其他的包，但是我不记得了，所以如果有其他错误再安装吧</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">sudo apt install libffi-devel -y</span><br><span class="line"></span><br><span class="line"><span class="comment"># 也许还需要其他的包，但是我不记得了，所以如果有其他错误再安装吧</span></span><br><span class="line"></span><br></pre></td></tr></table></figure>
 <p>下面我们来解决第一个问题，openssl也需要从源码构建。</p>
 <h4 id="编译安装openssl">编译安装openssl</h4>
 <p>这里参考的一篇<a target="_blank" rel="noopener" href="https://stackoverflow.com/questions/53543477/building-python-3-7-1-ssl-module-failed">博客</a></p>
 <p>首先，我们也需要安装一些前置的包并下载下来源码</p>
-<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">
-<span class="token function">sudo</span> <span class="token function">apt-get</span> <span class="token function">install</span> build-essential checkinstall libreadline-gplv2-dev libncursesw5-dev libsqlite3-dev tk-dev libgdbm-dev libc6-dev libbz2-dev
-
-<span class="token function">wget</span> https://www.openssl.org/source/openssl-1.0.2o.tar.gz
-<span class="token function">tar</span> <span class="token parameter variable">-zxvf</span> openssl-1.0.2o.tar.gz
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">sudo apt-get install build-essential checkinstall libreadline-gplv2-dev libncursesw5-dev libsqlite3-dev tk-dev libgdbm-dev libc6-dev libbz2-dev</span><br><span class="line"></span><br><span class="line">wget https://www.openssl.org/source/openssl-1.0.2o.tar.gz</span><br><span class="line">tar -zxvf openssl-1.0.2o.tar.gz</span><br><span class="line"></span><br></pre></td></tr></table></figure>
 <p>然后开始构建编译。</p>
-<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">
-./config shared <span class="token parameter variable">--prefix</span><span class="token operator">=</span>/usr/local/
-
-<span class="token function">make</span> <span class="token parameter variable">-j4</span>
-
-<span class="token function">sudo</span> <span class="token function">make</span> <span class="token function">install</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">./config shared --prefix=/usr/local/</span><br><span class="line"></span><br><span class="line">make -j4</span><br><span class="line"></span><br><span class="line">sudo make install</span><br><span class="line"></span><br></pre></td></tr></table></figure>
 <p>至此，openssl应该安装完成了。我们输入<code>openssl version</code>可以查看版本。</p>
 <h3 id="编译python3">编译python3</h3>
 <p>然后我们就可以正式来构建编译python3了。</p>
-<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">
-<span class="token builtin class-name">cd</span> Python3.8.1
-
-./configure <span class="token parameter variable">--prefix</span><span class="token operator">=</span>/usr/local/python3 <span class="token punctuation">\</span>--with-ssl <span class="token punctuation">\</span>--enable-optimizations
-
-<span class="token function">make</span> <span class="token parameter variable">-j4</span>
-
-<span class="token function">sudo</span> <span class="token function">make</span> <span class="token function">install</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="built_in">cd</span> Python3.8.1</span><br><span class="line"></span><br><span class="line">./configure --prefix=/usr/local/python3 \--with-ssl \--enable-optimizations</span><br><span class="line"></span><br><span class="line">make -j4</span><br><span class="line"></span><br><span class="line">sudo make install</span><br><span class="line"></span><br></pre></td></tr></table></figure>
 <h3 id="替换软链接">替换软链接</h3>
 <p>编译安装完成python3后我们需要更改软链接，不然还是没法用。</p>
-<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">
-<span class="token builtin class-name">cd</span> /usr/bin
-<span class="token function">sudo</span> <span class="token function">mv</span> python3 python3.bak
-<span class="token function">sudo</span> <span class="token function">ln</span> <span class="token parameter variable">-s</span> /usr/local/python3/bin/python3 /usr/bin/python3
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="built_in">cd</span> /usr/bin</span><br><span class="line">sudo <span class="built_in">mv</span> python3 python3.bak</span><br><span class="line">sudo <span class="built_in">ln</span> -s /usr/local/python3/bin/python3 /usr/bin/python3</span><br><span class="line"></span><br></pre></td></tr></table></figure>
 <p>然后我们输入<code>python3 --version</code>来查看python3版本是不是正确。</p>
 <p>到这里我们虽然完成了pyhton3的安装，但是，pip3是不能使用的。</p>
 <p>所以下一步我们是更改pip3的软链接。</p>
-<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">
-<span class="token function">sudo</span> <span class="token function">rm</span> <span class="token parameter variable">-rf</span> /usr/local/bin/pip3
-<span class="token function">sudo</span> <span class="token function">ln</span> <span class="token parameter variable">-s</span> /usr/local/Python3/bin/pip3 /usr/local/bin/pip3
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">sudo <span class="built_in">rm</span> -rf /usr/local/bin/pip3</span><br><span class="line">sudo <span class="built_in">ln</span> -s /usr/local/Python3/bin/pip3 /usr/local/bin/pip3</span><br><span class="line"></span><br></pre></td></tr></table></figure>
 <p>然后我们来试试安装一个包，如果能安装，则说明没有问题了。</p>
-<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">
-pip3 <span class="token function">install</span> requests
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">pip3 install requests</span><br><span class="line"></span><br></pre></td></tr></table></figure>
 
     </div>
 

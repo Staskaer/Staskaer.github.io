@@ -17,7 +17,7 @@
 
 <script id="hexo-configurations">
     var NexT = window.NexT || {};
-    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Gemini","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"flat"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"valine","storage":true,"lazyload":false,"nav":null,"activeClass":"valine"},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Gemini","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"mac"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"valine","storage":true,"lazyload":false,"nav":null,"activeClass":"valine"},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
   </script>
 
   <meta name="description" content="记风火轮MIQI-RK3288开发板的踩坑过程">
@@ -415,17 +415,7 @@ PC2这种小水管强多了(其实我就跑跑bot挂个下载器，偶尔当作v
 <p>我选择把这台小服务器扔在宿舍里，虽然在实验室里可能会更好(宿舍限电，说不定啥时候就崩了)，但是实验室的交换机离我有点远，要拉一根很长的网线才行。</p>
 <p>配置网络的时候最好将其配置成局域网内的静态IP，而不要DHCP分配。因为前者在局域网内访问会很方便，而且我这个路由器又是捡垃圾捡来的，它那个地址续租好像有点问题(不是很确定，但是非静态地址过一段时间会断网)。</p>
 <p>首先输入<code>ifconfig</code>查看网卡和当前ip地址，然后通过修改<code>/etc/network/interfaces</code>文件来修改网卡配置信息。</p>
-<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">
-<span class="token function">sudo</span> <span class="token function">vim</span> /etc/network/interfaces
-
-<span class="token comment"># 下面是interfaces文件中的内容</span>
-
-auto eth0
-iface eth0 inet static
-address <span class="token number">192.168</span>.1.205
-gateway <span class="token number">192.168</span>.1.1
-netmask <span class="token number">255.255</span>.255.0
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">sudo vim /etc/network/interfaces</span><br><span class="line"></span><br><span class="line"><span class="comment"># 下面是interfaces文件中的内容</span></span><br><span class="line"></span><br><span class="line">auto eth0</span><br><span class="line">iface eth0 inet static</span><br><span class="line">address 192.168.1.205</span><br><span class="line">gateway 192.168.1.1</span><br><span class="line">netmask 255.255.255.0</span><br><span class="line"></span><br></pre></td></tr></table></figure>
 <p>这样就配置好了静态IP。</p>
 <h3 id="配置frp内网穿透">配置frp内网穿透</h3>
 <p>由于这台服务器位于内网，我们要访问它就需要和它连接在一个子网内，但是这很明显不方便。而为了能够在外网访问它，我们需要使用内网穿透工具，此处选用了frp。</p>
@@ -433,52 +423,16 @@ netmask <span class="token number">255.255</span>.255.0
 <p>我们首先进入frp的<a target="_blank" rel="noopener" href="https://github.com/fatedier/frp/releases">github页面</a>，下载我们需要的frp程序，注意，这个程序是同步需要在我们的板子和远程主机上下载并启动的，且需要对应架构。</p>
 <h4 id="客户端配置">客户端配置</h4>
 <p>由于我们的板子是32位arm架构的(你可以输入<code>arch</code>来查看架构)，所以我们需要下载arm版本的frp程序并解压。</p>
-<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">
-<span class="token function">wget</span> https://github.com/fatedier/frp/releases/download/v0.44.0/frp_0.44.0_linux_arm.tar.gz
-
-<span class="token function">tar</span> <span class="token parameter variable">-zxvf</span> frp_0.44.0_linux_arm.tar.gz
-
-<span class="token builtin class-name">cd</span> frp_0.44.0_linux_arm
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">wget https://github.com/fatedier/frp/releases/download/v0.44.0/frp_0.44.0_linux_arm.tar.gz</span><br><span class="line"></span><br><span class="line">tar -zxvf frp_0.44.0_linux_arm.tar.gz</span><br><span class="line"></span><br><span class="line"><span class="built_in">cd</span> frp_0.44.0_linux_arm</span><br><span class="line"></span><br></pre></td></tr></table></figure>
 <p>然后开始配置frp客户端，我们先将ssh进行穿透。</p>
-<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">
-<span class="token function">vim</span> frpc.ini
-
-<span class="token comment"># 下面是配置文件内容</span>
-
-<span class="token punctuation">[</span>common<span class="token punctuation">]</span>
-server_addr <span class="token operator">=</span> <span class="token number">127.0</span>.0.1 <span class="token comment"># 这个是服务器端的公网ip</span>
-server_port <span class="token operator">=</span> <span class="token number">7000</span> <span class="token comment"># 这个是服务器端开放的端口，可以参见服务器端配置</span>
-
-<span class="token punctuation">[</span>ssh<span class="token punctuation">]</span>
-<span class="token builtin class-name">type</span> <span class="token operator">=</span> tcp
-local_ip <span class="token operator">=</span> <span class="token number">127.0</span>.0.1
-local_port <span class="token operator">=</span> <span class="token number">22</span>
-remote_port <span class="token operator">=</span> <span class="token number">6000</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">vim frpc.ini</span><br><span class="line"></span><br><span class="line"><span class="comment"># 下面是配置文件内容</span></span><br><span class="line"></span><br><span class="line">[common]</span><br><span class="line">server_addr = 127.0.0.1 <span class="comment"># 这个是服务器端的公网ip</span></span><br><span class="line">server_port = 7000 <span class="comment"># 这个是服务器端开放的端口，可以参见服务器端配置</span></span><br><span class="line"></span><br><span class="line">[ssh]</span><br><span class="line"><span class="built_in">type</span> = tcp</span><br><span class="line">local_ip = 127.0.0.1</span><br><span class="line">local_port = 22</span><br><span class="line">remote_port = 6000</span><br><span class="line"></span><br></pre></td></tr></table></figure>
 <p>然后就可以输入<code>./frpc -c frpc.ini</code>启动一下看看效果，正常启动就没问题。</p>
 <h4 id="服务器端配置">服务器端配置</h4>
 <p>仅仅配置了客户端我们目前还是没有办法进行远程登录，还需要额外配置服务器端的frp程序。</p>
 <p>我手上的这台服务器是<code>x86_64</code>架构的，所以我们需要下载对应架构的frp程序。</p>
-<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">
-<span class="token function">wget</span> https://github.com/fatedier/frp/releases/download/v0.44.0/frp_0.44.0_linux_amd64.tar.gz
-
-<span class="token function">tar</span> <span class="token parameter variable">-zxvf</span> frp_0.44.0_linux_amd64.tar.gz
-
-<span class="token builtin class-name">cd</span> frp_0.44.0_linux_amd64
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">wget https://github.com/fatedier/frp/releases/download/v0.44.0/frp_0.44.0_linux_amd64.tar.gz</span><br><span class="line"></span><br><span class="line">tar -zxvf frp_0.44.0_linux_amd64.tar.gz</span><br><span class="line"></span><br><span class="line"><span class="built_in">cd</span> frp_0.44.0_linux_amd64</span><br><span class="line"></span><br></pre></td></tr></table></figure>
 <p>然后类似的，我们也需要修改服务器端的配置文件。</p>
-<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">
-<span class="token function">vim</span> frps.ini
-
-<span class="token comment"># 下面是配置文件内容</span>
-
-<span class="token punctuation">[</span>common<span class="token punctuation">]</span>
-bind_port <span class="token operator">=</span> <span class="token number">7000</span> <span class="token comment"># 这个就是前面说的服务器端使用的ip地址</span>
-dashboard_port <span class="token operator">=</span> <span class="token number">7500</span> <span class="token comment"># 这个是提供统计信息的界面，在浏览器中输入http://{服务器ip}:7500就能看到</span>
-dashboard_user <span class="token operator">=</span> admin <span class="token comment"># 下面这俩是统计信息界面的账号密码，可以自己设置。</span>
-dashboard_pwd <span class="token operator">=</span> admin
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">vim frps.ini</span><br><span class="line"></span><br><span class="line"><span class="comment"># 下面是配置文件内容</span></span><br><span class="line"></span><br><span class="line">[common]</span><br><span class="line">bind_port = 7000 <span class="comment"># 这个就是前面说的服务器端使用的ip地址</span></span><br><span class="line">dashboard_port = 7500 <span class="comment"># 这个是提供统计信息的界面，在浏览器中输入http://{服务器ip}:7500就能看到</span></span><br><span class="line">dashboard_user = admin <span class="comment"># 下面这俩是统计信息界面的账号密码，可以自己设置。</span></span><br><span class="line">dashboard_pwd = admin</span><br><span class="line"></span><br></pre></td></tr></table></figure>
 <p>配置完成后我们输入<code>./frps -c frps.ini</code>来启动服务器端程序看看运行结果，正常运行就是ok的。</p>
 <p>最后注意需要在云服务器中的安全组里打开防火墙不然可能无法连接。</p>
 <h4 id="自启动与后台执行">自启动与后台执行</h4>
@@ -488,32 +442,14 @@ dashboard_pwd <span class="token operator">=</span> admin
 <li>远程服务器的ssh不能断开，否则frps程序会随着ssh断开而关闭</li>
 </ul>
 <p>我们先来解决第二个问题，因为可以通过screen来快速解决。</p>
-<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">
-<span class="token function">screen</span> <span class="token parameter variable">-S</span> frps <span class="token comment"># 先创建一个screen窗口</span>
-./frps <span class="token parameter variable">-c</span> frps.ini <span class="token comment"># 在窗口内执行</span>
-
-CTRL^A D <span class="token comment"># 按下ctrl^a 再按下d，此时这个窗口连同执行的程序就会进入后台。</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">screen -S frps <span class="comment"># 先创建一个screen窗口</span></span><br><span class="line">./frps -c frps.ini <span class="comment"># 在窗口内执行</span></span><br><span class="line"></span><br><span class="line">CTRL^A D <span class="comment"># 按下ctrl^a 再按下d，此时这个窗口连同执行的程序就会进入后台。</span></span><br><span class="line"></span><br></pre></td></tr></table></figure>
 <p>如果我们想重新连入这个窗口可以输入<code>screen -r frp</code>，这样可以很方便的查看日志，彻底关闭这个窗口可以按下ctrl^a
 再按下k。</p>
 <p>对于第一个问题，我们的解决方法是写一个bash脚本然后每次开机都自启动这个脚本。</p>
 <p>我们先写一个我们需要被自启动的脚本</p>
-<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">
-<span class="token function">vim</span> start.sh
-
-<span class="token comment"># 下面是脚本内容</span>
-
-<span class="token builtin class-name">cd</span> /usr/local/frp_0.39.1_linux_arm64
-<span class="token function">nohup</span> ./frpc <span class="token parameter variable">-c</span> frpc.ini <span class="token operator">&amp;</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">vim start.sh</span><br><span class="line"></span><br><span class="line"><span class="comment"># 下面是脚本内容</span></span><br><span class="line"></span><br><span class="line"><span class="built_in">cd</span> /usr/local/frp_0.39.1_linux_arm64</span><br><span class="line"><span class="built_in">nohup</span> ./frpc -c frpc.ini &amp;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
 <p>然后我们编辑<code>/etc/rc.local</code>，如果没有这个文件可以参考<a target="_blank" rel="noopener" href="https://www.linuxprobe.com/linux-rc-local.html">这里</a>。然后把我们的启动脚本添加进去。</p>
-<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">
-<span class="token function">sudo</span> <span class="token function">vim</span> /etc/rc.local
-
-<span class="token comment"># 下面是添加的内容 在exit 0之前</span>
-
-<span class="token function">bash</span> /usr/local/start.sh <span class="token operator">&amp;</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">sudo vim /etc/rc.local</span><br><span class="line"></span><br><span class="line"><span class="comment"># 下面是添加的内容 在exit 0之前</span></span><br><span class="line"></span><br><span class="line">bash /usr/local/start.sh &amp;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
 <p>这样就完成了。</p>
 
     </div>

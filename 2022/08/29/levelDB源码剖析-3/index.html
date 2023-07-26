@@ -17,7 +17,7 @@
 
 <script id="hexo-configurations">
     var NexT = window.NexT || {};
-    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Gemini","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"flat"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"valine","storage":true,"lazyload":false,"nav":null,"activeClass":"valine"},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Gemini","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"mac"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"valine","storage":true,"lazyload":false,"nav":null,"activeClass":"valine"},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
   </script>
 
   <meta name="description" content="levelDB的内存管理策略">
@@ -393,167 +393,11 @@ mjx-container[display="true"] + br {
           </div>
 <p>我们可以先来看一下arena类的头文件捏。从头文件中可以很明显的看到其用于内存分配的方法就是公有函数<code>Allocate</code>和<code>AllocateAligned</code>，区别是后者提供内存对齐，这对效率也有提升。</p>
 <h5 id="头文件">头文件</h5>
-<pre class="line-numbers language-C++" data-language="C++"><code class="language-C++">// utils/arena.h
-
-class Arena
-{
-public:
-    Arena();                                  //默认构造函数
-    Arena(const Arena &amp;) = delete;            //关闭复制构造函数
-    Arena &amp;operator=(const Arena &amp;) = delete; //关闭使用=的拷贝构造函数
-    ~Arena();                                 //析构函数
-
-    //返回一个指针指向新分配的内存区域，即内部的分配内存的方法
-    char *Allocate(size_t bytes);
-
-    //同Allocate，但是提供了内存对齐策略
-    char *AllocateAligned(size_t bytes);
-
-    //返回目前从内存中申请的内存大小，由于memory_usage_是原子操作
-    //此处的memory_order_relaxed表示宽松内存序，即任何一个线程可以任意更新
-    //不用同步到其他线程中，下一个访问该元素的线程获取到更新之后的值
-    size_t MemoryUsage() const
-    {
-        return memory_usage_.load(std::memory_order_relaxed);
-    }
-
-private:
-    char *AllocateFallback(size_t bytes);       //获取新分配的内存，被AllocateAligned和Allocate调用
-    char *AllocateNewBlock(size_t block_bytes); //new函数的包装，被AllocateFallback调用
-
-    char *alloc_ptr_;                  //当前内存块未使用内存的首地址
-    size_t alloc_bytes_remaining_;     //当前内存块中未使用空间的大小
-    std::vector&lt;char *&gt; blocks_;       //存储每一次向系统请求分配的内存块的指针
-    std::atomic&lt;size_t&gt; memory_usage_; //记录已申请全部内存使用的数目，注意此操作是原子的
-};<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// utils/arena.h</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">Arena</span></span><br><span class="line">{</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="built_in">Arena</span>();                                  <span class="comment">//默认构造函数</span></span><br><span class="line">    <span class="built_in">Arena</span>(<span class="type">const</span> Arena &amp;) = <span class="keyword">delete</span>;            <span class="comment">//关闭复制构造函数</span></span><br><span class="line">    Arena &amp;<span class="keyword">operator</span>=(<span class="type">const</span> Arena &amp;) = <span class="keyword">delete</span>; <span class="comment">//关闭使用=的拷贝构造函数</span></span><br><span class="line">    ~<span class="built_in">Arena</span>();                                 <span class="comment">//析构函数</span></span><br><span class="line"></span><br><span class="line">    <span class="comment">//返回一个指针指向新分配的内存区域，即内部的分配内存的方法</span></span><br><span class="line">    <span class="function"><span class="type">char</span> *<span class="title">Allocate</span><span class="params">(<span class="type">size_t</span> bytes)</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">//同Allocate，但是提供了内存对齐策略</span></span><br><span class="line">    <span class="function"><span class="type">char</span> *<span class="title">AllocateAligned</span><span class="params">(<span class="type">size_t</span> bytes)</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">//返回目前从内存中申请的内存大小，由于memory_usage_是原子操作</span></span><br><span class="line">    <span class="comment">//此处的memory_order_relaxed表示宽松内存序，即任何一个线程可以任意更新</span></span><br><span class="line">    <span class="comment">//不用同步到其他线程中，下一个访问该元素的线程获取到更新之后的值</span></span><br><span class="line">    <span class="function"><span class="type">size_t</span> <span class="title">MemoryUsage</span><span class="params">()</span> <span class="type">const</span></span></span><br><span class="line"><span class="function">    </span>{</span><br><span class="line">        <span class="keyword">return</span> memory_usage_.<span class="built_in">load</span>(std::memory_order_relaxed);</span><br><span class="line">    }</span><br><span class="line"></span><br><span class="line"><span class="keyword">private</span>:</span><br><span class="line">    <span class="function"><span class="type">char</span> *<span class="title">AllocateFallback</span><span class="params">(<span class="type">size_t</span> bytes)</span></span>;       <span class="comment">//获取新分配的内存，被AllocateAligned和Allocate调用</span></span><br><span class="line">    <span class="function"><span class="type">char</span> *<span class="title">AllocateNewBlock</span><span class="params">(<span class="type">size_t</span> block_bytes)</span></span>; <span class="comment">//new函数的包装，被AllocateFallback调用</span></span><br><span class="line"></span><br><span class="line">    <span class="type">char</span> *alloc_ptr_;                  <span class="comment">//当前内存块未使用内存的首地址</span></span><br><span class="line">    <span class="type">size_t</span> alloc_bytes_remaining_;     <span class="comment">//当前内存块中未使用空间的大小</span></span><br><span class="line">    std::vector&lt;<span class="type">char</span> *&gt; blocks_;       <span class="comment">//存储每一次向系统请求分配的内存块的指针</span></span><br><span class="line">    std::atomic&lt;<span class="type">size_t</span>&gt; memory_usage_; <span class="comment">//记录已申请全部内存使用的数目，注意此操作是原子的</span></span><br><span class="line">};</span><br></pre></td></tr></table></figure>
 <p>头文件定义了Arena这个类，在类中只有3个公有方法，分别用于返回小内存、对齐的小内存、当前类占用的空间。</p>
 <h5 id="实现文件">实现文件</h5>
 <p>分析完了头文件，我们接下来看一下它的cpp实现。</p>
-<pre class="line-numbers language-C++" data-language="C++"><code class="language-C++">
-/*=============类的构造析构等基础函数=============*/
-
-static const int kBlockSize = 4096; //一个内存块的大小
-
-// 构造函数，默认的构造函数直接对内部的几个元素进行初始化
-Arena::Arena()
-    : alloc_ptr_(nullptr), alloc_bytes_remaining_(0), memory_usage_(0) {}
-
-// 析构函数，注意，由于类中存在一个vector数组存储了每次分配的内存的块的指针
-// 所以析构的时候遍历这个数组然后逐个delete
-Arena::~Arena()
-{
-    for (size_t i = 0; i &lt; blocks_.size(); i++)
-    {
-        delete[] blocks_[i];
-    }
-}
-
-/*=============公有接口=============*/
-
-// 分配小内存的函数，这个函数是此类对外的接口，被写成内联函数效率更高
-inline char *Arena::Allocate(size_t bytes)
-{
-    // 首先，断言申请的内存数目是否合法
-    assert(bytes &gt; 0);
-    // 当从内存申请的整块中仍然存在空间时，就直接从这个块中分配
-    if (bytes &lt;= alloc_bytes_remaining_)
-    {
-        char *result = alloc_ptr_;
-        alloc_ptr_ += bytes;
-        alloc_bytes_remaining_ -= bytes;
-        return result;
-    }
-    // 否则调用AllocateFallback进行分配（从内存中申请空间去分配）
-    return AllocateFallback(bytes);
-}
-
-// 采用对齐的方式去分配内存，只比Allocate多出计算需要分配内存的步骤
-char *Arena::AllocateAligned(size_t bytes)
-{
-    // 首先设置对齐的字节数，(sizeof(void *)可以计算出当前机器的每个指针的字节数
-    // 最多8字节对齐，当当前机器指针的字节数不足8字节时，会使用当前机器的字节数
-    const int align = (sizeof(void *) &gt; 8) ? sizeof(void *) : 8;
-
-    // 静态断言，在编译时执行断言
-    // a&amp;(a-1)的功能是去掉右边的1(二进制)，所以当不是2的幂次方时，去掉1后就非0
-    static_assert((align &amp; (align - 1)) == 0,
-                  "Pointer size should be a power of 2");
-
-    // 下面这里的位运算等价于求余运算
-    // 因为上面这个断言已经确保了align是2个幂次方，因此align-1是一个右侧均为1的掩模
-    // 两者相与的结果就可以快速求出alloc_ptr_%align
-    // 但注意，此时两者能够等价的重要原因是align是2的幂次方
-    // 此处还有强制类型转换，也就是把取模结果转换成uintptr_t
-    size_t current_mod = reinterpret_cast&lt;uintptr_t&gt;(alloc_ptr_) &amp; (align - 1);
-
-    // 当取模结果不是0就表示需要分配的内存是2的整数幂，所以需要额外分配一些内存
-    size_t slop = (current_mod == 0 ? 0 : align - current_mod);
-
-    // 计算出总的需要的内存
-    size_t needed = bytes + slop;
-
-    /*-------- 至此，计算出需要对齐时分配的内存后，就与Allocate无异 --------*/
-
-    char *result;
-
-    // 当从内存申请的整块中仍然存在空间时，就直接从这个块中分配
-    if (needed &lt;= alloc_bytes_remaining_)
-    {
-        result = alloc_ptr_ + slop;
-        alloc_ptr_ += needed;
-        alloc_bytes_remaining_ -= needed;
-    }
-    else
-    {
-        // 此处存在一点点区别，AllocateFallback申请的参数时bytes而不是对齐后的need
-        // 这是因为AllocateFallback调用的是new/delete，总是内存对齐的
-        result = AllocateFallback(bytes);
-    }
-
-    // 这里再做一下断言，保证对齐
-    assert((reinterpret_cast&lt;uintptr_t&gt;(result) &amp; (align - 1)) == 0);
-    return result;
-}
-
-/*=============私有接口=============*/
-
-// 私有方法：回调函数，用于当当前块内内存不足时申请内存的策略
-char *Arena::AllocateFallback(size_t bytes)
-{
-    // 当需要的内存超过kBlockSize的1/4，（默认1kb时），申请和bytes相同大小的内存
-    // 这样做是因为当需要用到的内存已经超过块大小的1/4了，那么之前剩余的块可能还有不少
-    // 如果新分配一个块那么就可能会浪费比较多的内存
-    if (bytes &gt; kBlockSize / 4)
-    {
-        char *result = AllocateNewBlock(bytes);
-        return result;
-    }
-
-    // 当需要的内存不足kBlockSize的1/4，（默认1kb时），就申请一个整个的块（默认4kb）
-    // 然后从这里面分配内存
-    // 但注意，进入到此函数里只说明原来的块不足以分配现在需要的内存，但其可能仍然剩余内存
-    // 此处的策略是直接把原来的内存块中可能剩余的内存给浪费掉
-    // 毕竟此时需要分配的内存不到1/4个块，说明原来的块也剩下不了多少内存了
-    alloc_ptr_ = AllocateNewBlock(kBlockSize);
-
-    // 下面这几部就是分配了一个块后做块内的内存分配
-    alloc_bytes_remaining_ = kBlockSize;
-    char *result = alloc_ptr_;
-    alloc_ptr_ += bytes;
-    alloc_bytes_remaining_ -= bytes;
-    return result;
-}
-
-// 私有方法：向系统申请内存
-char *Arena::AllocateNewBlock(size_t block_bytes)
-{
-    // 就是对new的一层包装，同时更新一下类内的参数
-    char *result = new char[block_bytes];
-    blocks_.push_back(result);
-    memory_usage_.fetch_add(block_bytes + sizeof(char *),
-                            std::memory_order_relaxed);
-    return result;
-}<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="comment">/*=============类的构造析构等基础函数=============*/</span></span><br><span class="line"></span><br><span class="line"><span class="type">static</span> <span class="type">const</span> <span class="type">int</span> kBlockSize = <span class="number">4096</span>; <span class="comment">//一个内存块的大小</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// 构造函数，默认的构造函数直接对内部的几个元素进行初始化</span></span><br><span class="line">Arena::<span class="built_in">Arena</span>()</span><br><span class="line">    : <span class="built_in">alloc_ptr_</span>(<span class="literal">nullptr</span>), <span class="built_in">alloc_bytes_remaining_</span>(<span class="number">0</span>), <span class="built_in">memory_usage_</span>(<span class="number">0</span>) {}</span><br><span class="line"></span><br><span class="line"><span class="comment">// 析构函数，注意，由于类中存在一个vector数组存储了每次分配的内存的块的指针</span></span><br><span class="line"><span class="comment">// 所以析构的时候遍历这个数组然后逐个delete</span></span><br><span class="line">Arena::~<span class="built_in">Arena</span>()</span><br><span class="line">{</span><br><span class="line">    <span class="keyword">for</span> (<span class="type">size_t</span> i = <span class="number">0</span>; i &lt; blocks_.<span class="built_in">size</span>(); i++)</span><br><span class="line">    {</span><br><span class="line">        <span class="keyword">delete</span>[] blocks_[i];</span><br><span class="line">    }</span><br><span class="line">}</span><br><span class="line"></span><br><span class="line"><span class="comment">/*=============公有接口=============*/</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// 分配小内存的函数，这个函数是此类对外的接口，被写成内联函数效率更高</span></span><br><span class="line"><span class="function"><span class="keyword">inline</span> <span class="type">char</span> *<span class="title">Arena::Allocate</span><span class="params">(<span class="type">size_t</span> bytes)</span></span></span><br><span class="line"><span class="function"></span>{</span><br><span class="line">    <span class="comment">// 首先，断言申请的内存数目是否合法</span></span><br><span class="line">    <span class="built_in">assert</span>(bytes &gt; <span class="number">0</span>);</span><br><span class="line">    <span class="comment">// 当从内存申请的整块中仍然存在空间时，就直接从这个块中分配</span></span><br><span class="line">    <span class="keyword">if</span> (bytes &lt;= alloc_bytes_remaining_)</span><br><span class="line">    {</span><br><span class="line">        <span class="type">char</span> *result = alloc_ptr_;</span><br><span class="line">        alloc_ptr_ += bytes;</span><br><span class="line">        alloc_bytes_remaining_ -= bytes;</span><br><span class="line">        <span class="keyword">return</span> result;</span><br><span class="line">    }</span><br><span class="line">    <span class="comment">// 否则调用AllocateFallback进行分配（从内存中申请空间去分配）</span></span><br><span class="line">    <span class="keyword">return</span> <span class="built_in">AllocateFallback</span>(bytes);</span><br><span class="line">}</span><br><span class="line"></span><br><span class="line"><span class="comment">// 采用对齐的方式去分配内存，只比Allocate多出计算需要分配内存的步骤</span></span><br><span class="line"><span class="function"><span class="type">char</span> *<span class="title">Arena::AllocateAligned</span><span class="params">(<span class="type">size_t</span> bytes)</span></span></span><br><span class="line"><span class="function"></span>{</span><br><span class="line">    <span class="comment">// 首先设置对齐的字节数，(sizeof(void *)可以计算出当前机器的每个指针的字节数</span></span><br><span class="line">    <span class="comment">// 最多8字节对齐，当当前机器指针的字节数不足8字节时，会使用当前机器的字节数</span></span><br><span class="line">    <span class="type">const</span> <span class="type">int</span> align = (<span class="built_in">sizeof</span>(<span class="type">void</span> *) &gt; <span class="number">8</span>) ? <span class="built_in">sizeof</span>(<span class="type">void</span> *) : <span class="number">8</span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 静态断言，在编译时执行断言</span></span><br><span class="line">    <span class="comment">// a&amp;(a-1)的功能是去掉右边的1(二进制)，所以当不是2的幂次方时，去掉1后就非0</span></span><br><span class="line">    <span class="built_in">static_assert</span>((align &amp; (align - <span class="number">1</span>)) == <span class="number">0</span>,</span><br><span class="line">                  <span class="string">"Pointer size should be a power of 2"</span>);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 下面这里的位运算等价于求余运算</span></span><br><span class="line">    <span class="comment">// 因为上面这个断言已经确保了align是2个幂次方，因此align-1是一个右侧均为1的掩模</span></span><br><span class="line">    <span class="comment">// 两者相与的结果就可以快速求出alloc_ptr_%align</span></span><br><span class="line">    <span class="comment">// 但注意，此时两者能够等价的重要原因是align是2的幂次方</span></span><br><span class="line">    <span class="comment">// 此处还有强制类型转换，也就是把取模结果转换成uintptr_t</span></span><br><span class="line">    <span class="type">size_t</span> current_mod = <span class="built_in">reinterpret_cast</span>&lt;<span class="type">uintptr_t</span>&gt;(alloc_ptr_) &amp; (align - <span class="number">1</span>);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 当取模结果不是0就表示需要分配的内存是2的整数幂，所以需要额外分配一些内存</span></span><br><span class="line">    <span class="type">size_t</span> slop = (current_mod == <span class="number">0</span> ? <span class="number">0</span> : align - current_mod);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 计算出总的需要的内存</span></span><br><span class="line">    <span class="type">size_t</span> needed = bytes + slop;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/*-------- 至此，计算出需要对齐时分配的内存后，就与Allocate无异 --------*/</span></span><br><span class="line"></span><br><span class="line">    <span class="type">char</span> *result;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 当从内存申请的整块中仍然存在空间时，就直接从这个块中分配</span></span><br><span class="line">    <span class="keyword">if</span> (needed &lt;= alloc_bytes_remaining_)</span><br><span class="line">    {</span><br><span class="line">        result = alloc_ptr_ + slop;</span><br><span class="line">        alloc_ptr_ += needed;</span><br><span class="line">        alloc_bytes_remaining_ -= needed;</span><br><span class="line">    }</span><br><span class="line">    <span class="keyword">else</span></span><br><span class="line">    {</span><br><span class="line">        <span class="comment">// 此处存在一点点区别，AllocateFallback申请的参数时bytes而不是对齐后的need</span></span><br><span class="line">        <span class="comment">// 这是因为AllocateFallback调用的是new/delete，总是内存对齐的</span></span><br><span class="line">        result = <span class="built_in">AllocateFallback</span>(bytes);</span><br><span class="line">    }</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 这里再做一下断言，保证对齐</span></span><br><span class="line">    <span class="built_in">assert</span>((<span class="built_in">reinterpret_cast</span>&lt;<span class="type">uintptr_t</span>&gt;(result) &amp; (align - <span class="number">1</span>)) == <span class="number">0</span>);</span><br><span class="line">    <span class="keyword">return</span> result;</span><br><span class="line">}</span><br><span class="line"></span><br><span class="line"><span class="comment">/*=============私有接口=============*/</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// 私有方法：回调函数，用于当当前块内内存不足时申请内存的策略</span></span><br><span class="line"><span class="function"><span class="type">char</span> *<span class="title">Arena::AllocateFallback</span><span class="params">(<span class="type">size_t</span> bytes)</span></span></span><br><span class="line"><span class="function"></span>{</span><br><span class="line">    <span class="comment">// 当需要的内存超过kBlockSize的1/4，（默认1kb时），申请和bytes相同大小的内存</span></span><br><span class="line">    <span class="comment">// 这样做是因为当需要用到的内存已经超过块大小的1/4了，那么之前剩余的块可能还有不少</span></span><br><span class="line">    <span class="comment">// 如果新分配一个块那么就可能会浪费比较多的内存</span></span><br><span class="line">    <span class="keyword">if</span> (bytes &gt; kBlockSize / <span class="number">4</span>)</span><br><span class="line">    {</span><br><span class="line">        <span class="type">char</span> *result = <span class="built_in">AllocateNewBlock</span>(bytes);</span><br><span class="line">        <span class="keyword">return</span> result;</span><br><span class="line">    }</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 当需要的内存不足kBlockSize的1/4，（默认1kb时），就申请一个整个的块（默认4kb）</span></span><br><span class="line">    <span class="comment">// 然后从这里面分配内存</span></span><br><span class="line">    <span class="comment">// 但注意，进入到此函数里只说明原来的块不足以分配现在需要的内存，但其可能仍然剩余内存</span></span><br><span class="line">    <span class="comment">// 此处的策略是直接把原来的内存块中可能剩余的内存给浪费掉</span></span><br><span class="line">    <span class="comment">// 毕竟此时需要分配的内存不到1/4个块，说明原来的块也剩下不了多少内存了</span></span><br><span class="line">    alloc_ptr_ = <span class="built_in">AllocateNewBlock</span>(kBlockSize);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 下面这几部就是分配了一个块后做块内的内存分配</span></span><br><span class="line">    alloc_bytes_remaining_ = kBlockSize;</span><br><span class="line">    <span class="type">char</span> *result = alloc_ptr_;</span><br><span class="line">    alloc_ptr_ += bytes;</span><br><span class="line">    alloc_bytes_remaining_ -= bytes;</span><br><span class="line">    <span class="keyword">return</span> result;</span><br><span class="line">}</span><br><span class="line"></span><br><span class="line"><span class="comment">// 私有方法：向系统申请内存</span></span><br><span class="line"><span class="function"><span class="type">char</span> *<span class="title">Arena::AllocateNewBlock</span><span class="params">(<span class="type">size_t</span> block_bytes)</span></span></span><br><span class="line"><span class="function"></span>{</span><br><span class="line">    <span class="comment">// 就是对new的一层包装，同时更新一下类内的参数</span></span><br><span class="line">    <span class="type">char</span> *result = <span class="keyword">new</span> <span class="type">char</span>[block_bytes];</span><br><span class="line">    blocks_.<span class="built_in">push_back</span>(result);</span><br><span class="line">    memory_usage_.<span class="built_in">fetch_add</span>(block_bytes + <span class="built_in">sizeof</span>(<span class="type">char</span> *),</span><br><span class="line">                            std::memory_order_relaxed);</span><br><span class="line">    <span class="keyword">return</span> result;</span><br><span class="line">}</span><br></pre></td></tr></table></figure>
 <img src="/2022/08/29/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-3/pic1.jpg" class="">
 <p>实际上总体来说思路如下:</p>
 <p>1、当调用<code>AllocateAligned</code>或<code>Allocate</code>时，先判断当前分配内存块中剩余的内存是否有足够的内存去分配新的内存（以及计算内存对齐）；如果足以容纳，则直接从当前内存块中提取内存作为所需内存使用。若是不足以容纳则调用<code>AllocateFallback</code>去申请内存并分配。</p>

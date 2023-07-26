@@ -17,7 +17,7 @@
 
 <script id="hexo-configurations">
     var NexT = window.NexT || {};
-    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Gemini","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"flat"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"valine","storage":true,"lazyload":false,"nav":null,"activeClass":"valine"},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Gemini","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"mac"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"valine","storage":true,"lazyload":false,"nav":null,"activeClass":"valine"},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
   </script>
 
   <meta name="description" content="文件和IO----来源于cookbook第五章">
@@ -383,52 +383,22 @@ mjx-container[display="true"] + br {
 <div class="note primary">
             <p>由于有些文件中会出现编码错误或与当前主机不匹配，使用<code>open</code>函数时可以增加<code>errors='ignore'</code>来忽略掉错误的编码。</p>
           </div>
-<pre class="line-numbers language-python" data-language="python"><code class="language-python">
-g <span class="token operator">=</span> <span class="token builtin">open</span><span class="token punctuation">(</span><span class="token string">"somefile.txt"</span><span class="token punctuation">,</span> <span class="token string">'rt'</span><span class="token punctuation">,</span> encoding <span class="token operator">=</span> <span class="token string">'utf-8'</span><span class="token punctuation">,</span> errors <span class="token operator">=</span> <span class="token string">'ignore'</span><span class="token punctuation">)</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">g = <span class="built_in">open</span>(<span class="string">"somefile.txt"</span>, <span class="string">'rt'</span>, encoding = <span class="string">'utf-8'</span>, errors = <span class="string">'ignore'</span>)</span><br><span class="line"></span><br></pre></td></tr></table></figure>
 <h3 id="使用print函数重定向到文件">使用print函数重定向到文件</h3>
 <div class="note primary">
             <p>使用<code>print</code>函数的<code>file = handler</code>参数即可</p>
           </div>
-<pre class="line-numbers language-python" data-language="python"><code class="language-python">
-l <span class="token operator">=</span> <span class="token punctuation">[</span><span class="token number">1</span><span class="token punctuation">,</span><span class="token number">2</span><span class="token punctuation">,</span><span class="token string">'3'</span><span class="token punctuation">,</span><span class="token punctuation">(</span><span class="token number">4</span><span class="token punctuation">,</span><span class="token number">5</span><span class="token punctuation">)</span><span class="token punctuation">]</span>
-
-<span class="token keyword">with</span> <span class="token builtin">open</span><span class="token punctuation">(</span><span class="token string">"file"</span><span class="token punctuation">,</span><span class="token string">"w"</span><span class="token punctuation">)</span> <span class="token keyword">as</span> f<span class="token punctuation">:</span>
-    <span class="token keyword">print</span><span class="token punctuation">(</span><span class="token operator">*</span>l<span class="token punctuation">,</span> sep <span class="token operator">=</span> <span class="token string">','</span><span class="token punctuation">,</span> <span class="token builtin">file</span> <span class="token operator">=</span> f<span class="token punctuation">)</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">l = [<span class="number">1</span>,<span class="number">2</span>,<span class="string">'3'</span>,(<span class="number">4</span>,<span class="number">5</span>)]</span><br><span class="line"></span><br><span class="line"><span class="keyword">with</span> <span class="built_in">open</span>(<span class="string">"file"</span>,<span class="string">"w"</span>) <span class="keyword">as</span> f:</span><br><span class="line">    <span class="built_in">print</span>(*l, sep = <span class="string">','</span>, file = f)</span><br><span class="line"></span><br></pre></td></tr></table></figure>
 <h3 id="对不存在的文件进行写入操作">对不存在的文件进行写入操作</h3>
 <div class="note primary">
             <p>直接使用<code>xt</code>模式来操作文件即可</p>
           </div>
-<pre class="line-numbers language-python" data-language="python"><code class="language-python">
-<span class="token keyword">with</span> <span class="token builtin">open</span><span class="token punctuation">(</span><span class="token string">"somefile"</span><span class="token punctuation">,</span> <span class="token string">'wt'</span><span class="token punctuation">)</span> <span class="token keyword">as</span> f<span class="token punctuation">:</span> <span class="token comment"># 当somefile不存在时会报错</span>
-    <span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span>
-
-<span class="token keyword">with</span> <span class="token builtin">open</span><span class="token punctuation">(</span><span class="token string">"somefile"</span><span class="token punctuation">,</span> <span class="token string">'xt'</span><span class="token punctuation">)</span> <span class="token keyword">as</span> f<span class="token punctuation">:</span> <span class="token comment"># 当somefile不存在时会创建，存在时不影响</span>
-    <span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="keyword">with</span> <span class="built_in">open</span>(<span class="string">"somefile"</span>, <span class="string">'wt'</span>) <span class="keyword">as</span> f: <span class="comment"># 当somefile不存在时会报错</span></span><br><span class="line">    ...</span><br><span class="line"></span><br><span class="line"><span class="keyword">with</span> <span class="built_in">open</span>(<span class="string">"somefile"</span>, <span class="string">'xt'</span>) <span class="keyword">as</span> f: <span class="comment"># 当somefile不存在时会创建，存在时不影响</span></span><br><span class="line">    ...</span><br><span class="line"></span><br></pre></td></tr></table></figure>
 <h3 id="将二进制文件做内存映射">将二进制文件做内存映射</h3>
 <div class="note primary">
             <p>使用<code>mmap</code>模块来创建映射，这样可以直接访问，而不需要频繁的seek、read等操作。</p><p>另外，由于虚拟内存的存在，多个python解释器可以映射到同一个文件上从而实现共享数据。</p>
           </div>
-<pre class="line-numbers language-python" data-language="python"><code class="language-python">
-<span class="token keyword">import</span> os
-<span class="token keyword">import</span> mmap
-
-<span class="token keyword">def</span> <span class="token function">memory_map</span><span class="token punctuation">(</span>filename<span class="token punctuation">,</span> access <span class="token operator">=</span> mmap<span class="token punctuation">.</span>ACCESS_WRITE<span class="token punctuation">)</span><span class="token punctuation">:</span>
-    size <span class="token operator">=</span> os<span class="token punctuation">.</span>path<span class="token punctuation">.</span>getsize<span class="token punctuation">(</span>filename<span class="token punctuation">)</span>
-    fd <span class="token operator">=</span> os<span class="token punctuation">.</span><span class="token builtin">open</span><span class="token punctuation">(</span>filename<span class="token punctuation">,</span> os<span class="token punctuation">.</span>O_RDWR<span class="token punctuation">)</span>
-    <span class="token keyword">return</span> mmap<span class="token punctuation">.</span>mmap<span class="token punctuation">(</span>fd<span class="token punctuation">,</span> size<span class="token punctuation">,</span> access <span class="token operator">=</span> access<span class="token punctuation">)</span>
-
-m <span class="token operator">=</span> memory_map<span class="token punctuation">(</span><span class="token string">"data"</span><span class="token punctuation">)</span>
-
-<span class="token comment"># 此时就可以像操作数组那样操作m</span>
-
-<span class="token keyword">print</span><span class="token punctuation">(</span><span class="token builtin">len</span><span class="token punctuation">(</span>m<span class="token punctuation">)</span><span class="token punctuation">)</span>
-<span class="token keyword">print</span><span class="token punctuation">(</span>m<span class="token punctuation">[</span><span class="token punctuation">:</span><span class="token number">34</span><span class="token punctuation">]</span><span class="token punctuation">)</span>
-m<span class="token punctuation">[</span><span class="token punctuation">:</span><span class="token number">11</span><span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token string">b'hello world'</span>
-m<span class="token punctuation">.</span>close<span class="token punctuation">(</span><span class="token punctuation">)</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="keyword">import</span> os</span><br><span class="line"><span class="keyword">import</span> mmap</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">memory_map</span>(<span class="params">filename, access = mmap.ACCESS_WRITE</span>):</span><br><span class="line">    size = os.path.getsize(filename)</span><br><span class="line">    fd = os.<span class="built_in">open</span>(filename, os.O_RDWR)</span><br><span class="line">    <span class="keyword">return</span> mmap.mmap(fd, size, access = access)</span><br><span class="line"></span><br><span class="line">m = memory_map(<span class="string">"data"</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment"># 此时就可以像操作数组那样操作m</span></span><br><span class="line"></span><br><span class="line"><span class="built_in">print</span>(<span class="built_in">len</span>(m))</span><br><span class="line"><span class="built_in">print</span>(m[:<span class="number">34</span>])</span><br><span class="line">m[:<span class="number">11</span>] = <span class="string">b'hello world'</span></span><br><span class="line">m.close()</span><br><span class="line"></span><br></pre></td></tr></table></figure>
 <h3 id="将字节数据写入文本文件">将字节数据写入文本文件</h3>
 <div class="note primary">
             <p>只需要简答的将字节数据写入到文件底层buffer中就可以了。</p>
@@ -436,32 +406,12 @@ m<span class="token punctuation">.</span>close<span class="token punctuation">(<
 <div class="note warning">
             <p>在python中调用print时，事实上调用了sys.stdout.write(obj+'\n')</p><p>而stdout就像是一个类文件对象，因为你可以将他赋值给任意的一个文件对象，重定向输出</p><p>原始的sys.stdout指向控制台，如果把文件的对象引用赋给sys.stdout，那么print调用的就是文件对象的write方法</p><p>而buffer是缓冲区，所以此操作就是不调用上层的write方法而直接写入底层的缓冲区</p>
           </div>
-<pre class="line-numbers language-python" data-language="python"><code class="language-python">
-<span class="token comment"># 示例一</span>
-
-<span class="token keyword">import</span> sys
-
-sys<span class="token punctuation">.</span>stdout<span class="token punctuation">.</span><span class="token builtin">buffer</span><span class="token punctuation">.</span>write<span class="token punctuation">(</span><span class="token string">b'hello\n'</span><span class="token punctuation">)</span>
-
-
-<span class="token comment"># 示例二</span>
-
-<span class="token keyword">import</span> sys
-
-sys<span class="token punctuation">.</span>stdout <span class="token operator">=</span> <span class="token builtin">open</span><span class="token punctuation">(</span><span class="token string">"filename"</span><span class="token punctuation">,</span><span class="token string">"xt"</span><span class="token punctuation">)</span>
-
-sys<span class="token punctuation">.</span>stdout<span class="token punctuation">.</span><span class="token builtin">buffer</span><span class="token punctuation">.</span>write<span class="token punctuation">(</span><span class="token string">b'hello\n'</span><span class="token punctuation">)</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="comment"># 示例一</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> sys</span><br><span class="line"></span><br><span class="line">sys.stdout.buffer.write(<span class="string">b'hello\n'</span>)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="comment"># 示例二</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> sys</span><br><span class="line"></span><br><span class="line">sys.stdout = <span class="built_in">open</span>(<span class="string">"filename"</span>,<span class="string">"xt"</span>)</span><br><span class="line"></span><br><span class="line">sys.stdout.buffer.write(<span class="string">b'hello\n'</span>)</span><br><span class="line"></span><br></pre></td></tr></table></figure>
 <h3 id="创建临时文件与文件夹">创建临时文件与文件夹</h3>
 <div class="note primary">
             <p><code>tempfile</code>模块中有各种实现了上下文管理协议的函数来处理临时文件</p>
           </div>
-<pre class="line-numbers language-python" data-language="python"><code class="language-python">
-<span class="token keyword">from</span> tempfile <span class="token keyword">import</span> TemporaryFile
-
-<span class="token keyword">with</span> TemporaryFile<span class="token punctuation">(</span><span class="token string">'w+t'</span><span class="token punctuation">,</span> encoding <span class="token operator">=</span> <span class="token string">'utf-8'</span><span class="token punctuation">,</span> errors <span class="token operator">=</span> <span class="token string">'ignore'</span><span class="token punctuation">,</span> delete <span class="token operator">=</span> <span class="token boolean">True</span><span class="token punctuation">)</span><span class="token punctuation">:</span>
-    <span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="keyword">from</span> tempfile <span class="keyword">import</span> TemporaryFile</span><br><span class="line"></span><br><span class="line"><span class="keyword">with</span> TemporaryFile(<span class="string">'w+t'</span>, encoding = <span class="string">'utf-8'</span>, errors = <span class="string">'ignore'</span>, delete = <span class="literal">True</span>):</span><br><span class="line">    ...</span><br><span class="line"></span><br></pre></td></tr></table></figure>
 <h3 id="序列化python对象">序列化python对象</h3>
 <div class="note primary">
             <p><code>pickle</code>模块的dump和load函数就足以处理这些</p>
@@ -469,16 +419,7 @@ sys<span class="token punctuation">.</span>stdout<span class="token punctuation"
 <div class="note warning">
             <p>注意不要对来源不明的对象进行load，因为这会产生副作用，严重甚至可能导致计算机被入侵。</p>
           </div>
-<pre class="line-numbers language-python" data-language="python"><code class="language-python">
-<span class="token keyword">import</span> pickle
-
-a <span class="token operator">=</span> <span class="token punctuation">[</span><span class="token number">1</span><span class="token punctuation">,</span><span class="token number">2</span><span class="token punctuation">,</span><span class="token number">3</span><span class="token punctuation">]</span>
-
-<span class="token keyword">with</span> <span class="token builtin">open</span><span class="token punctuation">(</span><span class="token string">"filename"</span><span class="token punctuation">,</span><span class="token string">'wb'</span><span class="token punctuation">)</span> <span class="token keyword">as</span> f<span class="token punctuation">:</span>
-    pickle<span class="token punctuation">.</span>dump<span class="token punctuation">(</span>a<span class="token punctuation">,</span>f<span class="token punctuation">)</span>
-    <span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span>
-    pickle<span class="token punctuation">.</span>load<span class="token punctuation">(</span>a<span class="token punctuation">,</span>f<span class="token punctuation">)</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="keyword">import</span> pickle</span><br><span class="line"></span><br><span class="line">a = [<span class="number">1</span>,<span class="number">2</span>,<span class="number">3</span>]</span><br><span class="line"></span><br><span class="line"><span class="keyword">with</span> <span class="built_in">open</span>(<span class="string">"filename"</span>,<span class="string">'wb'</span>) <span class="keyword">as</span> f:</span><br><span class="line">    pickle.dump(a,f)</span><br><span class="line">    ...</span><br><span class="line">    pickle.load(a,f)</span><br><span class="line"></span><br></pre></td></tr></table></figure>
 
     </div>
 
