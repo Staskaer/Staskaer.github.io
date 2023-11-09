@@ -20,15 +20,22 @@
     var CONFIG = {"hostname":"example.com","root":"/","scheme":"Gemini","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"mac"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"valine","storage":true,"lazyload":false,"nav":null,"activeClass":"valine"},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
   </script>
 
-  <meta property="og:type" content="website">
-<meta property="og:title" content="Staskaer">
-<meta property="og:url" content="http://example.com/categories/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/index.html">
+  <meta name="description" content="使用pyCUDA实现批量化的Homotopy Continuation求解器">
+<meta property="og:type" content="article">
+<meta property="og:title" content="使用pyCUDA实现批量化的Homotopy Continuation求解器">
+<meta property="og:url" content="http://example.com/2023/11/08/%E4%BD%BF%E7%94%A8CUDA%E5%AE%9E%E7%8E%B0%E6%89%B9%E9%87%8F%E5%8C%96%E7%9A%84Homotopy-Continuation%E6%B1%82%E8%A7%A3%E5%99%A8/index.html">
 <meta property="og:site_name" content="Staskaer">
+<meta property="og:description" content="使用pyCUDA实现批量化的Homotopy Continuation求解器">
 <meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2023-11-08T08:25:40.000Z">
+<meta property="article:modified_time" content="2023-11-09T06:00:12.155Z">
 <meta property="article:author" content="Staskaer">
+<meta property="article:tag" content="CUDA">
+<meta property="article:tag" content="SLAM">
+<meta property="article:tag" content="论文阅读">
 <meta name="twitter:card" content="summary">
 
-<link rel="canonical" href="http://example.com/categories/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/">
+<link rel="canonical" href="http://example.com/2023/11/08/%E4%BD%BF%E7%94%A8CUDA%E5%AE%9E%E7%8E%B0%E6%89%B9%E9%87%8F%E5%8C%96%E7%9A%84Homotopy-Continuation%E6%B1%82%E8%A7%A3%E5%99%A8/">
 
 
 <script id="page-configurations">
@@ -36,12 +43,12 @@
   CONFIG.page = {
     sidebar: "",
     isHome : false,
-    isPost : false,
+    isPost : true,
     lang   : 'en'
   };
 </script>
 
-  <title>Category: levelDB源码剖析 | Staskaer</title>
+  <title>使用pyCUDA实现批量化的Homotopy Continuation求解器 | Staskaer</title>
   
 
 
@@ -295,240 +302,167 @@ mjx-container[display="true"] + br {
         <div class="content-wrap">
           
 
-          <div class="content category">
+          <div class="content post posts-expand">
             
 
+    
   
   
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2023/11/08/%E4%BD%BF%E7%94%A8CUDA%E5%AE%9E%E7%8E%B0%E6%89%B9%E9%87%8F%E5%8C%96%E7%9A%84Homotopy-Continuation%E6%B1%82%E8%A7%A3%E5%99%A8/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/imgs/theme_pic/head_img.png">
+      <meta itemprop="name" content="Staskaer">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Staskaer">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          使用pyCUDA实现批量化的Homotopy Continuation求解器
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2023-11-08 16:25:40" itemprop="dateCreated datePublished" datetime="2023-11-08T16:25:40+08:00">2023-11-08</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2023-11-09 14:00:12" itemprop="dateModified" datetime="2023-11-09T14:00:12+08:00">2023-11-09</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/SLAM%E5%AD%A6%E4%B9%A0/" itemprop="url" rel="index"><span itemprop="name">SLAM学习</span></a>
+                </span>
+            </span>
+
+          
   
-  <div class="post-block">
-    <div class="posts-collapse">
-      <div class="collection-title">
-        <h2 class="collection-header">levelDB源码剖析
-          <small>Category</small>
-        </h2>
-      </div>
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Valine: </span>
+    
+    <a title="valine" href="/2023/11/08/%E4%BD%BF%E7%94%A8CUDA%E5%AE%9E%E7%8E%B0%E6%89%B9%E9%87%8F%E5%8C%96%E7%9A%84Homotopy-Continuation%E6%B1%82%E8%A7%A3%E5%99%A8/#valine-comments" itemprop="discussionUrl">
+      <span class="post-comments-count valine-comment-count" data-xid="/2023/11/08/%E4%BD%BF%E7%94%A8CUDA%E5%AE%9E%E7%8E%B0%E6%89%B9%E9%87%8F%E5%8C%96%E7%9A%84Homotopy-Continuation%E6%B1%82%E8%A7%A3%E5%99%A8/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
 
       
-    <div class="collection-year">
-      <span class="collection-header">2022</span>
-    </div>
-
-  <article itemscope itemtype="http://schema.org/Article">
-    <header class="post-header">
-
-      <div class="post-meta">
-        <time itemprop="dateCreated"
-              datetime="2022-12-23T11:17:59+08:00"
-              content="2022-12-23">
-          12-23
-        </time>
-      </div>
-
-      <div class="post-title">
-          <a class="post-title-link" href="/2022/12/23/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-17/" itemprop="url">
-            <span itemprop="name">levelDB源码剖析(17)--Recover</span>
-          </a>
-      </div>
-
-    </header>
-  </article>
-
-  <article itemscope itemtype="http://schema.org/Article">
-    <header class="post-header">
-
-      <div class="post-meta">
-        <time itemprop="dateCreated"
-              datetime="2022-12-21T21:39:10+08:00"
-              content="2022-12-21">
-          12-21
-        </time>
-      </div>
-
-      <div class="post-title">
-          <a class="post-title-link" href="/2022/12/21/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-16/" itemprop="url">
-            <span itemprop="name">levelDB源码剖析(16)--Compaction</span>
-          </a>
-      </div>
-
-    </header>
-  </article>
-
-  <article itemscope itemtype="http://schema.org/Article">
-    <header class="post-header">
-
-      <div class="post-meta">
-        <time itemprop="dateCreated"
-              datetime="2022-12-19T15:31:33+08:00"
-              content="2022-12-19">
-          12-19
-        </time>
-      </div>
-
-      <div class="post-title">
-          <a class="post-title-link" href="/2022/12/19/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-15/" itemprop="url">
-            <span itemprop="name">levelDB源码剖析(15)--数据库的版本管理</span>
-          </a>
-      </div>
-
-    </header>
-  </article>
-
-  <article itemscope itemtype="http://schema.org/Article">
-    <header class="post-header">
-
-      <div class="post-meta">
-        <time itemprop="dateCreated"
-              datetime="2022-10-24T09:53:08+08:00"
-              content="2022-10-24">
-          10-24
-        </time>
-      </div>
-
-      <div class="post-title">
-          <a class="post-title-link" href="/2022/10/24/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-14/" itemprop="url">
-            <span itemprop="name">levelDB源码剖析(14)--数据库功能部分</span>
-          </a>
-      </div>
-
-    </header>
-  </article>
-
-  <article itemscope itemtype="http://schema.org/Article">
-    <header class="post-header">
-
-      <div class="post-meta">
-        <time itemprop="dateCreated"
-              datetime="2022-10-21T14:44:01+08:00"
-              content="2022-10-21">
-          10-21
-        </time>
-      </div>
-
-      <div class="post-title">
-          <a class="post-title-link" href="/2022/10/21/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-13/" itemprop="url">
-            <span itemprop="name">levelDB源码剖析(13)--缓存Cache</span>
-          </a>
-      </div>
-
-    </header>
-  </article>
-
-  <article itemscope itemtype="http://schema.org/Article">
-    <header class="post-header">
-
-      <div class="post-meta">
-        <time itemprop="dateCreated"
-              datetime="2022-10-19T16:13:47+08:00"
-              content="2022-10-19">
-          10-19
-        </time>
-      </div>
-
-      <div class="post-title">
-          <a class="post-title-link" href="/2022/10/19/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-12/" itemprop="url">
-            <span itemprop="name">levelDB源码剖析(12)--迭代器的实现</span>
-          </a>
-      </div>
-
-    </header>
-  </article>
-
-  <article itemscope itemtype="http://schema.org/Article">
-    <header class="post-header">
-
-      <div class="post-meta">
-        <time itemprop="dateCreated"
-              datetime="2022-10-01T11:15:36+08:00"
-              content="2022-10-01">
-          10-01
-        </time>
-      </div>
-
-      <div class="post-title">
-          <a class="post-title-link" href="/2022/10/01/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-11/" itemprop="url">
-            <span itemprop="name">levelDB源码剖析(11)--内部的key结构</span>
-          </a>
-      </div>
-
-    </header>
-  </article>
-
-  <article itemscope itemtype="http://schema.org/Article">
-    <header class="post-header">
-
-      <div class="post-meta">
-        <time itemprop="dateCreated"
-              datetime="2022-09-30T09:52:23+08:00"
-              content="2022-09-30">
-          09-30
-        </time>
-      </div>
-
-      <div class="post-title">
-          <a class="post-title-link" href="/2022/09/30/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-10/" itemprop="url">
-            <span itemprop="name">levelDB源码剖析(10)--MemTable结构</span>
-          </a>
-      </div>
-
-    </header>
-  </article>
-
-  <article itemscope itemtype="http://schema.org/Article">
-    <header class="post-header">
-
-      <div class="post-meta">
-        <time itemprop="dateCreated"
-              datetime="2022-09-29T14:05:36+08:00"
-              content="2022-09-29">
-          09-29
-        </time>
-      </div>
-
-      <div class="post-title">
-          <a class="post-title-link" href="/2022/09/29/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-9/" itemprop="url">
-            <span itemprop="name">levelDB源码剖析(9)--WAL日志</span>
-          </a>
-      </div>
-
-    </header>
-  </article>
-
-  <article itemscope itemtype="http://schema.org/Article">
-    <header class="post-header">
-
-      <div class="post-meta">
-        <time itemprop="dateCreated"
-              datetime="2022-09-27T20:34:08+08:00"
-              content="2022-09-27">
-          09-27
-        </time>
-      </div>
-
-      <div class="post-title">
-          <a class="post-title-link" href="/2022/09/27/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-8/" itemprop="url">
-            <span itemprop="name">levelDB源码剖析(8)--Block和SSTable的构建</span>
-          </a>
-      </div>
-
-    </header>
-  </article>
+        <p>使用pyCUDA实现批量化的Homotopy Continuation求解器</p>
+<span id="more"></span>
+<h2 id="gpu-hc">GPU-HC</h2>
+<p>Homotopy
+Continuation可以用来求解多项式方程，原理可以看之前的一篇<a href="/2023/09/19/%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB-%E5%9C%A8RANSAC%E4%B8%8B%E5%9F%BA%E4%BA%8EHC%E5%92%8CML%E7%9A%84%E4%BD%8D%E5%A7%BF%E4%BC%B0%E8%AE%A1%E6%9C%80%E5%B0%8F%E9%85%8D%E7%BD%AE%E9%97%AE%E9%A2%98/" title="论文阅读--在RANSAC下基于HC和ML的位姿估计最小配置问题">论文阅读--在RANSAC下基于HC和ML的位姿估计最小配置问题</a>。而对于PnP问题而言，由于可以把位姿估计问题转化成求解一系列方程组的问题，且这些方程组天然<strong>存在多个伪解</strong>，所以使用HC去求解也同样具有优势。</p>
+<p>由于上述过程相当于<strong>每个HC跟踪一个解</strong>，在<em>Minimal
+Solutions to Generalized Three-View Relative Pose
+Problem</em>和<em>GPU-Based Homotopy Continuation for Minimal Problems
+in Computer
+Vision</em>这两篇文章中，就使用CUDA来编写了HC求解器，使用Monodromy作为start
+system，每个CUDA
+core跟踪一个HC曲线，利用Monodromy的性质，先对具体的问题找出所有的参数，然后每个GPU-HC就可以利用这些参数来针对一个具体的问题求解出所有的解。关于Monodromy、Polyhedral这些HC
+start system可以简单参考<a target="_blank" rel="noopener" href="https://www.juliahomotopycontinuation.org/guides/start-systems/">这里</a>，上面两篇论文的Monodromy参数计算也是基于这个库，这个库是julia编写的，可以直接用jupyter运行。</p>
+<h3 id="python中的hc">python中的HC</h3>
+<p>但是上述代码是纯CUDA代码，而且还需要使用julia编写的程序计算monodromy参数，如果想要在python，尤其是和pytorch中结合使用会稍微有些麻烦。而且HC作为一个优化步骤，涉及到的循环很多，如果用pytorch的autogradient来写的话效率其实很差，并且如果把HC作为网络层后面的优化器的话，那么纯python实现必须把整个batch的数据展开成一维来逐个处理，计算量爆炸。</p>
+<p>所以基于此，可以使用pyCUDA来实现一个batch_HC，这样就能跟torch的网络层无缝衔接。</p>
+<p>简单测试一下性能，每个HC的超参数为：t_size=0.05
+newton_iter=400(<strong>此处代码暂不公开</strong>)</p>
+<table>
+<thead>
+<tr class="header">
+<th style="text-align: center;">数据量</th>
+<th style="text-align: center;">python-HC</th>
+<th style="text-align: center;">pyCUDA-HC</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: center;">1</td>
+<td style="text-align: center;">5.05s</td>
+<td style="text-align: center;">4.72+0.032s</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">5</td>
+<td style="text-align: center;">24.99s</td>
+<td style="text-align: center;">4.51+0.027s</td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;">10</td>
+<td style="text-align: center;">50.61s</td>
+<td style="text-align: center;">5.15+0.033s</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">100</td>
+<td style="text-align: center;">未测</td>
+<td style="text-align: center;">5.04+0.031s</td>
+</tr>
+</tbody>
+</table>
+<p>由于pyCUDA其实就是先用CUDA写一遍，然后再把CUDA代码转化成python接口，所以本质上还是在用C++写CUDA，因此核函数在pyCUDA中也同样需要编译，所以pyCUDA分为编译时间(前)和计算时间(后)，在我个人电脑(rtx2060，CUDA10.2)编译耗时大概为5s左右，而计算时间则是0.03s左右，且无论针对多么大的batch，运行时间基本都一致；而使用torch实现的HC，基本上稳定计算一个数据为5s左右，而通过torch写的代码很难向量化，所以导致运行效率低下。</p>
 
     </div>
-  </div>
-  
-  
-  
 
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/CUDA/" rel="tag"># CUDA</a>
+              <a href="/tags/SLAM/" rel="tag"># SLAM</a>
+              <a href="/tags/%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB/" rel="tag"># 论文阅读</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2023/10/10/%E5%AF%B9pnp%E9%97%AE%E9%A2%98end2end%E7%9A%84%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0%E8%AE%AD%E7%BB%83%E6%96%B9%E6%B3%95/" rel="prev" title="对pnp问题end2end的深度学习训练方法">
+      <i class="fa fa-chevron-left"></i> 对pnp问题end2end的深度学习训练方法
+    </a></div>
+      <div class="post-nav-item"></div>
+    </div>
+      </footer>
+    
+  </article>
   
-  <nav class="pagination">
-    <span class="page-number current">1</span><a class="page-number" href="/categories/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/page/2/">2</a><a class="extend next" rel="next" href="/categories/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/page/2/"><i class="fa fa-angle-right" aria-label="Next page"></i></a>
-  </nav>
+  
+  
 
 
 
           </div>
           
+    <div class="comments" id="valine-comments"></div>
 
 <script>
   window.addEventListener('tabs:register', () => {
@@ -575,6 +509,7 @@ mjx-container[display="true"] + br {
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#gpu-hc"><span class="nav-number">1.</span> <span class="nav-text">GPU-HC</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#python%E4%B8%AD%E7%9A%84hc"><span class="nav-number">1.1.</span> <span class="nav-text">python中的HC</span></a></li></ol></li></ol></div>
       </div>
       <!--/noindex-->
 
