@@ -28,7 +28,7 @@
 <meta property="og:description" content="bertini、Julia-HomotopyContinuation、GPU-HC、PHCpack">
 <meta property="og:locale" content="en_US">
 <meta property="article:published_time" content="2024-03-05T05:30:55.000Z">
-<meta property="article:modified_time" content="2024-03-05T10:04:17.172Z">
+<meta property="article:modified_time" content="2024-03-05T10:09:14.931Z">
 <meta property="article:author" content="Staskaer">
 <meta property="article:tag" content="SLAM">
 <meta name="twitter:card" content="summary">
@@ -331,7 +331,7 @@ mjx-container[display="true"] + br {
               <span class="post-meta-item-text">Posted on</span>
               
 
-              <time title="Created: 2024-03-05 13:30:55 / Modified: 18:04:17" itemprop="dateCreated datePublished" datetime="2024-03-05T13:30:55+08:00">2024-03-05</time>
+              <time title="Created: 2024-03-05 13:30:55 / Modified: 18:09:14" itemprop="dateCreated datePublished" datetime="2024-03-05T13:30:55+08:00">2024-03-05</time>
             </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -389,7 +389,7 @@ mjx-container[display="true"] + br {
 <li>因为一般SLAM系统中需要求解的东西都是实根，所以直接解析<code>real_finite_solutions</code>这个文件即可</li>
 </ol>
 <p>显然，这种方式要求我们创建一个<code>input</code>文件，然后在命令行输入<code>./bertini</code>，然后再解析一个文本，中间需要经过多次IO操作，不够方便。而且bertini同一时间只能存在一个input和real_finite_solutions文件，所以很难做并行化，不过胜在使用简单。不过一般只能求解方阵系统(square
-system，即未知数和方程数目一致)，如果是求解超定。</p>
+system，即未知数和方程数目一致)。</p>
 <h3 id="使用bertini2">使用bertini2</h3>
 <p>bertini2基本就是暴露了API接口的bertini，安装按照<a target="_blank" rel="noopener" href="https://github.com/bertiniteam/b2/wiki/Compilation-Guide">github上的说明</a>即可。</p>
 <p>不过bertini2需要安装boost库，而且需要boost&gt;=1.83，目前好像没法直接通过apt安装这个版本的boost，只能从源码安装，这就挺麻烦的。</p>
