@@ -28,7 +28,7 @@
 <meta property="og:description" content="bertini、Julia-HomotopyContinuation、GPU-HC、PHCpack">
 <meta property="og:locale" content="en_US">
 <meta property="article:published_time" content="2024-03-05T05:30:55.000Z">
-<meta property="article:modified_time" content="2024-03-05T09:46:01.026Z">
+<meta property="article:modified_time" content="2024-03-05T09:57:34.068Z">
 <meta property="article:author" content="Staskaer">
 <meta property="article:tag" content="SLAM">
 <meta name="twitter:card" content="summary">
@@ -331,7 +331,7 @@ mjx-container[display="true"] + br {
               <span class="post-meta-item-text">Posted on</span>
               
 
-              <time title="Created: 2024-03-05 13:30:55 / Modified: 17:46:01" itemprop="dateCreated datePublished" datetime="2024-03-05T13:30:55+08:00">2024-03-05</time>
+              <time title="Created: 2024-03-05 13:30:55 / Modified: 17:57:34" itemprop="dateCreated datePublished" datetime="2024-03-05T13:30:55+08:00">2024-03-05</time>
             </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -428,7 +428,7 @@ repo</a></p>
 <p><a target="_blank" rel="noopener" href="https://homepages.math.uic.edu/~jan/download.html">PHCpack</a></p>
 <p>我们用PHCpack的python接口，也就是phcpy，安装这个库，需要首先把安装alr，可以从<a target="_blank" rel="noopener" href="https://github.com/alire-project/alire/releases">alr的release</a>中下载对应的压缩包，解压后把alr程序移动到<code>/bin</code>目录下即可。</p>
 <p>然后把PHCpack的源码下载下来，并用alr编译即可</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">sudo apt install gnat gprbuild</span><br><span class="line">git <span class="built_in">clone</span> https://github.com/janverschelde/PHCpack.git</span><br><span class="line"><span class="built_in">cd</span> PHCpack</span><br><span class="line">alr make</span><br></pre></td></tr></table></figure>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">sudo apt install gnat gprbuild</span><br><span class="line">git <span class="built_in">clone</span> https://github.com/janverschelde/PHCpack.git</span><br><span class="line"><span class="built_in">cd</span> PHCpack</span><br><span class="line">alr install</span><br></pre></td></tr></table></figure>
 <p>然后把编译好的<code>libPHCpack.so</code>复制到需要安装的目录下</p>
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">cp</span> lib/libPHCpack.so src/lib</span><br><span class="line"><span class="built_in">cp</span> lib/libPHCpack.so src/Python/PHCpy/lib/</span><br><span class="line"><span class="built_in">cp</span> lib/libPHCpack.so src/Python/PHCpy/phcpy/</span><br><span class="line"></span><br><span class="line"><span class="built_in">cd</span> src/Python/PHCpy/</span><br><span class="line">python3 setup.py install</span><br></pre></td></tr></table></figure>
 <p>这样就安装好了，下面给一个简单的例子，更多例子可以参考<a target="_blank" rel="noopener" href="https://homepages.math.uic.edu/~jan/phcpy_doc_html/index.html">文档</a></p>
