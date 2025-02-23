@@ -29,7 +29,7 @@
 <meta property="og:locale" content="en_US">
 <meta property="og:image" content="http://example.com/2025/02/23/ORBSLAM2%E6%BA%90%E7%A0%81%E5%B0%8F%E8%AE%B0-4/pic1.png">
 <meta property="article:published_time" content="2025-02-23T06:34:02.000Z">
-<meta property="article:modified_time" content="2025-02-23T07:57:58.083Z">
+<meta property="article:modified_time" content="2025-02-23T07:59:12.860Z">
 <meta property="article:author" content="Staskaer">
 <meta property="article:tag" content="SLAM">
 <meta property="article:tag" content="ORBSLAM2">
@@ -334,7 +334,7 @@ mjx-container[display="true"] + br {
               <span class="post-meta-item-text">Posted on</span>
               
 
-              <time title="Created: 2025-02-23 14:34:02 / Modified: 15:57:58" itemprop="dateCreated datePublished" datetime="2025-02-23T14:34:02+08:00">2025-02-23</time>
+              <time title="Created: 2025-02-23 14:34:02 / Modified: 15:59:12" itemprop="dateCreated datePublished" datetime="2025-02-23T14:34:02+08:00">2025-02-23</time>
             </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -419,7 +419,7 @@ mjx-container[display="true"] + br {
 <p>在LocalMapping会融合相邻帧中重复地图点，而在LoopClosing中，则需要融合闭环后潜在重复地图点。融合时需要比较两个地图点的相似性，所以这项任务也交给匹配器来完成。</p>
 <p>融合思路其实比较简单：</p>
 <ul>
-<li>首先判断地图点投影后是否在当前帧视野内：（与<code>isInFrustum</code>函数类似）主要涉及相机坐标系深度为正、像素坐标系在校正后有效区域内、地图点与光心的距离在有效区域内以及地图点方向与光心夹角小于一定阈值</li>
+<li>首先判断地图点投影后是否在当前帧视野内，（与<code>isInFrustum</code>函数类似）主要涉及相机坐标系深度为正、像素坐标系在校正后有效区域内、地图点与光心的距离在有效区域内以及地图点方向与光心夹角小于一定阈值</li>
 <li>然后判断当前地图点可能出现在金字塔的哪些层中，从而确定特征点的搜索范围</li>
 <li>遍历匹配该区域内的特征点，并使用描述子距离和卡方检验来排除潜在的误匹配</li>
 <li>通过上述步骤的特征点如果有地图点，则选一个较好的（被观测到次数更多的地图点）；否则则为该特征点添加地图点</li>
@@ -447,7 +447,10 @@ mjx-container[display="true"] + br {
     <a href="/2025/02/22/ORBSLAM2%E6%BA%90%E7%A0%81%E5%B0%8F%E8%AE%B0-3/" rel="prev" title="ORBSLAM2源码小记(3)--初始化器Initializer">
       <i class="fa fa-chevron-left"></i> ORBSLAM2源码小记(3)--初始化器Initializer
     </a></div>
-      <div class="post-nav-item"></div>
+      <div class="post-nav-item">
+    <a href="/2025/02/23/ORBSLAM2%E6%BA%90%E7%A0%81%E5%B0%8F%E8%AE%B0-5/" rel="next" title="ORBSLAM2源码小记(5)--跟踪器Tracking">
+      ORBSLAM2源码小记(5)--跟踪器Tracking <i class="fa fa-chevron-right"></i>
+    </a></div>
     </div>
       </footer>
     
@@ -523,7 +526,7 @@ mjx-container[display="true"] + br {
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">89</span>
+          <span class="site-state-item-count">90</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
