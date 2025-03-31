@@ -301,6 +301,95 @@ mjx-container[display="true"] + br {
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2022/12/23/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-17/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/imgs/theme_pic/head_img.png">
+      <meta itemprop="name" content="Staskaer">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Staskaer">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2022/12/23/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-17/" class="post-title-link" itemprop="url">levelDB源码剖析(17)--Recover</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              
+
+              <time title="Created: 2022-12-23 11:17:59 / Modified: 20:52:58" itemprop="dateCreated datePublished" datetime="2022-12-23T11:17:59+08:00">2022-12-23</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/" itemprop="url" rel="index"><span itemprop="name">levelDB源码剖析</span></a>
+                </span>
+            </span>
+
+          
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Valine: </span>
+    
+    <a title="valine" href="/2022/12/23/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-17/#valine-comments" itemprop="discussionUrl">
+      <span class="post-comments-count valine-comment-count" data-xid="/2022/12/23/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-17/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h2 id="recover">Recover</h2>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/2022/12/23/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-17/#more" rel="contents">
+                Read more &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
     <link itemprop="mainEntityOfPage" href="http://example.com/2022/12/21/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-16/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -1152,101 +1241,6 @@ mjx-container[display="true"] + br {
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
-    <link itemprop="mainEntityOfPage" href="http://example.com/2022/10/19/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-12/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/imgs/theme_pic/head_img.png">
-      <meta itemprop="name" content="Staskaer">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Staskaer">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2022/10/19/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-12/" class="post-title-link" itemprop="url">levelDB源码剖析(12)--迭代器的实现</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2022-10-19 16:13:47" itemprop="dateCreated datePublished" datetime="2022-10-19T16:13:47+08:00">2022-10-19</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2022-11-04 14:03:08" itemprop="dateModified" datetime="2022-11-04T14:03:08+08:00">2022-11-04</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/" itemprop="url" rel="index"><span itemprop="name">levelDB源码剖析</span></a>
-                </span>
-            </span>
-
-          
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="far fa-comment"></i>
-      </span>
-      <span class="post-meta-item-text">Valine: </span>
-    
-    <a title="valine" href="/2022/10/19/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-12/#valine-comments" itemprop="discussionUrl">
-      <span class="post-comments-count valine-comment-count" data-xid="/2022/10/19/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-12/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h2 id="迭代器的实现">迭代器的实现</h2>
-          <!--noindex-->
-            <div class="post-button">
-              <a class="btn" href="/2022/10/19/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-12/#more" rel="contents">
-                Read more &raquo;
-              </a>
-            </div>
-          <!--/noindex-->
-        
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
@@ -1318,7 +1312,7 @@ mjx-container[display="true"] + br {
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">94</span>
+          <span class="site-state-item-count">95</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
