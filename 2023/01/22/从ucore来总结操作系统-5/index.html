@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 6.2.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/imgs/theme_pic/staskaer.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/imgs/theme_pic/staskaer.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/imgs/theme_pic/staskaer.png">
+  <link rel="mask-icon" href="/imgs/theme_pic/staskaer.png" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Gemini","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"mac"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"valine","storage":true,"lazyload":false,"nav":null,"activeClass":"valine"},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="用户线程">
+<meta property="og:type" content="article">
+<meta property="og:title" content="从ucore来总结操作系统(5)----用户线程">
+<meta property="og:url" content="http://example.com/2023/01/22/%E4%BB%8Eucore%E6%9D%A5%E6%80%BB%E7%BB%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-5/index.html">
+<meta property="og:site_name" content="Staskaer">
+<meta property="og:description" content="用户线程">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2023-01-22T06:15:07.000Z">
+<meta property="article:modified_time" content="2025-06-17T15:50:22.381Z">
+<meta property="article:author" content="Staskaer">
+<meta property="article:tag" content="ucore操作系统">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="http://example.com/2023/01/22/%E4%BB%8Eucore%E6%9D%A5%E6%80%BB%E7%BB%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-5/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'en'
+  };
+</script>
+
+  <title>从ucore来总结操作系统(5)----用户线程 | Staskaer</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+<style>mjx-container[jax="SVG"] {
+  direction: ltr;
+}
+
+mjx-container[jax="SVG"] > svg {
+  overflow: visible;
+}
+
+mjx-container[jax="SVG"][display="true"] {
+  display: block;
+  text-align: center;
+  margin: 1em 0;
+}
+
+mjx-container[jax="SVG"][justify="left"] {
+  text-align: left;
+}
+
+mjx-container[jax="SVG"][justify="right"] {
+  text-align: right;
+}
+
+g[data-mml-node="merror"] > g {
+  fill: red;
+  stroke: red;
+}
+
+g[data-mml-node="merror"] > rect[data-background] {
+  fill: yellow;
+  stroke: none;
+}
+
+g[data-mml-node="mtable"] > line[data-line] {
+  stroke-width: 70px;
+  fill: none;
+}
+
+g[data-mml-node="mtable"] > rect[data-frame] {
+  stroke-width: 70px;
+  fill: none;
+}
+
+g[data-mml-node="mtable"] > .mjx-dashed {
+  stroke-dasharray: 140;
+}
+
+g[data-mml-node="mtable"] > .mjx-dotted {
+  stroke-linecap: round;
+  stroke-dasharray: 0,140;
+}
+
+g[data-mml-node="mtable"] > svg {
+  overflow: visible;
+}
+
+[jax="SVG"] mjx-tool {
+  display: inline-block;
+  position: relative;
+  width: 0;
+  height: 0;
+}
+
+[jax="SVG"] mjx-tool > mjx-tip {
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+mjx-tool > mjx-tip {
+  display: inline-block;
+  padding: .2em;
+  border: 1px solid #888;
+  font-size: 70%;
+  background-color: #F8F8F8;
+  color: black;
+  box-shadow: 2px 2px 5px #AAAAAA;
+}
+
+g[data-mml-node="maction"][data-toggle] {
+  cursor: pointer;
+}
+
+mjx-status {
+  display: block;
+  position: fixed;
+  left: 1em;
+  bottom: 1em;
+  min-width: 25%;
+  padding: .2em .4em;
+  border: 1px solid #888;
+  font-size: 90%;
+  background-color: #F8F8F8;
+  color: black;
+}
+
+foreignObject[data-mjx-xml] {
+  font-family: initial;
+  line-height: normal;
+  overflow: visible;
+}
+
+.MathJax path {
+  stroke-width: 3;
+}
+
+mjx-container[display="true"] {
+  overflow: auto hidden;
+}
+
+mjx-container[display="true"] + br {
+  display: none;
+}
+</style></head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Staskaer</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">Hi, this is Staskaer</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+        <li class="menu-item menu-item-links">
+
+    <a href="/links/" rel="section"><i class="fa fa-link fa-fw"></i>links</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2023/01/22/%E4%BB%8Eucore%E6%9D%A5%E6%80%BB%E7%BB%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-5/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/imgs/theme_pic/head_img.png">
+      <meta itemprop="name" content="Staskaer">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Staskaer">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          从ucore来总结操作系统(5)----用户线程
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2023-01-22 14:15:07" itemprop="dateCreated datePublished" datetime="2023-01-22T14:15:07+08:00">2023-01-22</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2025-06-17 23:50:22" itemprop="dateModified" datetime="2025-06-17T23:50:22+08:00">2025-06-17</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/" itemprop="url" rel="index"><span itemprop="name">操作系统</span></a>
+                </span>
+            </span>
+
+          
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Valine: </span>
+    
+    <a title="valine" href="/2023/01/22/%E4%BB%8Eucore%E6%9D%A5%E6%80%BB%E7%BB%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-5/#valine-comments" itemprop="discussionUrl">
+      <span class="post-comments-count valine-comment-count" data-xid="/2023/01/22/%E4%BB%8Eucore%E6%9D%A5%E6%80%BB%E7%BB%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-5/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h2 id="用户线程">用户线程</h2>
+<span id="more"></span>
+<h3 id="x00-环境准备">0X00 环境准备</h3>
+<p>本lab基于前所有lab，但是需要对其进行一些扩展：</p>
+<ul>
+<li>alloc_proc函数：添加对proc_struct::wait_state以及proc_struct::cptr/optr/yptr成员的初始化。</li>
+</ul>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="type">static</span> <span class="keyword">struct</span> proc_struct *<span class="title function_">alloc_proc</span><span class="params">(<span class="type">void</span>)</span> </span><br><span class="line">{</span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">proc_struct</span> *<span class="title">proc</span> =</span> kmalloc(<span class="keyword">sizeof</span>(<span class="keyword">struct</span> proc_struct));</span><br><span class="line">    <span class="keyword">if</span> (proc != <span class="literal">NULL</span>) </span><br><span class="line">    {</span><br><span class="line">        <span class="comment">// .....</span></span><br><span class="line">        <span class="comment">// Lab5 code</span></span><br><span class="line">        proc-&gt;wait_state = <span class="number">0</span>;</span><br><span class="line">        proc-&gt;cptr = proc-&gt;optr = proc-&gt;yptr = <span class="literal">NULL</span>;</span><br><span class="line">    }</span><br><span class="line">    <span class="keyword">return</span> proc;</span><br><span class="line">}</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<div class="note primary">
+            <p><strong>proc结构体中的 parent, cptr, yptr, optr</strong></p><p>proc-&gt;parent是指向父进程的指针, proc-&gt;cptr是指向子进程的指针, proc-&gt;optr是指向更老兄弟进程的指针, proc-&gt;yptr是指向更年轻兄弟进程的指针</p><p>因为子进程并不唯一, 父进程的cptr指针指向最近建立的子进程, yptr和optr是子进程之间通过时间顺序形成的双向链表, 但是这个双向链表两边都是NULL，并不是严格的双向链表</p><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">                     +----------------+</span><br><span class="line">                     | parent process |</span><br><span class="line">                     +----------------+</span><br><span class="line">              parent ^         \       ^  parent</span><br><span class="line">                    /           \       \</span><br><span class="line">                   /             \ cptr  \</span><br><span class="line">                  /         yptr  V       \      yptr</span><br><span class="line">           +-------------+  --&gt;  +-------------+  --&gt;  <span class="literal">NULL</span></span><br><span class="line">           | old process |       | New Process |</span><br><span class="line"><span class="literal">NULL</span>  &lt;--  +-------------+  &lt;--  +-------------+</span><br><span class="line">      optr                  optr</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+          </div>
+<ul>
+<li>idt_init函数：设置中断T_SYSCALL的触发特权级位DPL_USER</li>
+</ul>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="type">void</span> <span class="title function_">idt_init</span><span class="params">(<span class="type">void</span>)</span> </span><br><span class="line">{</span><br><span class="line">     <span class="comment">// ......</span></span><br><span class="line">    <span class="comment">// Lab5 code</span></span><br><span class="line">    SETGATE(idt[T_SYSCALL], <span class="number">1</span>, GD_KTEXT, __vectors[T_SYSCALL], DPL_USER);</span><br><span class="line">    <span class="comment">// ......</span></span><br><span class="line">}</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<ul>
+<li>trap_dispatch函数：设置每100次时间中断后，当前正在执行的进程被调度，也注释掉输出100ticks的函数</li>
+</ul>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="type">static</span> <span class="type">void</span> <span class="title function_">trap_dispatch</span><span class="params">(<span class="keyword">struct</span> trapframe *tf)</span> </span><br><span class="line">{</span><br><span class="line">    <span class="type">char</span> c;</span><br><span class="line">    <span class="type">int</span> ret=<span class="number">0</span>;</span><br><span class="line">    <span class="keyword">switch</span> (tf-&gt;tf_trapno) </span><br><span class="line">    {</span><br><span class="line">    <span class="comment">// ......</span></span><br><span class="line">    <span class="keyword">case</span> IRQ_OFFSET + IRQ_TIMER:</span><br><span class="line">        ticks++;</span><br><span class="line">        <span class="keyword">if</span>(ticks % TICK_NUM == <span class="number">0</span>){</span><br><span class="line">            <span class="comment">// Lab5 Code</span></span><br><span class="line">            assert(current != <span class="literal">NULL</span>);</span><br><span class="line">            current-&gt;need_resched = <span class="number">1</span>;</span><br><span class="line">            <span class="comment">//print_ticks();</span></span><br><span class="line">        }</span><br><span class="line">        <span class="keyword">break</span>;</span><br><span class="line">   <span class="comment">// ......</span></span><br><span class="line">    }</span><br><span class="line">}</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<ul>
+<li>do_fork函数：添加对当前程序等待状态的检查，以及使用set_link函数来设置进程之间的关系</li>
+</ul>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="type">int</span> <span class="title function_">do_fork</span><span class="params">(<span class="type">uint32_t</span> clone_flags, <span class="type">uintptr_t</span> <span class="built_in">stack</span>, <span class="keyword">struct</span> trapframe *tf)</span> </span><br><span class="line">{</span><br><span class="line">    <span class="comment">// ..........</span></span><br><span class="line">    <span class="keyword">if</span> ((proc = alloc_proc()) == <span class="literal">NULL</span>)</span><br><span class="line">        <span class="keyword">goto</span> fork_out;</span><br><span class="line">    proc-&gt;parent = current;</span><br><span class="line">    <span class="comment">// Lab5: 确保当前进程的wait状态为空</span></span><br><span class="line">    assert(current-&gt;wait_state == <span class="number">0</span>);</span><br><span class="line">    <span class="keyword">if</span> (setup_kstack(proc) != <span class="number">0</span>)</span><br><span class="line">        <span class="keyword">goto</span> bad_fork_cleanup_proc;</span><br><span class="line">    <span class="keyword">if</span> (copy_mm(clone_flags, proc) != <span class="number">0</span>)</span><br><span class="line">        <span class="keyword">goto</span> bad_fork_cleanup_kstack;</span><br><span class="line">    copy_thread(proc, <span class="built_in">stack</span>, tf);</span><br><span class="line">    <span class="type">bool</span> intr_flag;</span><br><span class="line">    local_intr_save(intr_flag);</span><br><span class="line">    {</span><br><span class="line">        proc-&gt;pid = get_pid();</span><br><span class="line">        hash_proc(proc);</span><br><span class="line">        <span class="comment">// Lab5: 设置进程间的关系</span></span><br><span class="line">        set_links(proc);</span><br><span class="line">    }</span><br><span class="line">    local_intr_restore(intr_flag);</span><br><span class="line">    wakeup_proc(proc);</span><br><span class="line">    ret = proc-&gt;pid;</span><br><span class="line">    <span class="comment">// ..........</span></span><br><span class="line">}</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<div class="note primary">
+            <p>只有当前进程不在等待中，才能进入fork函数里</p><p>set_link函数,是设置proc结构体中的 cptr, yptr, optr, 因为子进程并不唯一, 这个函数位置保证, 父进程的cptr指针指向最近建立的子进程, yptr和optr是子进程之间通过时间顺序形成的双向链表。</p>
+          </div>
+<h3 id="x01-加载应用程序并执行">0X01 加载应用程序并执行</h3>
+<p>一般我们fork出子进程后会立刻执行execv函数，从而加载到另一个程序(这也是为什么大多需要写时复制，因为新程序不需要父进程的上下文)。</p>
+<p><code>kern/process/proc.c</code>的do_execv函数加载并解析一个处于内存中的ELF执行文件格式(<strong>因为此时没有文件系统，所以所有用户程序需要随内核编译，参见实验指导书</strong>)的应用程序，建立相应的用户内存空间来放置应用程序的代码段、数据段等，且要设置好proc_struct结构中的成员变量trapframe中的内容，确保在执行此进程后，能够从应用程序设定的起始执行地址开始执行。需设置正确的trapframe内容。</p>
+<p>而上述函数调用load_icode函数来完成具体的实现，所以我们需要完成<code>kern/process/proc.c</code>中的load_icode函数。</p>
+<p>不过在实现这个函数之前，我们<strong>先分析一下创建内核线程的过程</strong>：</p>
+<ul>
+<li>首先用户程序随内核编译，放在内核代码的后面，然后随内核一起被bootloader加载到内存中。</li>
+<li>在本实验中第一个用户进程是由第二个内核线程initproc通过把hello应用程序执行码覆盖到initproc的用户虚拟内存空间来创建的，其会通过调用<code>KERNEL_EXECVE(hello)</code>来创建用户线程</li>
+<li>KERNEL_EXECVE(hello)会调用<code>kernel_execve</code>函数来调用<code>SYS_exec</code>系统调用(这里面会做一些解析传递用户线程地址的工作，非常的简单)</li>
+<li>系统调用发生后，会进入中断处理函数(中断的调用栈此处就忽略了)</li>
+<li>在中断处理函数中，会进入到我们在准备工作中写的那个分支，会直接调用<code>syscall</code>函数。</li>
+<li>在syscall函数中，由于<strong>此时还未中断返回，所以syscall会从中断帧中取出系统调用代号</strong>，并使用一个函数指针数组来调用对应的系统调用处理函数，此时就是<code>sys_exec</code>函数。</li>
+<li>sys_exec函数会解析传递进来的参数并转换一下(<strong>因为各个系统调用需要的参数数目不同，所以传递的是类似'变长参数'的东西(其实是一个数组，各个函数各取所需)</strong>)，然后调用<code>do_execv</code>函数来加载应用程序并执行。</li>
+<li>当各个子函数都执行完，就正确加载了程序并建立了上下文，<strong>但是建立上下文不代表能执行</strong>，想要让上下文正确被加载，需要中断返回，当中断返回之后，就进入新加载的程序的上下文中和对应权限下执行了()</li>
+</ul>
+<p>所以我们先从<code>do_execv</code>函数开始分析(前面一些函数比较简单，就是参数倒来倒去)。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="comment">// kern/process/proc.c</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// do_execve - call exit_mmap(mm)&amp;put_pgdir(mm) to reclaim memory space of current process</span></span><br><span class="line"><span class="comment">//           - call load_icode to setup new memory space accroding binary prog.</span></span><br><span class="line"><span class="comment">// 真正处理execve系统调用的函数</span></span><br><span class="line"><span class="type">int</span> <span class="title function_">do_execve</span><span class="params">(<span class="type">const</span> <span class="type">char</span> *name, <span class="type">size_t</span> len, <span class="type">unsigned</span> <span class="type">char</span> *binary, <span class="type">size_t</span> size)</span></span><br><span class="line">{</span><br><span class="line">    <span class="comment">// 需要完成从内核态到用户态的转换，所以需要先清空mm</span></span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">mm_struct</span> *<span class="title">mm</span> =</span> current-&gt;mm;</span><br><span class="line">    <span class="comment">// 检查在mm中，从name开始的len个字节是否都能被用户线程访问</span></span><br><span class="line">    <span class="comment">// 而mm是内核栈，所以这些是保险性监测</span></span><br><span class="line">    <span class="comment">// user_mem_check在vmm.c中</span></span><br><span class="line">    <span class="keyword">if</span> (!user_mem_check(mm, (<span class="type">uintptr_t</span>)name, len, <span class="number">0</span>))</span><br><span class="line">    {</span><br><span class="line">        <span class="keyword">return</span> -E_INVAL;</span><br><span class="line">    }</span><br><span class="line">    <span class="keyword">if</span> (len &gt; PROC_NAME_LEN)</span><br><span class="line">    {</span><br><span class="line">        len = PROC_NAME_LEN;</span><br><span class="line">    }</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 存储副本</span></span><br><span class="line">    <span class="comment">// 猜测原因：因为name可能在用户空间，而用户空间可能会被修改</span></span><br><span class="line">    <span class="type">char</span> local_name[PROC_NAME_LEN + <span class="number">1</span>];</span><br><span class="line">    <span class="built_in">memset</span>(local_name, <span class="number">0</span>, <span class="keyword">sizeof</span>(local_name));</span><br><span class="line">    <span class="built_in">memcpy</span>(local_name, name, len);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 如果mm不为空，那么就需要清空mm</span></span><br><span class="line">    <span class="comment">// 因为内核线程常驻内存，所以内核线程的mm为NULL</span></span><br><span class="line">    <span class="comment">// 如果是用户线程的话，因为需要置换，所以mm不为NULL</span></span><br><span class="line">    <span class="keyword">if</span> (mm != <span class="literal">NULL</span>)</span><br><span class="line">    {</span><br><span class="line">        lcr3(boot_cr3);</span><br><span class="line">        <span class="comment">// mm的引用计数为0</span></span><br><span class="line">        <span class="keyword">if</span> (mm_count_dec(mm) == <span class="number">0</span>)</span><br><span class="line">        {</span><br><span class="line">            exit_mmap(mm);</span><br><span class="line">            put_pgdir(mm);</span><br><span class="line">            mm_destroy(mm);</span><br><span class="line">        }</span><br><span class="line">        current-&gt;mm = <span class="literal">NULL</span>;</span><br><span class="line">    }</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 然后执行load_icode，这个函数会加载ELF格式的程序</span></span><br><span class="line">    <span class="comment">// 申请内存、建立用户态地址空间、加载程序等等</span></span><br><span class="line">    <span class="type">int</span> ret;</span><br><span class="line">    <span class="keyword">if</span> ((ret = load_icode(binary, size)) != <span class="number">0</span>)</span><br><span class="line">    {</span><br><span class="line">        <span class="keyword">goto</span> execve_exit;</span><br><span class="line">    }</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 设置线程名字</span></span><br><span class="line">    set_proc_name(current, local_name);</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line"></span><br><span class="line">execve_exit:</span><br><span class="line">    do_exit(ret);</span><br><span class="line">    panic(<span class="string">"already exit: %e.\n"</span>, ret);</span><br><span class="line">}</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>在确定了用户进程的执行代码和数据，以及用户进程的虚拟空间布局后，我们可以来创建用户进程了。在本实验中第一个用户进程是由第二个内核线程initproc通过把hello应用程序执行码覆盖到initproc的用户虚拟内存空间来创建的，期间通过一系列调用，最终通过do_execve函数来完成用户进程的创建工作。此函数的主要工作流程如下：</p>
+<ul>
+<li>首先为加载新的执行码做好用户态内存空间清空准备。如果mm不为NULL，则设置页表为内核空间页表，且进一步判断mm的引用计数减1后是否为0，如果为0，则表明没有进程再需要此进程所占用的内存空间，为此将根据mm中的记录，释放进程所占用户空间内存和进程页表本身所占空间。最后把当前进程的mm内存管理指针为空。由于此处的initproc是内核线程，所以mm为NULL，整个处理都不会做。</li>
+<li>接下来的一步是加载应用程序执行码到当前进程的新创建的用户态虚拟空间中。这里涉及到读ELF格式的文件，申请内存空间，建立用户态虚存空间，加载应用程序执行码等。load_icode函数完成了整个复杂的工作。</li>
+</ul>
+<p>可以看到，重点其实就是<code>load_icode</code>函数，这也是我们需要实现的函数</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br><span class="line">144</span><br><span class="line">145</span><br><span class="line">146</span><br><span class="line">147</span><br><span class="line">148</span><br><span class="line">149</span><br><span class="line">150</span><br><span class="line">151</span><br><span class="line">152</span><br><span class="line">153</span><br><span class="line">154</span><br><span class="line">155</span><br><span class="line">156</span><br><span class="line">157</span><br><span class="line">158</span><br><span class="line">159</span><br><span class="line">160</span><br><span class="line">161</span><br><span class="line">162</span><br><span class="line">163</span><br><span class="line">164</span><br><span class="line">165</span><br><span class="line">166</span><br><span class="line">167</span><br><span class="line">168</span><br><span class="line">169</span><br><span class="line">170</span><br><span class="line">171</span><br><span class="line">172</span><br><span class="line">173</span><br><span class="line">174</span><br><span class="line">175</span><br><span class="line">176</span><br><span class="line">177</span><br><span class="line">178</span><br><span class="line">179</span><br><span class="line">180</span><br><span class="line">181</span><br><span class="line">182</span><br><span class="line">183</span><br><span class="line">184</span><br><span class="line">185</span><br><span class="line">186</span><br><span class="line">187</span><br><span class="line">188</span><br><span class="line">189</span><br><span class="line">190</span><br><span class="line">191</span><br><span class="line">192</span><br><span class="line">193</span><br><span class="line">194</span><br><span class="line">195</span><br><span class="line">196</span><br><span class="line">197</span><br><span class="line">198</span><br><span class="line">199</span><br><span class="line">200</span><br><span class="line">201</span><br><span class="line">202</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="comment">// kern/process/proc.c</span></span><br><span class="line"></span><br><span class="line"><span class="comment">/* load_icode - load the content of binary program(ELF format) as the new content of current process</span></span><br><span class="line"><span class="comment"> * @binary:  the memory addr of the content of binary program</span></span><br><span class="line"><span class="comment"> * @size:  the size of the content of binary program</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="comment">// 从内存中地址位置为binary的地方加载一个ELF格式的程序，加载到当前进程的内存空间中</span></span><br><span class="line"><span class="comment">// size是binary的大小</span></span><br><span class="line"><span class="comment">// 因为没有文件管理系统，所以只能从内存中加载</span></span><br><span class="line"><span class="comment">// 而应用程序随内核编译，被bootloader加载到内存中(参见实验指导书)</span></span><br><span class="line"><span class="type">static</span> <span class="type">int</span> <span class="title function_">load_icode</span><span class="params">(<span class="type">unsigned</span> <span class="type">char</span> *binary, <span class="type">size_t</span> size)</span></span><br><span class="line">{</span><br><span class="line">    <span class="comment">// 需要保证当前进程的内存空间是空的</span></span><br><span class="line">    <span class="comment">// 这在do_execve中已经保证了</span></span><br><span class="line">    <span class="keyword">if</span> (current-&gt;mm != <span class="literal">NULL</span>)</span><br><span class="line">    {</span><br><span class="line">        panic(<span class="string">"load_icode: current-&gt;mm must be empty.\n"</span>);</span><br><span class="line">    }</span><br><span class="line"></span><br><span class="line">    <span class="type">int</span> ret = -E_NO_MEM;</span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">mm_struct</span> *<span class="title">mm</span>;</span></span><br><span class="line">    <span class="comment">//(1) create a new mm for current process</span></span><br><span class="line">    <span class="comment">// 1. 创建一个新的mm_struct结构体，其实就是为新程序创建地址空间</span></span><br><span class="line">    <span class="keyword">if</span> ((mm = mm_create()) == <span class="literal">NULL</span>)</span><br><span class="line">    {</span><br><span class="line">        <span class="keyword">goto</span> bad_mm;</span><br><span class="line">    }</span><br><span class="line"></span><br><span class="line">    <span class="comment">//(2) create a new PDT, and mm-&gt;pgdir= kernel virtual addr of PDT</span></span><br><span class="line">    <span class="comment">// 2. 创建一个新的页目录表</span></span><br><span class="line">    <span class="keyword">if</span> (setup_pgdir(mm) != <span class="number">0</span>)</span><br><span class="line">    {</span><br><span class="line">        <span class="keyword">goto</span> bad_pgdir_cleanup_mm;</span><br><span class="line">    }</span><br><span class="line"></span><br><span class="line">    <span class="comment">//(3) copy TEXT/DATA section, build BSS parts in binary to memory space of process</span></span><br><span class="line">    <span class="comment">// 3. 加载程序，需要解析各种东西</span></span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">Page</span> *<span class="title">page</span>;</span></span><br><span class="line">    <span class="comment">//(3.1) get the file header of the bianry program (ELF format)</span></span><br><span class="line">    <span class="comment">// 3.1 获取ELF文件头</span></span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">elfhdr</span> *<span class="title">elf</span> =</span> (<span class="keyword">struct</span> elfhdr *)binary;</span><br><span class="line">    <span class="comment">//(3.2) get the entry of the program section headers of the bianry program (ELF format)</span></span><br><span class="line">    <span class="comment">// 3.2 获取ELF程序头表</span></span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">proghdr</span> *<span class="title">ph</span> =</span> (<span class="keyword">struct</span> proghdr *)(binary + elf-&gt;e_phoff);</span><br><span class="line">    <span class="comment">//(3.3) This program is valid?</span></span><br><span class="line">    <span class="comment">// 3.3 检查ELF文件头是否合法(魔数)</span></span><br><span class="line">    <span class="keyword">if</span> (elf-&gt;e_magic != ELF_MAGIC)</span><br><span class="line">    {</span><br><span class="line">        ret = -E_INVAL_ELF;</span><br><span class="line">        <span class="keyword">goto</span> bad_elf_cleanup_pgdir;</span><br><span class="line">    }</span><br><span class="line"></span><br><span class="line">    <span class="type">uint32_t</span> vm_flags, perm;</span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">proghdr</span> *<span class="title">ph_end</span> =</span> ph + elf-&gt;e_phnum;</span><br><span class="line">    <span class="keyword">for</span> (; ph &lt; ph_end; ph++)</span><br><span class="line">    {</span><br><span class="line">        <span class="comment">//(3.4) find every program section headers</span></span><br><span class="line">        <span class="comment">// 3.4 寻找每个程序段</span></span><br><span class="line">        <span class="keyword">if</span> (ph-&gt;p_type != ELF_PT_LOAD)</span><br><span class="line">        {</span><br><span class="line">            <span class="keyword">continue</span>;</span><br><span class="line">        }</span><br><span class="line">        <span class="keyword">if</span> (ph-&gt;p_filesz &gt; ph-&gt;p_memsz)</span><br><span class="line">        {</span><br><span class="line">            ret = -E_INVAL_ELF;</span><br><span class="line">            <span class="keyword">goto</span> bad_cleanup_mmap;</span><br><span class="line">        }</span><br><span class="line">        <span class="keyword">if</span> (ph-&gt;p_filesz == <span class="number">0</span>)</span><br><span class="line">        {</span><br><span class="line">            <span class="keyword">continue</span>;</span><br><span class="line">        }</span><br><span class="line">        <span class="comment">//(3.5) call mm_map fun to setup the new vma ( ph-&gt;p_va, ph-&gt;p_memsz)</span></span><br><span class="line">        <span class="comment">// 3.5 设置新的虚拟内存区域</span></span><br><span class="line">        vm_flags = <span class="number">0</span>, perm = PTE_U;</span><br><span class="line">        <span class="keyword">if</span> (ph-&gt;p_flags &amp; ELF_PF_X)</span><br><span class="line">            vm_flags |= VM_EXEC;</span><br><span class="line">        <span class="keyword">if</span> (ph-&gt;p_flags &amp; ELF_PF_W)</span><br><span class="line">            vm_flags |= VM_WRITE;</span><br><span class="line">        <span class="keyword">if</span> (ph-&gt;p_flags &amp; ELF_PF_R)</span><br><span class="line">            vm_flags |= VM_READ;</span><br><span class="line">        <span class="keyword">if</span> (vm_flags &amp; VM_WRITE)</span><br><span class="line">            perm |= PTE_W;</span><br><span class="line">        <span class="keyword">if</span> ((ret = mm_map(mm, ph-&gt;p_va, ph-&gt;p_memsz, vm_flags, <span class="literal">NULL</span>)) != <span class="number">0</span>)</span><br><span class="line">        {</span><br><span class="line">            <span class="keyword">goto</span> bad_cleanup_mmap;</span><br><span class="line">        }</span><br><span class="line">        <span class="type">unsigned</span> <span class="type">char</span> *from = binary + ph-&gt;p_offset;</span><br><span class="line">        <span class="type">size_t</span> off, size;</span><br><span class="line">        <span class="type">uintptr_t</span> start = ph-&gt;p_va, end, la = ROUNDDOWN(start, PGSIZE);</span><br><span class="line"></span><br><span class="line">        ret = -E_NO_MEM;</span><br><span class="line"></span><br><span class="line">        <span class="comment">//(3.6) alloc memory, and  copy the contents of every program section (from, from+end) to process's memory (la, la+end)</span></span><br><span class="line">        <span class="comment">// 3.6 分配内存和复制上下文</span></span><br><span class="line">        end = ph-&gt;p_va + ph-&gt;p_filesz;</span><br><span class="line">        <span class="comment">//(3.6.1) copy TEXT/DATA section of bianry program</span></span><br><span class="line">        <span class="comment">// 3.6.1 复制TEXT/DATA段</span></span><br><span class="line">        <span class="keyword">while</span> (start &lt; end)</span><br><span class="line">        {</span><br><span class="line">            <span class="keyword">if</span> ((page = pgdir_alloc_page(mm-&gt;pgdir, la, perm)) == <span class="literal">NULL</span>)</span><br><span class="line">            {</span><br><span class="line">                <span class="keyword">goto</span> bad_cleanup_mmap;</span><br><span class="line">            }</span><br><span class="line">            off = start - la, size = PGSIZE - off, la += PGSIZE;</span><br><span class="line">            <span class="keyword">if</span> (end &lt; la)</span><br><span class="line">            {</span><br><span class="line">                size -= la - end;</span><br><span class="line">            }</span><br><span class="line">            <span class="built_in">memcpy</span>(page2kva(page) + off, from, size);</span><br><span class="line">            start += size, from += size;</span><br><span class="line">        }</span><br><span class="line"></span><br><span class="line">        <span class="comment">//(3.6.2) build BSS section of binary program</span></span><br><span class="line">        <span class="comment">// 3.6.2 参数段</span></span><br><span class="line">        end = ph-&gt;p_va + ph-&gt;p_memsz;</span><br><span class="line">        <span class="keyword">if</span> (start &lt; la)</span><br><span class="line">        {</span><br><span class="line">            <span class="comment">/* ph-&gt;p_memsz == ph-&gt;p_filesz */</span></span><br><span class="line">            <span class="keyword">if</span> (start == end)</span><br><span class="line">            {</span><br><span class="line">                <span class="keyword">continue</span>;</span><br><span class="line">            }</span><br><span class="line">            off = start + PGSIZE - la, size = PGSIZE - off;</span><br><span class="line">            <span class="keyword">if</span> (end &lt; la)</span><br><span class="line">            {</span><br><span class="line">                size -= la - end;</span><br><span class="line">            }</span><br><span class="line">            <span class="built_in">memset</span>(page2kva(page) + off, <span class="number">0</span>, size);</span><br><span class="line">            start += size;</span><br><span class="line">            assert((end &lt; la &amp;&amp; start == end) || (end &gt;= la &amp;&amp; start == la));</span><br><span class="line">        }</span><br><span class="line">        <span class="keyword">while</span> (start &lt; end)</span><br><span class="line">        {</span><br><span class="line">            <span class="keyword">if</span> ((page = pgdir_alloc_page(mm-&gt;pgdir, la, perm)) == <span class="literal">NULL</span>)</span><br><span class="line">            {</span><br><span class="line">                <span class="keyword">goto</span> bad_cleanup_mmap;</span><br><span class="line">            }</span><br><span class="line">            off = start - la, size = PGSIZE - off, la += PGSIZE;</span><br><span class="line">            <span class="keyword">if</span> (end &lt; la)</span><br><span class="line">            {</span><br><span class="line">                size -= la - end;</span><br><span class="line">            }</span><br><span class="line">            <span class="built_in">memset</span>(page2kva(page) + off, <span class="number">0</span>, size);</span><br><span class="line">            start += size;</span><br><span class="line">        }</span><br><span class="line">    }</span><br><span class="line">    <span class="comment">//(4) build user stack memory</span></span><br><span class="line">    <span class="comment">// 设置用户栈</span></span><br><span class="line">    vm_flags = VM_READ | VM_WRITE | VM_STACK;</span><br><span class="line">    <span class="keyword">if</span> ((ret = mm_map(mm, USTACKTOP - USTACKSIZE, USTACKSIZE, vm_flags, <span class="literal">NULL</span>)) != <span class="number">0</span>)</span><br><span class="line">    {</span><br><span class="line">        <span class="keyword">goto</span> bad_cleanup_mmap;</span><br><span class="line">    }</span><br><span class="line">    assert(pgdir_alloc_page(mm-&gt;pgdir, USTACKTOP - PGSIZE, PTE_USER) != <span class="literal">NULL</span>);</span><br><span class="line">    assert(pgdir_alloc_page(mm-&gt;pgdir, USTACKTOP - <span class="number">2</span> * PGSIZE, PTE_USER) != <span class="literal">NULL</span>);</span><br><span class="line">    assert(pgdir_alloc_page(mm-&gt;pgdir, USTACKTOP - <span class="number">3</span> * PGSIZE, PTE_USER) != <span class="literal">NULL</span>);</span><br><span class="line">    assert(pgdir_alloc_page(mm-&gt;pgdir, USTACKTOP - <span class="number">4</span> * PGSIZE, PTE_USER) != <span class="literal">NULL</span>);</span><br><span class="line"></span><br><span class="line">    <span class="comment">//(5) set current process's mm, sr3, and set CR3 reg = physical addr of Page Directory</span></span><br><span class="line">    <span class="comment">// 设置当前线程的mm表、cr3寄存器和CR3寄存器</span></span><br><span class="line">    mm_count_inc(mm);</span><br><span class="line">    current-&gt;mm = mm;</span><br><span class="line">    current-&gt;cr3 = PADDR(mm-&gt;pgdir);</span><br><span class="line">    lcr3(PADDR(mm-&gt;pgdir));</span><br><span class="line"></span><br><span class="line">    <span class="comment">//(6) setup trapframe for user environment</span></span><br><span class="line">    <span class="comment">// 设置用户环境的trapframe</span></span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">trapframe</span> *<span class="title">tf</span> =</span> current-&gt;tf;</span><br><span class="line">    <span class="built_in">memset</span>(tf, <span class="number">0</span>, <span class="keyword">sizeof</span>(<span class="keyword">struct</span> trapframe));</span><br><span class="line">    <span class="comment">// 需要通过中断帧来实现中断返回</span></span><br><span class="line">    <span class="comment">// 这样才能正确切换到目标线程的上下文里</span></span><br><span class="line">    <span class="comment">// 此处修改的是current里的trapframe，即当前线程的tf</span></span><br><span class="line">    <span class="comment">/* LAB5:EXERCISE1 YOUR CODE</span></span><br><span class="line"><span class="comment">     * should set tf_cs,tf_ds,tf_es,tf_ss,tf_esp,tf_eip,tf_eflags</span></span><br><span class="line"><span class="comment">     * NOTICE: If we set trapframe correctly, then the user level process can return to USER MODE from kernel. So</span></span><br><span class="line"><span class="comment">     *          tf_cs should be USER_CS segment (see memlayout.h)</span></span><br><span class="line"><span class="comment">     *          tf_ds=tf_es=tf_ss should be USER_DS segment</span></span><br><span class="line"><span class="comment">     *          tf_esp should be the top addr of user stack (USTACKTOP)</span></span><br><span class="line"><span class="comment">     *          tf_eip should be the entry point of this binary program (elf-&gt;e_entry)</span></span><br><span class="line"><span class="comment">     *          tf_eflags should be set to enable computer to produce Interrupt</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="comment">// 用户堆栈</span></span><br><span class="line">    tf-&gt;tf_cs = USER_CS;</span><br><span class="line">    tf-&gt;tf_ds = tf-&gt;tf_es = tf-&gt;tf_ss = USER_DS;</span><br><span class="line">    tf-&gt;tf_esp = USTACKTOP;</span><br><span class="line">    <span class="comment">// 设置下一条指令为程序入口</span></span><br><span class="line">    tf-&gt;tf_eip = elf-&gt;e_entry;</span><br><span class="line">    tf-&gt;tf_eflags = FL_IF;</span><br><span class="line">    ret = <span class="number">0</span>;</span><br><span class="line">out:</span><br><span class="line">    <span class="keyword">return</span> ret;</span><br><span class="line">bad_cleanup_mmap:</span><br><span class="line">    exit_mmap(mm);</span><br><span class="line">bad_elf_cleanup_pgdir:</span><br><span class="line">    put_pgdir(mm);</span><br><span class="line">bad_pgdir_cleanup_mm:</span><br><span class="line">    mm_destroy(mm);</span><br><span class="line">bad_mm:</span><br><span class="line">    <span class="keyword">goto</span> out;</span><br><span class="line">}</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>load_icode函数的主要工作就是给用户进程建立一个能够让用户进程正常运行的用户环境。此函数有一百多行，完成了如下重要工作：</p>
+<ul>
+<li>调用<code>mm_create</code>函数来申请进程的内存管理数据结构mm所需内存空间，并对mm进行初始化</li>
+<li>调用<code>setup_pgdir</code>来申请一个页目录表所需的一个页大小的内存空间，并把描述ucore内核虚空间映射的内核页表（boot_pgdir所指）的内容拷贝到此新目录表中，最后让mm-&gt;pgdir指向此页目录表，这就是进程新的页目录表了，且能够正确映射内核虚空间</li>
+<li>根据应用程序执行码的起始位置来解析此ELF格式的执行程序，并调用<code>mm_map</code>函数根据ELF格式的执行程序说明的各个段（代码段、数据段、BSS段等）的起始位置和大小建立对应的vma结构，并把vma插入到mm结构中，从而<strong>表明了用户进程的合法用户态虚拟地址空间</strong></li>
+<li>调用根据执行程序各个段的大小分配物理内存空间，并根据执行程序各个段的起始位置确定虚拟地址，并在页表中建立好物理地址和虚拟地址的映射关系，然后把执行程序各个段的内容拷贝到相应的内核虚拟地址中，至此<strong>应用程序执行码和数据已经根据编译时设定地址放置到虚拟内存中了</strong></li>
+<li>需要给用户进程设置用户栈，为此调用mm_mmap函数建立用户栈的vma结构，明确用户栈的位置在用户虚空间的顶端，大小为256个页，即1MB，并分配一定数量的物理内存且建立好栈的虚地址&lt;–&gt;物理地址映射关系</li>
+<li>至此,进程内的内存管理vma和mm数据结构已经建立完成，于是把mm-&gt;pgdir赋值到cr3寄存器中，即更新了用户进程的虚拟内存空间，此时的initproc已经被hello的代码和数据覆盖，成为了第一个用户进程，<strong>但此时这个用户进程的执行现场还没建立好</strong></li>
+<li><strong>先清空进程的中断帧，再重新设置进程的中断帧，使得在执行中断返回指令“iret”后，能够让CPU转到用户态特权级，并回到用户态内存空间，使用用户态的代码段、数据段和堆栈，且能够跳转到用户进程的第一条指令执行，并确保在用户态能够响应中断</strong></li>
+</ul>
+<div class="note info">
+            <p><strong>当创建一个用户态进程并加载了应用程序后，CPU是如何让这个应用程序最终在用户态执行起来的</strong></p><ul><li>创建一个新的用户态进程后(<strong>可以参考一下<code>proc:init_main</code></strong>)，内核线程调用<code>schedule</code>函数，schedule函数在proc_list队列中查找下一个处于“就绪”态的用户态进程，然后调用<code>proc_run</code>来运行新进程。</li><li>随后proc_run根据上一个实验的调用流程，找到了kernel_thread_entry。而kernel_thread_entry先将edx保存的输入参数（NULL）压栈，然后通过call指令，跳转到ebx指向的函数，即user_main，user_main先打印userproc的pid和name信息，然后调用<code>kernel_execve</code>。</li><li>kernel_execve调用了exec系统调用，从而转入到了系统调用的处理例程。之后进行正常的中断处理例程，然后控制权转移到了syscall.c中的<code>syscall</code>函数，然后根据系统调用号转移给了<code>sys_exec</code>函数，在该函数中调用了<code>do_execve</code>函数来完成指定应用程序的加载。其调用流程为：vector128 -&gt; __alltraps -&gt; trap -&gt; trap_dispatch -&gt; syscall -&gt; sys_exec -&gt; do_execve。</li><li>在do_execve中进行了若干设置，包括推出当前进程的页表，换用内核的PDT，调用<code>load_icode</code>函数完成对整个用户线程内存空间的初始化，包括堆栈的设置以及将ELF可执行文件的加载，之后通过current-&gt;tf指针修改了当前系统调用的trapframe，使得最终中断返回的时候能够切换到用户态，并且同时可以正确地将控制权转移到应用程序的入口处。</li><li>在完成了do_exec函数之后，进行正常的中断返回的流程，由于中断处理例程的栈上面的eip已经被修改成了应用程序的入口处，而CS上的CPL是用户态，因此iret进行中断返回的时候会将堆栈切换到用户的栈，并且完成特权级的切换，并且跳转到要求的应用程序的入口处，开始执行应用程序的第一条代码。</li></ul>
+          </div>
+<h3 id="x02-父进程复制自己的内存空间给子进程">0X02 父进程复制自己的内存空间给子进程</h3>
+<p>创建子进程的函数do_fork在执行中将拷贝当前进程（即父进程）的用户内存地址空间中的合法内容到新进程中（子进程），完成内存资源的复制。具体是通过copy_range函数（位于kern/mm/pmm.c中）实现的，我们需要完善这个函数，从而保证复制正常执行。</p>
+<p>其调用栈为do_fork()----&gt;copy_mm()----&gt;dup_mmap()----&gt;copy_range()。<strong>在lab4中，copy_mm是空的，因为内核线程常驻内存，不需要mm和调度，所以不需要设置子进程的mm</strong>，但是用户线程需要复制父进程的内存空间。</p>
+<p>我们先看一下这些函数。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br><span class="line">144</span><br><span class="line">145</span><br><span class="line">146</span><br><span class="line">147</span><br><span class="line">148</span><br><span class="line">149</span><br><span class="line">150</span><br><span class="line">151</span><br><span class="line">152</span><br><span class="line">153</span><br><span class="line">154</span><br><span class="line">155</span><br><span class="line">156</span><br><span class="line">157</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="comment">// copy_mm - process "proc" duplicate OR share process "current"'s mm according clone_flags</span></span><br><span class="line"><span class="comment">//         - if clone_flags &amp; CLONE_VM, then "share" ; else "duplicate"</span></span><br><span class="line"><span class="type">static</span> <span class="type">int</span> <span class="title function_">copy_mm</span><span class="params">(<span class="type">uint32_t</span> clone_flags, <span class="keyword">struct</span> proc_struct *proc)</span></span><br><span class="line">{</span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">mm_struct</span> *<span class="title">mm</span>, *<span class="title">oldmm</span> =</span> current-&gt;mm;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/* current is a kernel thread */</span></span><br><span class="line">    <span class="comment">// 内核线程不需要复制地址空间</span></span><br><span class="line">    <span class="keyword">if</span> (oldmm == <span class="literal">NULL</span>)</span><br><span class="line">    {</span><br><span class="line">        <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">    }</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 写时复制，目前没有，不会进入此if</span></span><br><span class="line">    <span class="keyword">if</span> (clone_flags &amp; CLONE_VM)</span><br><span class="line">    {</span><br><span class="line">        mm = oldmm;</span><br><span class="line">        <span class="keyword">goto</span> good_mm;</span><br><span class="line">    }</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 一般情况下，进程复制</span></span><br><span class="line">    <span class="type">int</span> ret = -E_NO_MEM;</span><br><span class="line">    <span class="comment">// 创建子进程的mm</span></span><br><span class="line">    <span class="keyword">if</span> ((mm = mm_create()) == <span class="literal">NULL</span>)</span><br><span class="line">    {</span><br><span class="line">        <span class="keyword">goto</span> bad_mm;</span><br><span class="line">    }</span><br><span class="line">    <span class="comment">// 设置子进程的页目录</span></span><br><span class="line">    <span class="keyword">if</span> (setup_pgdir(mm) != <span class="number">0</span>)</span><br><span class="line">    {</span><br><span class="line">        <span class="keyword">goto</span> bad_pgdir_cleanup_mm;</span><br><span class="line">    }</span><br><span class="line"></span><br><span class="line">    lock_mm(oldmm);</span><br><span class="line">    {</span><br><span class="line">        <span class="comment">// 执行复制</span></span><br><span class="line">        ret = dup_mmap(mm, oldmm);</span><br><span class="line">    }</span><br><span class="line">    unlock_mm(oldmm);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (ret != <span class="number">0</span>)</span><br><span class="line">    {</span><br><span class="line">        <span class="keyword">goto</span> bad_dup_cleanup_mmap;</span><br><span class="line">    }</span><br><span class="line"></span><br><span class="line">good_mm:</span><br><span class="line">    mm_count_inc(mm);</span><br><span class="line">    proc-&gt;mm = mm;</span><br><span class="line">    proc-&gt;cr3 = PADDR(mm-&gt;pgdir);</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">bad_dup_cleanup_mmap:</span><br><span class="line">    exit_mmap(mm);</span><br><span class="line">    put_pgdir(mm);</span><br><span class="line">bad_pgdir_cleanup_mm:</span><br><span class="line">    mm_destroy(mm);</span><br><span class="line">bad_mm:</span><br><span class="line">    <span class="keyword">return</span> ret;</span><br><span class="line">}</span><br><span class="line"></span><br><span class="line"><span class="comment">// 复制mm的函数</span></span><br><span class="line"><span class="type">int</span> <span class="title function_">dup_mmap</span><span class="params">(<span class="keyword">struct</span> mm_struct *to, <span class="keyword">struct</span> mm_struct *from)</span></span><br><span class="line">{</span><br><span class="line">    assert(to != <span class="literal">NULL</span> &amp;&amp; from != <span class="literal">NULL</span>);</span><br><span class="line">    <span class="type">list_entry_t</span> *<span class="built_in">list</span> = &amp;(from-&gt;mmap_list), *le = <span class="built_in">list</span>;</span><br><span class="line">    <span class="keyword">while</span> ((le = list_prev(le)) != <span class="built_in">list</span>)</span><br><span class="line">    {</span><br><span class="line">        <span class="class"><span class="keyword">struct</span> <span class="title">vma_struct</span> *<span class="title">vma</span>, *<span class="title">nvma</span>;</span></span><br><span class="line">        vma = le2vma(le, list_link);</span><br><span class="line">        nvma = vma_create(vma-&gt;vm_start, vma-&gt;vm_end, vma-&gt;vm_flags);</span><br><span class="line">        <span class="keyword">if</span> (nvma == <span class="literal">NULL</span>)</span><br><span class="line">        {</span><br><span class="line">            <span class="keyword">return</span> -E_NO_MEM;</span><br><span class="line">        }</span><br><span class="line"></span><br><span class="line">        insert_vma_struct(to, nvma);</span><br><span class="line"></span><br><span class="line">        <span class="type">bool</span> share = <span class="number">0</span>;</span><br><span class="line">        <span class="comment">// 逐个复制其中的每个VMM</span></span><br><span class="line">        <span class="keyword">if</span> (copy_range(to-&gt;pgdir, from-&gt;pgdir, vma-&gt;vm_start, vma-&gt;vm_end, share) != <span class="number">0</span>)</span><br><span class="line">        {</span><br><span class="line">            <span class="keyword">return</span> -E_NO_MEM;</span><br><span class="line">        }</span><br><span class="line">    }</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">}</span><br><span class="line"></span><br><span class="line"><span class="comment">/* copy_range - copy content of memory (start, end) of one process A to another process B</span></span><br><span class="line"><span class="comment"> * @to:    the addr of process B's Page Directory</span></span><br><span class="line"><span class="comment"> * @from:  the addr of process A's Page Directory</span></span><br><span class="line"><span class="comment"> * @share: flags to indicate to dup OR share. We just use dup method, so it didn't be used.</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * CALL GRAPH: copy_mm--&gt;dup_mmap--&gt;copy_range</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="type">int</span> <span class="title function_">copy_range</span><span class="params">(<span class="type">pde_t</span> *to, <span class="type">pde_t</span> *from, <span class="type">uintptr_t</span> start, <span class="type">uintptr_t</span> end, <span class="type">bool</span> share)</span></span><br><span class="line">{</span><br><span class="line">    assert(start % PGSIZE == <span class="number">0</span> &amp;&amp; end % PGSIZE == <span class="number">0</span>);</span><br><span class="line">    assert(USER_ACCESS(start, end));</span><br><span class="line">    <span class="comment">// copy content by page unit.</span></span><br><span class="line">    <span class="keyword">do</span></span><br><span class="line">    {</span><br><span class="line">        <span class="comment">// call get_pte to find process A's pte according to the addr start</span></span><br><span class="line">        <span class="comment">// 从父进程中的页表中找到对应的页表项</span></span><br><span class="line">        <span class="type">pte_t</span> *ptep = get_pte(from, start, <span class="number">0</span>), *nptep;</span><br><span class="line">        <span class="keyword">if</span> (ptep == <span class="literal">NULL</span>)</span><br><span class="line">        {</span><br><span class="line">            start = ROUNDDOWN(start + PTSIZE, PTSIZE);</span><br><span class="line">            <span class="keyword">continue</span>;</span><br><span class="line">        }</span><br><span class="line">        <span class="comment">// call get_pte to find process B's pte according to the addr start. If pte is NULL, just alloc a PT</span></span><br><span class="line">        <span class="comment">// 然后在子进程里找到对应的，找不到就新建一个，然后把父进程的复制过去</span></span><br><span class="line">        <span class="keyword">if</span> (*ptep &amp; PTE_P)</span><br><span class="line">        {</span><br><span class="line">            <span class="keyword">if</span> ((nptep = get_pte(to, start, <span class="number">1</span>)) == <span class="literal">NULL</span>)</span><br><span class="line">            {</span><br><span class="line">                <span class="keyword">return</span> -E_NO_MEM;</span><br><span class="line">            }</span><br><span class="line">            <span class="type">uint32_t</span> perm = (*ptep &amp; PTE_USER);</span><br><span class="line">            <span class="comment">// get page from ptep</span></span><br><span class="line">            <span class="class"><span class="keyword">struct</span> <span class="title">Page</span> *<span class="title">page</span> =</span> pte2page(*ptep);</span><br><span class="line">            <span class="comment">// alloc a page for process B</span></span><br><span class="line">            <span class="class"><span class="keyword">struct</span> <span class="title">Page</span> *<span class="title">npage</span> =</span> alloc_page();</span><br><span class="line">            assert(page != <span class="literal">NULL</span>);</span><br><span class="line">            assert(npage != <span class="literal">NULL</span>);</span><br><span class="line">            <span class="type">int</span> ret = <span class="number">0</span>;</span><br><span class="line">            <span class="comment">/* LAB5:EXERCISE2 YOUR CODE</span></span><br><span class="line"><span class="comment">             * replicate content of page to npage, build the map of phy addr of nage with the linear addr start</span></span><br><span class="line"><span class="comment">             *</span></span><br><span class="line"><span class="comment">             * Some Useful MACROs and DEFINEs, you can use them in below implementation.</span></span><br><span class="line"><span class="comment">             * MACROs or Functions:</span></span><br><span class="line"><span class="comment">             *    page2kva(struct Page *page): return the kernel vritual addr of memory which page managed (SEE pmm.h)</span></span><br><span class="line"><span class="comment">             *    page_insert: build the map of phy addr of an Page with the linear addr la</span></span><br><span class="line"><span class="comment">             *    memcpy: typical memory copy function</span></span><br><span class="line"><span class="comment">             *</span></span><br><span class="line"><span class="comment">             * (1) find src_kvaddr: the kernel virtual address of page</span></span><br><span class="line"><span class="comment">             * (2) find dst_kvaddr: the kernel virtual address of npage</span></span><br><span class="line"><span class="comment">             * (3) memory copy from src_kvaddr to dst_kvaddr, size is PGSIZE</span></span><br><span class="line"><span class="comment">             * (4) build the map of phy addr of  nage with the linear addr start</span></span><br><span class="line"><span class="comment">             */</span></span><br><span class="line">            <span class="comment">// 复制page的内容到npage，建立npage的物理地址与线性地址开始的映射。</span></span><br><span class="line"></span><br><span class="line">            <span class="comment">// 获取源(src)页面所在的虚拟地址（注意，此时的PDT是内核状态下的页目录表）</span></span><br><span class="line">            <span class="type">void</span> *kva_src = page2kva(page);</span><br><span class="line">            <span class="comment">// 获取目标(dst)页面所在的虚拟地址</span></span><br><span class="line">            <span class="type">void</span> *kva_dst = page2kva(npage);</span><br><span class="line">            <span class="comment">// 页面数据复制</span></span><br><span class="line">            <span class="built_in">memcpy</span>(kva_dst, kva_src, PGSIZE);</span><br><span class="line">            <span class="comment">// 将该页面设置至对应的PTE中</span></span><br><span class="line">            ret = page_insert(to, npage, start, perm);</span><br><span class="line"></span><br><span class="line">            assert(ret == <span class="number">0</span>);</span><br><span class="line">        }</span><br><span class="line">        start += PGSIZE;</span><br><span class="line">    } <span class="keyword">while</span> (start != <span class="number">0</span> &amp;&amp; start &lt; end);</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">}</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>其实copy_range就是将进程A的内存复制到进程B里，不过这里并不是写时复制，而是全部复制，这样会浪费比较严重。</p>
+<h3 id="x03-系统调用函数们">0X03 系统调用函数们</h3>
+<ul>
+<li>do_fork
+<ul>
+<li>分配并初始化进程控制块（alloc_proc函数）。</li>
+<li>分配并初始化内核栈（setup_stack函数）。</li>
+<li>对当前进程等待状态的检查。</li>
+<li>根据clone_flag标志复制或共享进程内存管理结构（copy_mm函数）。</li>
+<li>设置进程在内核（将来也包括用户态）正常运行和调度所需的中断帧和执行上下文（copy_thread函数）。</li>
+<li>把设置好的进程控制块放入hash_list和proc_list两个全局进程链表中，并且设置set_links。</li>
+<li>自此，进程已经准备好执行了，把进程状态设置为“就绪”态。</li>
+<li>设置返回码为子进程的id号。</li>
+</ul></li>
+<li>do_execve
+<ul>
+<li>调用exit_mmap(mm)和put_pgdir(mm)来回收当前进程内存空间的所有资源（仅保留了PCB）。</li>
+<li>调用load_icode根据可执行文件分配特定位置的虚拟内存空间。</li>
+<li><strong>该函数会释放除了PCB以外所有的原进程的资源</strong></li>
+</ul></li>
+<li>do_wait
+<ul>
+<li>检查当前进程分配的内存区域是否正常。</li>
+<li>查找特定/所有子进程中是否存在某个等待的父进程回收的子进程（PROC_ZOMBIE状态）。如果有则回收该进程返回，如果没有则设置当前进程为PROC_SLEEPING并执行schedule调度其他进程运行。当前进程的某个子进程结束运行后，当前进程会被唤醒，并在do_wait函数中回收子进程的PCB内存资源。</li>
+</ul></li>
+<li>do_exit
+<ul>
+<li>调用exit_mmap，put_pgdir和mm_destroy来释放进程几乎所有的内存空间。</li>
+<li>将进程状态设置为僵死模式，然后调用wakeup_proc(parent)来让父进程回收这个进程。</li>
+<li>调用scheduler来切换到其他进程。</li>
+</ul></li>
+</ul>
+<p>这些函数是具体处理系统调用的函数，这些系统调用函数都被组织成数组，以快速访问。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="type">static</span> <span class="title function_">int</span> <span class="params">(*syscalls[])</span><span class="params">(<span class="type">uint32_t</span> arg[])</span> = {</span><br><span class="line">    [SYS_exit]              sys_exit,</span><br><span class="line">    [SYS_fork]              sys_fork,</span><br><span class="line">    [SYS_wait]              sys_wait,</span><br><span class="line">    [SYS_exec]              sys_exec,</span><br><span class="line">    [SYS_yield]             sys_yield,</span><br><span class="line">    [SYS_kill]              sys_kill,</span><br><span class="line">    [SYS_getpid]            sys_getpid,</span><br><span class="line">    [SYS_putc]              sys_putc,</span><br><span class="line">    [SYS_pgdir]             sys_pgdir,</span><br><span class="line">};</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>当系统调用中断发生后，会执行syscall函数，这个函数会从上述数组中选择出对应的系统调用以执行。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="type">void</span> <span class="title function_">syscall</span><span class="params">(<span class="type">void</span>)</span></span><br><span class="line">{</span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">trapframe</span> *<span class="title">tf</span> =</span> current-&gt;tf;</span><br><span class="line">    <span class="type">uint32_t</span> arg[<span class="number">5</span>];</span><br><span class="line">    <span class="type">int</span> num = tf-&gt;tf_regs.reg_eax;</span><br><span class="line">    <span class="keyword">if</span> (num &gt;= <span class="number">0</span> &amp;&amp; num &lt; NUM_SYSCALLS)</span><br><span class="line">    {</span><br><span class="line">        <span class="keyword">if</span> (syscalls[num] != <span class="literal">NULL</span>)</span><br><span class="line">        {</span><br><span class="line">            arg[<span class="number">0</span>] = tf-&gt;tf_regs.reg_edx;</span><br><span class="line">            arg[<span class="number">1</span>] = tf-&gt;tf_regs.reg_ecx;</span><br><span class="line">            arg[<span class="number">2</span>] = tf-&gt;tf_regs.reg_ebx;</span><br><span class="line">            arg[<span class="number">3</span>] = tf-&gt;tf_regs.reg_edi;</span><br><span class="line">            arg[<span class="number">4</span>] = tf-&gt;tf_regs.reg_esi;</span><br><span class="line">            <span class="comment">// 从数组中选择出函数并执行</span></span><br><span class="line">            tf-&gt;tf_regs.reg_eax = syscalls[num](arg);</span><br><span class="line">            <span class="keyword">return</span>;</span><br><span class="line">        }</span><br><span class="line">    }</span><br><span class="line">    print_trapframe(tf);</span><br><span class="line">    panic(<span class="string">"undefined syscall %d, pid = %d, name = %s.\n"</span>,</span><br><span class="line">          num, current-&gt;pid, current-&gt;name);</span><br><span class="line">}</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>等相应的内核函数结束后，程序通过之前保留的trapframe返回用户态。一次系统调用结束。</p>
+<ul>
+<li>在fork完成后，会修改子进程状态为可执行，但是父进程不变</li>
+<li>exec不修改当前进程的状态，但是会替换内存空间的所有数据和代码</li>
+<li>wait会先检测是否存在子进程，如果存在僵尸子进程，就回收；否则会阻塞父进程为睡眠状态，并等待子进程唤醒</li>
+<li>exit会将当前进程的状态设置为僵尸状态，并唤醒父进程，使其为可运行状态</li>
+</ul>
+<h3 id="x04-总结">0X04 总结</h3>
+<p>通过这个lab5，我们学习了以下内容:</p>
+<ul>
+<li>学习用户进程和内核进程的区别</li>
+<li>了解在没有文件系统的情况下，用户线程是如何加载的(execve)</li>
+<li>系统调用的中断的处理，以及系统调用的实现</li>
+<li>创建用户子进程时的处理，包括加载用户程序，复制内存空间，复制trapframe等</li>
+<li>创建完成后如何进行中断返回从而到的对应的上下文中</li>
+<li>fork是复制一个一模一样的线程、execve是执行另一个线程。本lab中是直接在内核线程中加载用户线程并切换到相应的上下文</li>
+</ul>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/ucore%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/" rel="tag"># ucore操作系统</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2023/01/20/%E4%BB%8Eucore%E6%9D%A5%E6%80%BB%E7%BB%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-4/" rel="prev" title="从ucore来总结操作系统(4)----内核线程">
+      <i class="fa fa-chevron-left"></i> 从ucore来总结操作系统(4)----内核线程
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2023/01/23/%E4%BB%8Eucore%E6%9D%A5%E6%80%BB%E7%BB%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-6/" rel="next" title="从ucore来总结操作系统(6)----线程调度算法">
+      从ucore来总结操作系统(6)----线程调度算法 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+    <div class="comments" id="valine-comments"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%94%A8%E6%88%B7%E7%BA%BF%E7%A8%8B"><span class="nav-number">1.</span> <span class="nav-text">用户线程</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#x00-%E7%8E%AF%E5%A2%83%E5%87%86%E5%A4%87"><span class="nav-number">1.1.</span> <span class="nav-text">0X00 环境准备</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#x01-%E5%8A%A0%E8%BD%BD%E5%BA%94%E7%94%A8%E7%A8%8B%E5%BA%8F%E5%B9%B6%E6%89%A7%E8%A1%8C"><span class="nav-number">1.2.</span> <span class="nav-text">0X01 加载应用程序并执行</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#x02-%E7%88%B6%E8%BF%9B%E7%A8%8B%E5%A4%8D%E5%88%B6%E8%87%AA%E5%B7%B1%E7%9A%84%E5%86%85%E5%AD%98%E7%A9%BA%E9%97%B4%E7%BB%99%E5%AD%90%E8%BF%9B%E7%A8%8B"><span class="nav-number">1.3.</span> <span class="nav-text">0X02 父进程复制自己的内存空间给子进程</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#x03-%E7%B3%BB%E7%BB%9F%E8%B0%83%E7%94%A8%E5%87%BD%E6%95%B0%E4%BB%AC"><span class="nav-number">1.4.</span> <span class="nav-text">0X03 系统调用函数们</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#x04-%E6%80%BB%E7%BB%93"><span class="nav-number">1.5.</span> <span class="nav-text">0X04 总结</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Staskaer"
+      src="/imgs/theme_pic/head_img.png">
+  <p class="site-author-name" itemprop="name">Staskaer</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">97</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">10</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">24</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/Staskaer" title="Github → https:&#x2F;&#x2F;github.com&#x2F;Staskaer" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:liujiaxin011121@gmail.com" title="E-Mail → mailto:liujiaxin011121@gmail.com" rel="noopener" target="_blank"><i class="fa fa-envelope fa-fw"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://www.zhihu.com/people/staskaer" title="Zhihu → https:&#x2F;&#x2F;www.zhihu.com&#x2F;people&#x2F;staskaer" rel="noopener" target="_blank"><i class="fab fa-zhihu fa-fw"></i></a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2025</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Staskaer</span>
+</div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+
+<script>
+NexT.utils.loadComments(document.querySelector('#valine-comments'), () => {
+  NexT.utils.getScript('https://cdn.jsdelivr.net/npm/valine@1.5.1/dist/Valine.min.js', () => {
+    var GUEST = ['nick', 'mail', 'link'];
+    var guest = 'nick,mail,link';
+    guest = guest.split(',').filter(item => {
+      return GUEST.includes(item);
+    });
+    new Valine({
+      el         : '#valine-comments',
+      verify     : false,
+      notify     : false,
+      appId      : 'xH8NDrh9u4SQrUpQOd0lICnX-MdYXbMMI',
+      appKey     : 'jl3JjPS4jsosZG29Zv24Y7LE',
+      placeholder: "Just go go",
+      avatar     : 'mm',
+      meta       : guest,
+      pageSize   : '10' || 10,
+      visitor    : false,
+      lang       : 'zh-Hans' || 'zh-cn',
+      path       : location.pathname,
+      recordIP   : false,
+      serverURLs : 'https://xh8ndrh9.api.lncldglobal.com'
+    });
+  }, window.Valine);
+});
+</script>
+
+</body>
+</html>
+

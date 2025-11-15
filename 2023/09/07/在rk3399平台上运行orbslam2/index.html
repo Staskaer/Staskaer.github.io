@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 6.2.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/imgs/theme_pic/staskaer.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/imgs/theme_pic/staskaer.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/imgs/theme_pic/staskaer.png">
+  <link rel="mask-icon" href="/imgs/theme_pic/staskaer.png" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Gemini","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"mac"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"valine","storage":true,"lazyload":false,"nav":null,"activeClass":"valine"},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="在rk3399平台上编译orbslam2">
+<meta property="og:type" content="article">
+<meta property="og:title" content="在rk3399平台上运行orbslam2">
+<meta property="og:url" content="http://example.com/2023/09/07/%E5%9C%A8rk3399%E5%B9%B3%E5%8F%B0%E4%B8%8A%E8%BF%90%E8%A1%8Corbslam2/index.html">
+<meta property="og:site_name" content="Staskaer">
+<meta property="og:description" content="在rk3399平台上编译orbslam2">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="http://example.com/2023/09/07/%E5%9C%A8rk3399%E5%B9%B3%E5%8F%B0%E4%B8%8A%E8%BF%90%E8%A1%8Corbslam2/pic1.png">
+<meta property="og:image" content="http://example.com/2023/09/07/%E5%9C%A8rk3399%E5%B9%B3%E5%8F%B0%E4%B8%8A%E8%BF%90%E8%A1%8Corbslam2/pic2.png">
+<meta property="og:image" content="http://example.com/2023/09/07/%E5%9C%A8rk3399%E5%B9%B3%E5%8F%B0%E4%B8%8A%E8%BF%90%E8%A1%8Corbslam2/pic3.png">
+<meta property="og:image" content="http://example.com/2023/09/07/%E5%9C%A8rk3399%E5%B9%B3%E5%8F%B0%E4%B8%8A%E8%BF%90%E8%A1%8Corbslam2/pic4.png">
+<meta property="article:published_time" content="2023-09-07T09:13:07.000Z">
+<meta property="article:modified_time" content="2025-06-17T15:50:22.394Z">
+<meta property="article:author" content="Staskaer">
+<meta property="article:tag" content="SLAM">
+<meta property="article:tag" content="开发板使用">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://example.com/2023/09/07/%E5%9C%A8rk3399%E5%B9%B3%E5%8F%B0%E4%B8%8A%E8%BF%90%E8%A1%8Corbslam2/pic1.png">
+
+<link rel="canonical" href="http://example.com/2023/09/07/%E5%9C%A8rk3399%E5%B9%B3%E5%8F%B0%E4%B8%8A%E8%BF%90%E8%A1%8Corbslam2/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'en'
+  };
+</script>
+
+  <title>在rk3399平台上运行orbslam2 | Staskaer</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+<style>mjx-container[jax="SVG"] {
+  direction: ltr;
+}
+
+mjx-container[jax="SVG"] > svg {
+  overflow: visible;
+}
+
+mjx-container[jax="SVG"][display="true"] {
+  display: block;
+  text-align: center;
+  margin: 1em 0;
+}
+
+mjx-container[jax="SVG"][justify="left"] {
+  text-align: left;
+}
+
+mjx-container[jax="SVG"][justify="right"] {
+  text-align: right;
+}
+
+g[data-mml-node="merror"] > g {
+  fill: red;
+  stroke: red;
+}
+
+g[data-mml-node="merror"] > rect[data-background] {
+  fill: yellow;
+  stroke: none;
+}
+
+g[data-mml-node="mtable"] > line[data-line] {
+  stroke-width: 70px;
+  fill: none;
+}
+
+g[data-mml-node="mtable"] > rect[data-frame] {
+  stroke-width: 70px;
+  fill: none;
+}
+
+g[data-mml-node="mtable"] > .mjx-dashed {
+  stroke-dasharray: 140;
+}
+
+g[data-mml-node="mtable"] > .mjx-dotted {
+  stroke-linecap: round;
+  stroke-dasharray: 0,140;
+}
+
+g[data-mml-node="mtable"] > svg {
+  overflow: visible;
+}
+
+[jax="SVG"] mjx-tool {
+  display: inline-block;
+  position: relative;
+  width: 0;
+  height: 0;
+}
+
+[jax="SVG"] mjx-tool > mjx-tip {
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+mjx-tool > mjx-tip {
+  display: inline-block;
+  padding: .2em;
+  border: 1px solid #888;
+  font-size: 70%;
+  background-color: #F8F8F8;
+  color: black;
+  box-shadow: 2px 2px 5px #AAAAAA;
+}
+
+g[data-mml-node="maction"][data-toggle] {
+  cursor: pointer;
+}
+
+mjx-status {
+  display: block;
+  position: fixed;
+  left: 1em;
+  bottom: 1em;
+  min-width: 25%;
+  padding: .2em .4em;
+  border: 1px solid #888;
+  font-size: 90%;
+  background-color: #F8F8F8;
+  color: black;
+}
+
+foreignObject[data-mjx-xml] {
+  font-family: initial;
+  line-height: normal;
+  overflow: visible;
+}
+
+.MathJax path {
+  stroke-width: 3;
+}
+
+mjx-container[display="true"] {
+  overflow: auto hidden;
+}
+
+mjx-container[display="true"] + br {
+  display: none;
+}
+</style></head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Staskaer</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">Hi, this is Staskaer</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+        <li class="menu-item menu-item-links">
+
+    <a href="/links/" rel="section"><i class="fa fa-link fa-fw"></i>links</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2023/09/07/%E5%9C%A8rk3399%E5%B9%B3%E5%8F%B0%E4%B8%8A%E8%BF%90%E8%A1%8Corbslam2/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/imgs/theme_pic/head_img.png">
+      <meta itemprop="name" content="Staskaer">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Staskaer">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          在rk3399平台上运行orbslam2
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2023-09-07 17:13:07" itemprop="dateCreated datePublished" datetime="2023-09-07T17:13:07+08:00">2023-09-07</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2025-06-17 23:50:22" itemprop="dateModified" datetime="2025-06-17T23:50:22+08:00">2025-06-17</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/SLAM%E5%AD%A6%E4%B9%A0/" itemprop="url" rel="index"><span itemprop="name">SLAM学习</span></a>
+                </span>
+            </span>
+
+          
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Valine: </span>
+    
+    <a title="valine" href="/2023/09/07/%E5%9C%A8rk3399%E5%B9%B3%E5%8F%B0%E4%B8%8A%E8%BF%90%E8%A1%8Corbslam2/#valine-comments" itemprop="discussionUrl">
+      <span class="post-comments-count valine-comment-count" data-xid="/2023/09/07/%E5%9C%A8rk3399%E5%B9%B3%E5%8F%B0%E4%B8%8A%E8%BF%90%E8%A1%8Corbslam2/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>在rk3399平台上编译orbslam2</p>
+<span id="more"></span>
+<h2 id="在rk3399平台上运行orbslam2">在rk3399平台上运行orbslam2</h2>
+<p>之前的rk3399的矿板终于能派上用场了，打算在嵌入式板子上跑orb-slam2试试。</p>
+<img src="/2023/09/07/%E5%9C%A8rk3399%E5%B9%B3%E5%8F%B0%E4%B8%8A%E8%BF%90%E8%A1%8Corbslam2/pic1.png" class="">
+<h3 id="环境准备">环境准备</h3>
+<p>orb-slam2需要一大堆的前置库，下面来安装这些前置库，虽然orb-slam2已经有些年头了，但是我们还是要安装比较新的库(除了opencv)，一方面库都是学新不学旧，另一方面，这些库也全是编译安装的(因为是arm平台)，找老版本好麻烦的。</p>
+<p>orb-slam2的前置库有：</p>
+<ul>
+<li><strong>eigen3</strong>：head-only的库，直接从apt安装即可</li>
+<li><strong>Pangolin</strong>：一个用于可视化的库，拉下最新的源码，编译安装</li>
+<li><strong>g2o</strong>：图优化的库，拉下最新的源码，编译安装</li>
+<li><strong>opencv3</strong>：不能使用opencv4，我下了opencv3的源码，然后编译安装</li>
+<li><strong>DBoW2</strong>：一个用于词袋的库，拉下最新的源码，编译安装</li>
+<li><strong>ros</strong>：可选，我装了ROS1的noetic版本</li>
+</ul>
+<p>上述环境安装步骤已经很多了，就不再赘述了。</p>
+<h3 id="orb-slam2的编译">orb-slam2的编译</h3>
+<p>首先利用加速镜像来获取到源码</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">git <span class="built_in">clone</span> https://gitclone.com/github.com/raulmur/ORB_SLAM2.git</span><br></pre></td></tr></table></figure>
+<p>然后修改CMakeLists.txt，将C++标准改为14，不能使用17或11</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sed -i <span class="string">'s/++11/++14/g'</span> CMakeLists.txt</span><br></pre></td></tr></table></figure>
+<p>同时修改CMakeLists.txt，再把eigen3依赖改了，否则会报错找不到</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">find_package(Eigen3 REQUIRED NO_MODULE)</span><br></pre></td></tr></table></figure>
+<p>接下来修改<code>loopclosing.h</code>文件，添加一行头文件，这个是解决usleep函数找不到的问题</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;unistd.h&gt;</span></span></span><br></pre></td></tr></table></figure>
+<p>同时，修改<code>loopclosing.h</code>文件，将这一行</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">typedef</span> map&lt;KeyFrame *, g2o::Sim3, std::less&lt;KeyFrame *&gt;,</span><br><span class="line">                    Eigen::aligned_allocator&lt;std::pair&lt; <span class="type">const</span> KeyFrame *, g2o::Sim3&gt;&gt;&gt;</span><br></pre></td></tr></table></figure>
+<p>改为</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">typedef</span> map&lt;KeyFrame *, g2o::Sim3, std::less&lt;KeyFrame *&gt;,</span><br><span class="line">                    Eigen::aligned_allocator&lt;std::pair&lt;  KeyFrame *<span class="type">const</span>, g2o::Sim3&gt;&gt;&gt;</span><br></pre></td></tr></table></figure>
+<p>否则会导致一个定义错误。</p>
+<p>然后接下来就可以执行非ros版本的编译了</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">sudo <span class="built_in">chmod</span> +x build.sh</span><br><span class="line">./build.sh</span><br></pre></td></tr></table></figure>
+<img src="/2023/09/07/%E5%9C%A8rk3399%E5%B9%B3%E5%8F%B0%E4%B8%8A%E8%BF%90%E8%A1%8Corbslam2/pic2.png" class="">
+<h3 id="orb-slam2的运行">orb-slam2的运行</h3>
+<p>由于这里编译了不带ros的版本，所以直接找个数据集来测试一下slam程序。</p>
+<p>首先下载一个数据集，并解压缩，数据集可以在<a target="_blank" rel="noopener" href="https://cvg.cit.tum.de/data/datasets/rgbd-dataset/download">这里</a>找</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">wget https://cvg.cit.tum.de/rgbd/dataset/freiburg1/rgbd_dataset_freiburg1_xyz.tgz</span><br><span class="line"></span><br><span class="line">tar -zxvf rgbd_dataset_freiburg1_xyz.tgz rgbd_dataset_freiburg1_xyz/</span><br></pre></td></tr></table></figure>
+<p>然后进入编译好的orb-slam2的目录，执行单目程序，注意第三个参数是之前下载好的数据集</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">cd</span> ORB_SLAM2/Examples/Monocular/</span><br><span class="line"></span><br><span class="line">./mono_tum ../../Vocabulary/ORBvoc.txt TUM1.yaml ../../rgbd_dataset_freiburg1_xyz</span><br></pre></td></tr></table></figure>
+<p>然后就可以看到orb-slam2正常运行了。由于单目slam需要初始化，所以很明显前一段时间是没有位姿的，而初始化完成后才会出现位姿。</p>
+<div class="group-picture"><div class="group-picture-container"><div class="group-picture-row"><div class="group-picture-column" style="width: 50%;"><img src="pic3.png" width="450" alt="前"></div><div class="group-picture-column" style="width: 50%;"><img src="pic4.png" width="450" alt="后"></div></div></div></div>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/SLAM/" rel="tag"># SLAM</a>
+              <a href="/tags/%E5%BC%80%E5%8F%91%E6%9D%BF%E4%BD%BF%E7%94%A8/" rel="tag"># 开发板使用</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2023/09/06/%E7%BB%BC%E8%BF%B0%E9%98%85%E8%AF%BB-G2O/" rel="prev" title="综述阅读-G2O">
+      <i class="fa fa-chevron-left"></i> 综述阅读-G2O
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2023/09/09/%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB-ORBSLAM/" rel="next" title="论文阅读--ORBSLAM">
+      论文阅读--ORBSLAM <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+    <div class="comments" id="valine-comments"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%9C%A8rk3399%E5%B9%B3%E5%8F%B0%E4%B8%8A%E8%BF%90%E8%A1%8Corbslam2"><span class="nav-number">1.</span> <span class="nav-text">在rk3399平台上运行orbslam2</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%8E%AF%E5%A2%83%E5%87%86%E5%A4%87"><span class="nav-number">1.1.</span> <span class="nav-text">环境准备</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#orb-slam2%E7%9A%84%E7%BC%96%E8%AF%91"><span class="nav-number">1.2.</span> <span class="nav-text">orb-slam2的编译</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#orb-slam2%E7%9A%84%E8%BF%90%E8%A1%8C"><span class="nav-number">1.3.</span> <span class="nav-text">orb-slam2的运行</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Staskaer"
+      src="/imgs/theme_pic/head_img.png">
+  <p class="site-author-name" itemprop="name">Staskaer</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">97</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">10</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">24</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/Staskaer" title="Github → https:&#x2F;&#x2F;github.com&#x2F;Staskaer" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:liujiaxin011121@gmail.com" title="E-Mail → mailto:liujiaxin011121@gmail.com" rel="noopener" target="_blank"><i class="fa fa-envelope fa-fw"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://www.zhihu.com/people/staskaer" title="Zhihu → https:&#x2F;&#x2F;www.zhihu.com&#x2F;people&#x2F;staskaer" rel="noopener" target="_blank"><i class="fab fa-zhihu fa-fw"></i></a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2025</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Staskaer</span>
+</div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+
+<script>
+NexT.utils.loadComments(document.querySelector('#valine-comments'), () => {
+  NexT.utils.getScript('https://cdn.jsdelivr.net/npm/valine@1.5.1/dist/Valine.min.js', () => {
+    var GUEST = ['nick', 'mail', 'link'];
+    var guest = 'nick,mail,link';
+    guest = guest.split(',').filter(item => {
+      return GUEST.includes(item);
+    });
+    new Valine({
+      el         : '#valine-comments',
+      verify     : false,
+      notify     : false,
+      appId      : 'xH8NDrh9u4SQrUpQOd0lICnX-MdYXbMMI',
+      appKey     : 'jl3JjPS4jsosZG29Zv24Y7LE',
+      placeholder: "Just go go",
+      avatar     : 'mm',
+      meta       : guest,
+      pageSize   : '10' || 10,
+      visitor    : false,
+      lang       : 'zh-Hans' || 'zh-cn',
+      path       : location.pathname,
+      recordIP   : false,
+      serverURLs : 'https://xh8ndrh9.api.lncldglobal.com'
+    });
+  }, window.Valine);
+});
+</script>
+
+</body>
+</html>
+

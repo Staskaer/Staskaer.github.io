@@ -1,0 +1,646 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 6.2.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/imgs/theme_pic/staskaer.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/imgs/theme_pic/staskaer.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/imgs/theme_pic/staskaer.png">
+  <link rel="mask-icon" href="/imgs/theme_pic/staskaer.png" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Gemini","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"mac"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"valine","storage":true,"lazyload":false,"nav":null,"activeClass":"valine"},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="ctypes、Cython、pyCUDA和pybind11来对矩阵相关python代码进行加速。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="使用C++加速Python代码的几种方式">
+<meta property="og:url" content="http://example.com/2023/12/01/%E4%BD%BF%E7%94%A8C-%E5%8A%A0%E9%80%9FPython%E4%BB%A3%E7%A0%81%E7%9A%84%E5%87%A0%E7%A7%8D%E6%96%B9%E5%BC%8F/index.html">
+<meta property="og:site_name" content="Staskaer">
+<meta property="og:description" content="ctypes、Cython、pyCUDA和pybind11来对矩阵相关python代码进行加速。">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2023-12-01T03:07:00.000Z">
+<meta property="article:modified_time" content="2025-06-17T15:50:22.390Z">
+<meta property="article:author" content="Staskaer">
+<meta property="article:tag" content="CUDA">
+<meta property="article:tag" content="Python">
+<meta property="article:tag" content="C++">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="http://example.com/2023/12/01/%E4%BD%BF%E7%94%A8C-%E5%8A%A0%E9%80%9FPython%E4%BB%A3%E7%A0%81%E7%9A%84%E5%87%A0%E7%A7%8D%E6%96%B9%E5%BC%8F/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'en'
+  };
+</script>
+
+  <title>使用C++加速Python代码的几种方式 | Staskaer</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+<style>mjx-container[jax="SVG"] {
+  direction: ltr;
+}
+
+mjx-container[jax="SVG"] > svg {
+  overflow: visible;
+}
+
+mjx-container[jax="SVG"][display="true"] {
+  display: block;
+  text-align: center;
+  margin: 1em 0;
+}
+
+mjx-container[jax="SVG"][justify="left"] {
+  text-align: left;
+}
+
+mjx-container[jax="SVG"][justify="right"] {
+  text-align: right;
+}
+
+g[data-mml-node="merror"] > g {
+  fill: red;
+  stroke: red;
+}
+
+g[data-mml-node="merror"] > rect[data-background] {
+  fill: yellow;
+  stroke: none;
+}
+
+g[data-mml-node="mtable"] > line[data-line] {
+  stroke-width: 70px;
+  fill: none;
+}
+
+g[data-mml-node="mtable"] > rect[data-frame] {
+  stroke-width: 70px;
+  fill: none;
+}
+
+g[data-mml-node="mtable"] > .mjx-dashed {
+  stroke-dasharray: 140;
+}
+
+g[data-mml-node="mtable"] > .mjx-dotted {
+  stroke-linecap: round;
+  stroke-dasharray: 0,140;
+}
+
+g[data-mml-node="mtable"] > svg {
+  overflow: visible;
+}
+
+[jax="SVG"] mjx-tool {
+  display: inline-block;
+  position: relative;
+  width: 0;
+  height: 0;
+}
+
+[jax="SVG"] mjx-tool > mjx-tip {
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+mjx-tool > mjx-tip {
+  display: inline-block;
+  padding: .2em;
+  border: 1px solid #888;
+  font-size: 70%;
+  background-color: #F8F8F8;
+  color: black;
+  box-shadow: 2px 2px 5px #AAAAAA;
+}
+
+g[data-mml-node="maction"][data-toggle] {
+  cursor: pointer;
+}
+
+mjx-status {
+  display: block;
+  position: fixed;
+  left: 1em;
+  bottom: 1em;
+  min-width: 25%;
+  padding: .2em .4em;
+  border: 1px solid #888;
+  font-size: 90%;
+  background-color: #F8F8F8;
+  color: black;
+}
+
+foreignObject[data-mjx-xml] {
+  font-family: initial;
+  line-height: normal;
+  overflow: visible;
+}
+
+.MathJax path {
+  stroke-width: 3;
+}
+
+mjx-container[display="true"] {
+  overflow: auto hidden;
+}
+
+mjx-container[display="true"] + br {
+  display: none;
+}
+</style></head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Staskaer</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">Hi, this is Staskaer</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+        <li class="menu-item menu-item-links">
+
+    <a href="/links/" rel="section"><i class="fa fa-link fa-fw"></i>links</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2023/12/01/%E4%BD%BF%E7%94%A8C-%E5%8A%A0%E9%80%9FPython%E4%BB%A3%E7%A0%81%E7%9A%84%E5%87%A0%E7%A7%8D%E6%96%B9%E5%BC%8F/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/imgs/theme_pic/head_img.png">
+      <meta itemprop="name" content="Staskaer">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Staskaer">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          使用C++加速Python代码的几种方式
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2023-12-01 11:07:00" itemprop="dateCreated datePublished" datetime="2023-12-01T11:07:00+08:00">2023-12-01</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2025-06-17 23:50:22" itemprop="dateModified" datetime="2025-06-17T23:50:22+08:00">2025-06-17</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/python%E6%8A%80%E5%B7%A7/" itemprop="url" rel="index"><span itemprop="name">python技巧</span></a>
+                </span>
+            </span>
+
+          
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Valine: </span>
+    
+    <a title="valine" href="/2023/12/01/%E4%BD%BF%E7%94%A8C-%E5%8A%A0%E9%80%9FPython%E4%BB%A3%E7%A0%81%E7%9A%84%E5%87%A0%E7%A7%8D%E6%96%B9%E5%BC%8F/#valine-comments" itemprop="discussionUrl">
+      <span class="post-comments-count valine-comment-count" data-xid="/2023/12/01/%E4%BD%BF%E7%94%A8C-%E5%8A%A0%E9%80%9FPython%E4%BB%A3%E7%A0%81%E7%9A%84%E5%87%A0%E7%A7%8D%E6%96%B9%E5%BC%8F/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>ctypes、Cython、pyCUDA和pybind11来对矩阵相关python代码进行加速。</p>
+<span id="more"></span>
+<h2 id="向量化操作与局限性">向量化操作与局限性</h2>
+<p>在矩阵相关的问题中，可以使用numpy等库来高效的完成计算，因为这些库的底层往往也是lapack、mkl等高效的矩阵库，所以效率很高，但是这要求使用时必须以向量化的语法来进行操作，而如果使用python的循环来写的话，效率就会非常低。</p>
+<p>比如</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> numpy <span class="keyword">as</span> np</span><br><span class="line"><span class="keyword">import</span> time</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">func1</span>():</span><br><span class="line">    start = time.time()</span><br><span class="line">    np.<span class="built_in">sum</span>(np.arange(<span class="number">150000000</span>))</span><br><span class="line">    end = time.time()</span><br><span class="line">    <span class="built_in">print</span>(end - start)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">func2</span>():</span><br><span class="line">    start = time.time()</span><br><span class="line">    total = <span class="number">0</span></span><br><span class="line">    <span class="keyword">for</span> item <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">0</span>, <span class="number">150000000</span>):</span><br><span class="line">        total = total + item</span><br><span class="line">    end = time.time()</span><br><span class="line">    <span class="built_in">print</span>(end - start)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">func1()</span><br><span class="line">func2()</span><br></pre></td></tr></table></figure>
+<p>在这个例子里numpy的内置函数比python的循环快非常多，原因在之前的文章中已经提到过，这里就不再赘述。</p>
+<p>当然，这篇文章不是说如何去使用向量化语法，经常用numpy等库的人应该对此非常熟悉才对。但是由于内置的库的方法是有限的，有的时候可能没法使用向量化语法，尤其是对于某些需要求解<strong>雅可比矩阵</strong>的地方，求解雅可比矩阵的时候基本上都是单独操作矩阵中每一个元素的，比如下面这个4*4大小的雅可比矩阵</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">J=torch.tensor(</span><br><span class="line">[</span><br><span class="line">[8*M[37,7]+1*M[4,8]*q3**3+7*M[3,4]*q8**7+0*M[9,0]*q7**9+8*M[7,9]*q4**1+3*q6*(8*M[3,9]*q6+M[4,2]*q3+M[0,1]*q3+M[5,4]*q3)+q8*(3*M[7,5]*q7+M[9,1]*q1+M[6,2]*q1+M[1,4]*q4)+q7*(8*M[4,3]*q3+M[5,7]*q9+M[7,5]*q8+M[8,0]*q5)+q3*(7*M[6,5]*q6+M[3,7]*q7+M[6,4]*q0+M[1,1]*q5)+9*M[0,2]*q8*q7+6*M[3,8]*q0*q7+5*M[5,0]*q7*q6+0*M[6,8]*q2*q7+4*M[5,1]*q5*q0+0*M[9,9]*q2*q8,M[92,1]+M[4,5]*q1**9+M[2,3]*q1**4+M[9,9]*q0**8+M[4,9]*q3**4+5*q3*(4*M[9,2]*q8+M[8,1]*q1+M[1,5]*q1+M[0,0]*q4)+q0*(9*M[8,2]*q7+M[0,1]*q4+M[0,5]*q3+M[1,7]*q6)+q5*(0*M[3,8]*q9+M[0,9]*q3+M[4,0]*q3+M[5,2]*q6)+q1*(9*M[9,2]*q6+M[0,2]*q8+M[7,6]*q9+M[1,2]*q4)+M[7,9]*q3*q4+M[3,0]*q7*q4+M[4,9]*q7*q0+M[6,9]*q7*q9+M[1,9]*q4*q1+M[9,9]*q9*q1,M[70,6]+M[0,3]*q0**2+M[8,0]*q6**3+M[5,2]*q4**5+M[6,7]*q6**3+1*q6*(M[9,7]*q8+9*M[7,3]*q0+M[7,9]*q0+M[5,4]*q0)+q6*(M[2,6]*q6+1*M[6,8]*q5+M[9,2]*q3+M[2,5]*q9)+q9*(M[5,2]*q8+2*M[4,0]*q4+M[4,2]*q8+M[9,0]*q2)+q9*(M[6,1]*q2+3*M[0,5]*q8+M[5,4]*q1+M[3,5]*q4)+M[4,5]*q3*q2+M[5,6]*q6*q1+M[0,3]*q2*q5+M[4,3]*q7*q4+M[6,2]*q8*q5+M[7,0]*q6*q0,M[21,7]+M[0,8]*q1**4+M[5,1]*q3**5+M[0,1]*q3**3+M[3,1]*q2**0+3*q5*(M[0,8]*q0+0*M[5,2]*q3+M[8,9]*q0+M[5,3]*q0)+q2*(M[2,6]*q9+2*M[2,3]*q9+M[9,4]*q3+M[8,2]*q5)+q0*(M[2,5]*q9+4*M[9,4]*q3+M[0,3]*q2+M[3,5]*q9)+q6*(M[6,6]*q9+9*M[5,4]*q2+M[8,2]*q7+M[2,5]*q7)+M[4,0]*q3*q2+M[6,1]*q2*q3+M[5,7]*q7*q8+M[6,2]*q0*q0+M[4,0]*q7*q5+M[7,2]*q2*q6],</span><br><span class="line">[M[19,6]+M[4,8]*q2**0+M[2,5]*q8**7+M[0,4]*q2**7+M[7,6]*q5**9+4*q0*(7*M[2,6]*q4+M[0,2]*q5+M[1,4]*q0+M[7,7]*q1)+q4*(3*M[0,4]*q5+M[3,8]*q4+M[4,0]*q4+M[8,0]*q6)+q9*(8*M[5,5]*q7+M[9,4]*q9+M[4,6]*q2+M[9,7]*q1)+q5*(9*M[3,1]*q9+M[9,8]*q4+M[8,0]*q1+M[6,8]*q0)+M[1,9]*q9*q4+M[6,9]*q2*q5+M[1,5]*q8*q7+M[5,4]*q4*q0+M[7,5]*q1*q1+M[5,2]*q9*q8,5*M[65,0]+9*M[9,7]*q6**3+3*M[6,1]*q3**4+1*M[0,9]*q2**3+0*M[8,2]*q5**7+1*q4*(0*M[1,0]*q7+M[7,8]*q9+M[6,9]*q9+M[7,5]*q9)+q0*(1*M[5,4]*q6+M[4,4]*q1+M[2,9]*q5+M[5,2]*q6)+q7*(7*M[2,8]*q2+M[2,5]*q1+M[8,6]*q8+M[5,0]*q0)+q6*(1*M[9,2]*q8+M[3,6]*q1+M[2,5]*q8+M[0,0]*q3)+2*M[6,1]*q9*q3+9*M[5,5]*q0*q6+3*M[3,4]*q1*q6+3*M[0,8]*q2*q4+9*M[0,2]*q5*q6+4*M[3,6]*q2*q5,M[02,5]+M[3,2]*q5**8+M[0,3]*q3**6+M[4,0]*q7**3+M[4,7]*q4**8+9*q6*(M[7,5]*q0+4*M[0,5]*q4+M[2,9]*q0+M[9,6]*q7)+q1*(M[7,7]*q3+4*M[8,3]*q0+M[0,3]*q8+M[4,7]*q6)+q5*(M[0,6]*q3+6*M[0,6]*q0+M[2,6]*q1+M[5,2]*q7)+q7*(M[6,8]*q7+5*M[2,9]*q2+M[5,4]*q6+M[4,6]*q1)+M[2,5]*q2*q8+M[7,6]*q5*q6+M[6,2]*q2*q1+M[1,8]*q2*q3+M[7,0]*q5*q3+M[0,8]*q9*q4,M[77,3]+M[7,4]*q6**4+M[4,7]*q5**4+M[5,5]*q5**0+M[2,5]*q3**5+9*q0*(M[3,0]*q6+5*M[7,9]*q0+M[1,6]*q1+M[5,7]*q3)+q8*(M[5,7]*q2+6*M[3,5]*q5+M[5,5]*q2+M[5,9]*q3)+q8*(M[5,0]*q9+1*M[6,9]*q1+M[5,4]*q6+M[1,6]*q5)+q3*(M[7,6]*q4+0*M[0,2]*q2+M[6,3]*q1+M[0,7]*q6)+M[6,5]*q9*q8+M[1,3]*q2*q7+M[2,7]*q3*q6+M[0,3]*q4*q1+M[5,8]*q5*q2+M[9,7]*q1*q6],</span><br><span class="line">[M[09,8]+M[1,8]*q6**8+M[8,8]*q6**5+M[0,4]*q7**7+M[3,1]*q5**3+2*q4*(9*M[1,3]*q2+M[0,0]*q6+M[5,3]*q0+M[3,8]*q4)+q9*(5*M[5,2]*q3+M[3,5]*q1+M[6,1]*q8+M[1,5]*q9)+q5*(1*M[8,7]*q2+M[0,2]*q4+M[4,0]*q4+M[0,6]*q8)+q6*(9*M[6,6]*q1+M[2,7]*q5+M[8,4]*q8+M[5,2]*q6)+M[1,8]*q9*q6+M[8,3]*q9*q7+M[4,6]*q8*q8+M[6,0]*q8*q9+M[9,5]*q8*q8+M[0,6]*q4*q8,M[28,4]+M[6,7]*q9**8+M[7,5]*q5**1+M[3,7]*q3**4+M[7,3]*q5**2+2*q2*(3*M[1,6]*q0+M[6,5]*q2+M[6,1]*q2+M[6,5]*q7)+q7*(4*M[3,4]*q0+M[9,8]*q7+M[3,9]*q8+M[9,9]*q9)+q0*(0*M[8,6]*q8+M[6,3]*q1+M[0,9]*q9+M[1,6]*q8)+q0*(4*M[7,1]*q6+M[7,4]*q7+M[2,9]*q3+M[8,4]*q2)+M[1,3]*q0*q0+M[4,8]*q2*q7+M[0,6]*q1*q8+M[0,1]*q0*q5+M[2,2]*q4*q6+M[5,5]*q0*q8,2*M[91,9]+6*M[3,8]*q0**9+9*M[4,3]*q7**1+7*M[8,7]*q0**0+4*M[0,7]*q3**5+6*q5*(M[0,9]*q6+2*M[4,0]*q7+M[7,9]*q4+M[9,1]*q7)+q0*(M[6,1]*q6+7*M[0,0]*q3+M[1,7]*q6+M[9,5]*q4)+q3*(M[1,8]*q3+2*M[9,3]*q1+M[1,9]*q8+M[1,2]*q4)+q9*(M[4,5]*q5+0*M[7,0]*q1+M[4,3]*q9+M[4,8]*q1)+8*M[8,7]*q5*q4+1*M[6,6]*q0*q6+0*M[8,4]*q3*q5+3*M[5,0]*q7*q7+8*M[9,4]*q9*q7+2*M[5,2]*q5*q4,M[98,9]+M[3,1]*q3**3+M[4,3]*q4**0+M[4,3]*q3**1+M[9,4]*q4**5+8*q4*(M[3,0]*q4+8*M[1,4]*q3+M[6,2]*q1+M[3,5]*q8)+q0*(M[9,2]*q2+3*M[8,8]*q9+M[5,8]*q1+M[2,3]*q1)+q8*(M[5,2]*q2+1*M[4,9]*q5+M[9,0]*q8+M[4,4]*q4)+q0*(M[7,2]*q5+9*M[8,1]*q6+M[7,4]*q8+M[3,1]*q6)+M[3,1]*q9*q6+M[2,3]*q2*q0+M[5,4]*q3*q4+M[0,7]*q5*q0+M[6,4]*q9*q2+M[6,2]*q5*q1],</span><br><span class="line">[M[06,6]+M[7,0]*q3**2+M[1,7]*q7**5+M[1,0]*q7**1+M[6,2]*q9**2+3*q0*(2*M[2,4]*q6+M[3,8]*q5+M[4,8]*q4+M[6,6]*q5)+q1*(9*M[5,5]*q4+M[4,8]*q6+M[6,9]*q4+M[0,9]*q9)+q9*(4*M[1,7]*q8+M[4,4]*q6+M[9,8]*q3+M[6,2]*q1)+q0*(1*M[4,3]*q1+M[7,2]*q9+M[9,5]*q1+M[3,0]*q9)+M[3,0]*q3*q4+M[7,5]*q5*q2+M[7,3]*q2*q4+M[2,3]*q4*q2+M[3,9]*q5*q3+M[9,7]*q2*q4,M[83,6]+M[0,3]*q4**0+M[5,1]*q2**8+M[5,2]*q1**6+M[5,6]*q2**0+3*q8*(3*M[1,3]*q9+M[6,9]*q8+M[2,0]*q5+M[9,6]*q9)+q3*(2*M[7,7]*q6+M[8,8]*q2+M[8,1]*q0+M[0,2]*q1)+q0*(5*M[7,2]*q9+M[2,2]*q3+M[5,7]*q9+M[9,3]*q1)+q6*(1*M[5,0]*q1+M[9,8]*q7+M[8,9]*q5+M[7,7]*q4)+M[0,1]*q1*q0+M[8,1]*q6*q8+M[5,8]*q0*q6+M[2,6]*q8*q3+M[2,6]*q0*q1+M[3,1]*q5*q0,M[18,2]+M[6,6]*q1**9+M[1,4]*q7**4+M[9,3]*q3**6+M[6,3]*q7**1+0*q5*(M[4,3]*q2+1*M[2,9]*q4+M[7,9]*q4+M[4,4]*q3)+q6*(M[2,4]*q3+0*M[8,4]*q9+M[3,4]*q5+M[5,1]*q8)+q4*(M[0,3]*q4+6*M[3,3]*q9+M[5,7]*q0+M[9,5]*q3)+q3*(M[5,0]*q6+0*M[5,0]*q5+M[6,4]*q3+M[6,1]*q0)+M[6,3]*q5*q7+M[7,6]*q4*q3+M[4,1]*q5*q9+M[0,0]*q4*q5+M[9,5]*q3*q0+M[9,8]*q2*q0,3*M[45,3]+4*M[3,7]*q6**5+1*M[0,2]*q5**7+0*M[5,1]*q2**4+6*M[2,6]*q5**4+1*q4*(M[9,3]*q2+4*M[8,8]*q0+M[3,1]*q5+M[2,5]*q3)+q1*(M[3,1]*q8+2*M[1,8]*q4+M[6,8]*q8+M[3,9]*q9)+q9*(M[2,2]*q0+3*M[7,6]*q9+M[5,5]*q9+M[0,8]*q6)+q7*(M[8,0]*q3+7*M[4,7]*q5+M[4,4]*q2+M[2,9]*q8)+6*M[8,8]*q9*q7+2*M[6,6]*q9*q7+0*M[6,5]*q8*q6+6*M[9,0]*q1*q7+4*M[0,7]*q8*q4+4*M[9,4]*q3*q2],</span><br><span class="line">[4*q9**8+q8**1+q5**4+q6**8,8*q8*q7,0*q1*q8,2*q1*q2],</span><br><span class="line">[8*q9*q0,q0**9+9*q7**8+q5**9+q8**5,5*q0*q7,7*q2*q2],</span><br><span class="line">[5*q1*q2,8*q7*q1,q0**8+q8**1+2*q9**8+q1**9,2*q7*q7],</span><br><span class="line">[9*q3*q8,6*q0*q0,1*q0*q7,q1**2+q0**4+q3**5+4*q5**9]</span><br><span class="line">],device=q.device</span><br><span class="line">)</span><br></pre></td></tr></table></figure>
+<p>可能会觉得上述内容有点太不常见，但是如果你的方法中用到了某种参数化的方法，那么它的雅可比矩阵往往就是这么复杂的。更麻烦的是，如果用到了雅可比矩阵，那么往往会跟迭代法联系在一起，这意味着需要在<strong>一个循环中多次去计算雅可比矩阵</strong>！如果还是上面那个东西，在python里计算一个雅可比矩阵就要花费几十毫秒，那么在一个循环中计算几百次(迭代法几百次也很少了)，那么就会花费十来秒。这还不算完，深度学习这么火，不给你的方法加个网络总说不过去吧，假设一个batch_size是128，那么在一个batch_size的前向传播里计算jacobian都得花个一两分钟，如果再考虑一个复杂的网络，算上训练集的大小，那么一个epoch都会花好长时间！<strong>最关键的是，上述复杂的计算中很多一部分东西都是python引入的不必要的对象创建和销毁、内存分配与释放等等，并没有用在关键的计算上</strong>，所以这些时间都是浪费的。</p>
+<p>既然python本身会浪费掉很多时间，那么如果用其他的语言来重写这些耗时的计算，那么就可以大大提高效率。这里介绍几种方法，分别是ctypes、Cython、pyCUDA和pybind11。</p>
+<h2 id="涉及到矩阵不是那么有效的方法">涉及到矩阵不是那么有效的方法</h2>
+<p>这里的<strong>不是那么有效</strong>针对的是涉及到传输numpy矩阵以及后续矩阵处理的任务，并不是说这些方法不好用。</p>
+<h3 id="ctypes与动态链接库">ctypes与动态链接库</h3>
+<p>ctypes是Python的一个库，提供了与C兼容的数据类型，允许调用动态链接库中的函数，这样就可以在python中调用C语言的函数，从而提高效率。</p>
+<p>ctypes使用起来非常简单，在编译C++动态库的时候也不需要考虑python的版本，C++与python基本上完全无关。但是C++代码中不涉及到python的对象，所以他们之间传递的参数也会非常有限，当然这也是优势，这可以让C++代码与python尽可能解耦。</p>
+<p>而且C++编译成动态库完全不会涉及到GIL这种东西，所以可以在python用事件循环或线程池之类的东西，来在python里实现真正的多核多线程。</p>
+<p>当然，Ctypes在传输numpy矩阵上不是很方便，但是假如矩阵是图像的话，可以试着把图像保存下来，然后只传递文件名过去，这样也是一种节省时间的做法。这里给一个linux下的简单例子(<del>但是因为偷懒所以没真的去跑，之前写的类似的找不到了</del>)，因为linux下可以直接存在/dev的内存挂载点里，更加合理。这里用asyncio的原因也是因为如果需要大量存取图像的话，用协程会更高效。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> ctypes</span><br><span class="line"><span class="keyword">import</span> asyncio</span><br><span class="line"><span class="keyword">from</span> concurrent.futures <span class="keyword">import</span> ThreadPoolExecutor</span><br><span class="line"></span><br><span class="line"><span class="comment"># 假设这个C++动态库对单个元素做了超级复杂的计算</span></span><br><span class="line">lib = ctypes.cdll.LoadLibrary(<span class="string">'./libtest.so'</span>)</span><br><span class="line">lib.compute.argtypes = (ctypes.c_char_p)</span><br><span class="line">libfunc = lib.compute</span><br><span class="line"></span><br><span class="line"><span class="keyword">async</span> <span class="keyword">def</span> <span class="title function_">compute</span>(<span class="params">img_path</span>):</span><br><span class="line">    <span class="comment"># 忽略掉乱七八糟的处理流程</span></span><br><span class="line">    img_path = <span class="string">'/dev/shm/'</span> + img_path</span><br><span class="line"></span><br><span class="line">    <span class="keyword">await</span> asyncio.get_event_loop().run_in_executor(ThreadPoolExecutor(), libfunc, img_path)</span><br><span class="line"></span><br><span class="line"><span class="keyword">async</span> <span class="keyword">def</span> <span class="title function_">warp_func</span>():</span><br><span class="line">    <span class="comment"># 假装这里是从batch中构造任务</span></span><br><span class="line">    tasks = [compute(<span class="string">f'img<span class="subst">{i}</span>.jpg'</span>) <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">32</span>)]</span><br><span class="line"></span><br><span class="line">    <span class="keyword">for</span> task <span class="keyword">in</span> asyncio.as_completed(tasks):</span><br><span class="line">        res = <span class="keyword">await</span> task</span><br><span class="line">    </span><br><span class="line">        <span class="comment"># 后续处理</span></span><br></pre></td></tr></table></figure>
+<h3 id="cython">Cython</h3>
+<p>注意是Cython而不是CPython，后者是python的一个实现，而前者是一个库，通过一种很新的语法来直接在python中实现强类型的变量，"像写python那样去写C"，从本质上来说，Cython就是包含C数据类型的Python。</p>
+<div class="note info">
+            <p>Cython我没有正式在项目里用过，所以不好评价，这里大部分内容参考的是<strong>公众号：古明地觉的编程教室</strong>中的文章</p><p>以及，"古明地觉的编程教室"这位大佬还写了几个pdf来教大家写Cython和C扩展，有兴趣可以去Ta公众号里免费下载下来看一下</p>
+          </div>
+<p>这里简单列出一下Cython的代码</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">def</span> <span class="title function_">fib</span>(<span class="params"><span class="built_in">int</span> n</span>):</span><br><span class="line">    cdef <span class="built_in">int</span> i</span><br><span class="line">    cdef double a = <span class="number">0.0</span>, b = <span class="number">1.0</span></span><br><span class="line">    <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(n):</span><br><span class="line">        a, b = a + b, a</span><br><span class="line">    <span class="keyword">return</span> a</span><br></pre></td></tr></table></figure>
+<p>另外，Cython的话也可以实现真·多线程代码，也就是不去管GIL的代码，这点还是很nice的。</p>
+<p>但是其实我觉得这种方法还是有点怪的，首先是它构建Cython的代码长得非常奇怪，无论是喜欢python的还是喜欢c的都很难去喜欢Cython的代码，然后是它似乎没法直接和numpy的矩阵直接交互，虽然可以通过其他的方法完成转换，但是想要去使用矩阵一些方法，比如求逆、求特征值等等，就会比较麻烦。</p>
+<h2 id="涉及到矩阵很有效的方法">涉及到矩阵很有效的方法</h2>
+<p>下面涉及到的一些方法跟python中的矩阵有非常大的关系，"天生"对矩阵有很好的支持。</p>
+<h3 id="pycuda">pyCUDA</h3>
+<p>CUDA就不用多说了吧，在GPU上真的不能再真的并行计算了，pyCUDA是一个把CUDA核函数直接编译成python可以调用的接口，这样就可以在python中直接调用CUDA核函数，从而实现GPU加速。</p>
+<p>它本质上还是需要写C++代码的，主要是去实现核函数部分。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> pycuda.driver <span class="keyword">as</span> cuda</span><br><span class="line"><span class="keyword">import</span> pycuda.autoinit</span><br><span class="line"><span class="keyword">from</span> pycuda.compiler <span class="keyword">import</span> SourceModule</span><br><span class="line"><span class="keyword">import</span> numpy <span class="keyword">as</span> np</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">cuda_kernel = <span class="string">"""</span></span><br><span class="line"><span class="string">__global__ void matrix_multiply(float *a, float *b, float *c, int rows_a, int cols_a, int cols_b) {</span></span><br><span class="line"><span class="string">    int row = blockIdx.y * blockDim.y + threadIdx.y;</span></span><br><span class="line"><span class="string">    int col = blockIdx.x * blockDim.x + threadIdx.x;</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">    if (row &lt; rows_a &amp;&amp; col &lt; cols_b) {</span></span><br><span class="line"><span class="string">        float sum = 0.0;</span></span><br><span class="line"><span class="string">        for (int i = 0; i &lt; cols_a; ++i) {</span></span><br><span class="line"><span class="string">            sum += a[row * cols_a + i] * b[i * cols_b + col];</span></span><br><span class="line"><span class="string">        }</span></span><br><span class="line"><span class="string">        c[row * cols_b + col] = sum;</span></span><br><span class="line"><span class="string">    }</span></span><br><span class="line"><span class="string">}</span></span><br><span class="line"><span class="string">"""</span></span><br><span class="line"></span><br><span class="line">mod = SourceModule(cuda_kernel)</span><br><span class="line">matrix_multiply_kernel = mod.get_function(<span class="string">"matrix_multiply"</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment"># 生成随机矩阵</span></span><br><span class="line">matrix_a = np.random.rand(<span class="number">3</span>, <span class="number">4</span>).astype(np.float32)</span><br><span class="line">matrix_b = np.random.rand(<span class="number">4</span>, <span class="number">4</span>).astype(np.float32)</span><br><span class="line">matrix_result = np.empty((<span class="number">3</span>, <span class="number">4</span>), dtype=np.float32)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">matrix_multiply_kernel(cuda.In(matrix_a),</span><br><span class="line">                       cuda.In(matrix_b),</span><br><span class="line">                       cuda.Out(matrix_result),</span><br><span class="line">                       np.int32(<span class="number">3</span>),</span><br><span class="line">                       np.int32(<span class="number">4</span>),</span><br><span class="line">                       np.int32(<span class="number">4</span>),</span><br><span class="line">                       block=(<span class="number">16</span>, <span class="number">16</span>, <span class="number">1</span>),</span><br><span class="line">                       grid=(<span class="built_in">int</span>(np.ceil(<span class="number">3</span> / <span class="number">16</span>)),</span><br><span class="line">                             <span class="built_in">int</span>(np.ceil(<span class="number">4</span> / <span class="number">16</span>))))</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="built_in">print</span>(<span class="string">"Matrix A:"</span>)</span><br><span class="line"><span class="built_in">print</span>(matrix_a)</span><br><span class="line"><span class="built_in">print</span>(<span class="string">"\nMatrix B:"</span>)</span><br><span class="line"><span class="built_in">print</span>(matrix_b)</span><br><span class="line"><span class="built_in">print</span>(<span class="string">"\nResult Matrix:"</span>)</span><br><span class="line"><span class="built_in">print</span>(matrix_result)</span><br></pre></td></tr></table></figure>
+<p>但是上述过程可以看出来，矩阵传递还是需要拉平成一维数组的样子传进去，而且这样子不能去使用CUDA的非常丰富的生态库，比如cuBLAS、cuDNN等等，这样子就会比较麻烦。</p>
+<p>对于我们之前的求解非常复杂的雅可比矩阵的例子，可以用pycuda来编写一个求解雅可比矩阵的核函数，每个cuda thread只求解雅可比矩阵中的一个元素。<strong>但是这样只能说它比python快，未必会比C++实现的同等串行代码要快，因为数据传输需要成本</strong>。另外还有一个弊端就是，想要在核函数里面求逆矩阵(这种也是迭代运算非常常见的操作)就会非常麻烦，适合不需要矩阵之间有复杂运算，只是简单的代数运算的那种算子，单独使用起来可能不是很方便。</p>
+<h3 id="pybind11">pybind11</h3>
+<p>pybind11感觉可以是对于这种涉及到矩阵无法直接向量化处理时的一个大杀器了，它能直接把python的二维矩阵变成eigen3的矩阵！当然比如数组、列表什么的都不在话下。此外，pybind11还允许C++代码中可以使用CUDA。</p>
+<p>pybind11也是把C++代码编译成一个动态链接库，只是它跟ctypes不一样，它需要包含python的头文件，并链接python的两个lib，所以他是跟pyhton版本绑定的，谁让他交互起来那么方便呢。另外，pybind11跟eigen3一样，都是head-only的库，所以用起来非常方便。当然，它的编译安装和编码的注意就不提了，网上很容易找到资料。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;pybind11/pybind11.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;pybind11/numpy.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;Eigen/Dense&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span><span class="string">&lt;Eigen/Core&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;iostream&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="keyword">namespace</span> py = pybind11;</span><br><span class="line"></span><br><span class="line"><span class="type">int</span> iters = <span class="number">400</span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">typedef</span> Eigen::Matrix&lt;<span class="type">double</span>, <span class="number">11</span>, <span class="number">11</span>&gt; M11;</span><br><span class="line"><span class="keyword">typedef</span> Eigen::Matrix&lt;<span class="type">double</span>, <span class="number">8</span>, <span class="number">4</span>&gt; M84;</span><br><span class="line"><span class="keyword">typedef</span> Eigen::Matrix&lt;<span class="type">double</span>, <span class="number">4</span>, <span class="number">8</span>&gt; M48;</span><br><span class="line"><span class="keyword">typedef</span> Eigen::Matrix&lt;<span class="type">double</span>, <span class="number">8</span>, <span class="number">1</span>&gt; M81;</span><br><span class="line"><span class="keyword">typedef</span> Eigen::Matrix&lt;<span class="type">double</span>, <span class="number">4</span>, <span class="number">1</span>&gt; M41;</span><br><span class="line"></span><br><span class="line"><span class="function">Eigen::Vector4d <span class="title">HC_Implication</span><span class="params">(<span class="type">const</span> Eigen::Vector4d&amp; _q, <span class="type">const</span> M11&amp; M_F, <span class="type">const</span> M11&amp; M_G)</span></span></span><br><span class="line"><span class="function"></span>{</span><br><span class="line">    <span class="comment">// 假装复杂的计算...</span></span><br><span class="line">    Eigen::Vector4d q{ _q };</span><br><span class="line">    <span class="keyword">return</span> q;</span><br><span class="line">}</span><br><span class="line"></span><br><span class="line"><span class="function">py::<span class="type">array_t</span>&lt;<span class="type">double</span>&gt; <span class="title">func</span><span class="params">(py::<span class="type">array_t</span>&lt;<span class="type">double</span>&gt; q_array, py::<span class="type">array_t</span>&lt;<span class="type">double</span>&gt; M_F_array, py::<span class="type">array_t</span>&lt;<span class="type">double</span>&gt; M_G_array)</span> </span></span><br><span class="line"><span class="function"></span>{</span><br><span class="line">	<span class="comment">// 转换相关</span></span><br><span class="line">	py::buffer_info q_buf_info = q_array.<span class="built_in">request</span>();</span><br><span class="line">	py::buffer_info M_F_buf_info = M_F_array.<span class="built_in">request</span>();</span><br><span class="line">	py::buffer_info M_G_buf_info = M_G_array.<span class="built_in">request</span>();</span><br><span class="line"></span><br><span class="line">	<span class="function">Eigen::Map&lt;Eigen::Vector4d&gt; <span class="title">q</span><span class="params">(<span class="keyword">static_cast</span>&lt;<span class="type">double</span> *&gt;(q_buf_info.ptr), q_buf_info.size)</span></span>;</span><br><span class="line">	<span class="function">Eigen::Map&lt;M11&gt; <span class="title">M_F</span><span class="params">(<span class="keyword">static_cast</span>&lt;<span class="type">double</span> *&gt;(M_F_buf_info.ptr), M_F_buf_info.shape[<span class="number">0</span>], M_F_buf_info.shape[<span class="number">1</span>])</span></span>;</span><br><span class="line">	<span class="function">Eigen::Map&lt;M11&gt; <span class="title">M_G</span><span class="params">(<span class="keyword">static_cast</span>&lt;<span class="type">double</span> *&gt;(M_G_buf_info.ptr), M_G_buf_info.shape[<span class="number">0</span>], M_G_buf_info.shape[<span class="number">1</span>])</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 调用函数</span></span><br><span class="line">	Eigen::Vector4d result = <span class="built_in">funcImplication</span>(q, M_F, M_G);</span><br><span class="line">				</span><br><span class="line">	<span class="comment">// 转换相关</span></span><br><span class="line">	<span class="function">py::<span class="type">array_t</span>&lt;<span class="type">double</span>&gt; <span class="title">result_array</span><span class="params">(result.size())</span></span>;</span><br><span class="line">	py::buffer_info result_buf_info = result_array.<span class="built_in">request</span>();</span><br><span class="line">	<span class="type">double</span> *result_ptr = <span class="built_in">static_cast</span>&lt;<span class="type">double</span> *&gt;(result_buf_info.ptr);</span><br><span class="line">	std::<span class="built_in">copy</span>(result.<span class="built_in">data</span>(), result.<span class="built_in">data</span>() + result.<span class="built_in">size</span>(), result_ptr);</span><br><span class="line"></span><br><span class="line">	<span class="keyword">return</span> result_array;</span><br><span class="line">}</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">set_iter</span><span class="params">(<span class="type">int</span> value)</span></span></span><br><span class="line"><span class="function"></span>{</span><br><span class="line">	iters = value;</span><br><span class="line">}</span><br><span class="line"></span><br><span class="line"><span class="built_in">PYBIND11_MODULE</span>(example, m) </span><br><span class="line">{</span><br><span class="line">	m.<span class="built_in">def</span>(<span class="string">"func"</span>, &amp;func, <span class="string">"example"</span>);</span><br><span class="line">    m.<span class="built_in">def</span>(<span class="string">"set_iter"</span>, &amp;set_iter, <span class="string">"Set the iters"</span>);</span><br><span class="line">}</span><br></pre></td></tr></table></figure>
+<p>然后编译成动态库后，改成pyd后缀，就可以当作一个包来调用了</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> example</span><br><span class="line"></span><br><span class="line">example.set_iter(<span class="number">400</span>)</span><br><span class="line"></span><br><span class="line">q = np.random.rand(<span class="number">4</span>)</span><br><span class="line">M_F = np.random.rand(<span class="number">11</span>, <span class="number">11</span>)</span><br><span class="line">M_G = np.random.rand(<span class="number">11</span>, <span class="number">11</span>)</span><br><span class="line"></span><br><span class="line">result = example.func(q, M_F, M_G)</span><br><span class="line"></span><br><span class="line"><span class="built_in">print</span>(result)</span><br></pre></td></tr></table></figure>
+<p>能够把numpy的矩阵直接转成eigen3能省去很多力，使用eigen3的静态矩阵，能够在编译期间把大部分工作都给做了，最大化的提升执行时间，而且eigen3作为完善的矩阵库，各种处理基本直接调用，广播机制也很完善，感觉跟写python的numpy差不了多少。</p>
+<p>另外，转成eigen3的话，做batch之间的矩阵运算也相对容易了一点，因为不需要去考虑向量化操作，可以肆无忌惮的遍历，增加不了多少开销。</p>
+<p>不过值得一提的是，pybind11只能够完美衔接最多就是2维矩阵，而如果是图像处理的话，在网络中出现的往往是b*m*n这种三维张量。遇到这种情况可以把高维张量拉平后传进来，然后在C++代码里手动组装。不过实测的话，直接遍历batch_size维度，然后一次只传输一个样本，这样耗时也是可以接受的，大致是下面这种调用</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> torch</span><br><span class="line"></span><br><span class="line">batch = torch.randn(<span class="number">32</span>, <span class="number">224</span>, <span class="number">224</span>)</span><br><span class="line"><span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">32</span>):</span><br><span class="line">    result = example.func(i)</span><br></pre></td></tr></table></figure>
+<h2 id="总结">总结</h2>
+<p>介绍了ctypes、Cython、pyCUDA和pybind11这几种方法。推荐轻量级低耦合的C++代码接口用ctypes，而需要处理矩阵相关的东西直接用pybind11就好了。</p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/CUDA/" rel="tag"># CUDA</a>
+              <a href="/tags/Python/" rel="tag"># Python</a>
+              <a href="/tags/C/" rel="tag"># C++</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2023/11/22/python%E4%B9%9F%E6%83%B3%E8%A6%81%E5%8F%98%E5%BE%97%E5%8F%AF%E7%88%B1%EF%BC%81/" rel="prev" title="python也想要变得可爱！">
+      <i class="fa fa-chevron-left"></i> python也想要变得可爱！
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2024/03/05/%E4%B8%80%E4%BA%9BHomotopyContinuation%E6%B1%82%E8%A7%A3%E5%99%A8/" rel="next" title="一些HomotopyContinuation求解器">
+      一些HomotopyContinuation求解器 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+    <div class="comments" id="valine-comments"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%90%91%E9%87%8F%E5%8C%96%E6%93%8D%E4%BD%9C%E4%B8%8E%E5%B1%80%E9%99%90%E6%80%A7"><span class="nav-number">1.</span> <span class="nav-text">向量化操作与局限性</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%B6%89%E5%8F%8A%E5%88%B0%E7%9F%A9%E9%98%B5%E4%B8%8D%E6%98%AF%E9%82%A3%E4%B9%88%E6%9C%89%E6%95%88%E7%9A%84%E6%96%B9%E6%B3%95"><span class="nav-number">2.</span> <span class="nav-text">涉及到矩阵不是那么有效的方法</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#ctypes%E4%B8%8E%E5%8A%A8%E6%80%81%E9%93%BE%E6%8E%A5%E5%BA%93"><span class="nav-number">2.1.</span> <span class="nav-text">ctypes与动态链接库</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#cython"><span class="nav-number">2.2.</span> <span class="nav-text">Cython</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%B6%89%E5%8F%8A%E5%88%B0%E7%9F%A9%E9%98%B5%E5%BE%88%E6%9C%89%E6%95%88%E7%9A%84%E6%96%B9%E6%B3%95"><span class="nav-number">3.</span> <span class="nav-text">涉及到矩阵很有效的方法</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#pycuda"><span class="nav-number">3.1.</span> <span class="nav-text">pyCUDA</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#pybind11"><span class="nav-number">3.2.</span> <span class="nav-text">pybind11</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%80%BB%E7%BB%93"><span class="nav-number">4.</span> <span class="nav-text">总结</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Staskaer"
+      src="/imgs/theme_pic/head_img.png">
+  <p class="site-author-name" itemprop="name">Staskaer</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">97</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">10</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">24</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/Staskaer" title="Github → https:&#x2F;&#x2F;github.com&#x2F;Staskaer" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:liujiaxin011121@gmail.com" title="E-Mail → mailto:liujiaxin011121@gmail.com" rel="noopener" target="_blank"><i class="fa fa-envelope fa-fw"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://www.zhihu.com/people/staskaer" title="Zhihu → https:&#x2F;&#x2F;www.zhihu.com&#x2F;people&#x2F;staskaer" rel="noopener" target="_blank"><i class="fab fa-zhihu fa-fw"></i></a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2025</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Staskaer</span>
+</div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+
+<script>
+NexT.utils.loadComments(document.querySelector('#valine-comments'), () => {
+  NexT.utils.getScript('https://cdn.jsdelivr.net/npm/valine@1.5.1/dist/Valine.min.js', () => {
+    var GUEST = ['nick', 'mail', 'link'];
+    var guest = 'nick,mail,link';
+    guest = guest.split(',').filter(item => {
+      return GUEST.includes(item);
+    });
+    new Valine({
+      el         : '#valine-comments',
+      verify     : false,
+      notify     : false,
+      appId      : 'xH8NDrh9u4SQrUpQOd0lICnX-MdYXbMMI',
+      appKey     : 'jl3JjPS4jsosZG29Zv24Y7LE',
+      placeholder: "Just go go",
+      avatar     : 'mm',
+      meta       : guest,
+      pageSize   : '10' || 10,
+      visitor    : false,
+      lang       : 'zh-Hans' || 'zh-cn',
+      path       : location.pathname,
+      recordIP   : false,
+      serverURLs : 'https://xh8ndrh9.api.lncldglobal.com'
+    });
+  }, window.Valine);
+});
+</script>
+
+</body>
+</html>
+

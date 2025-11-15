@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 6.2.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/imgs/theme_pic/staskaer.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/imgs/theme_pic/staskaer.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/imgs/theme_pic/staskaer.png">
+  <link rel="mask-icon" href="/imgs/theme_pic/staskaer.png" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Gemini","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"mac"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"valine","storage":true,"lazyload":false,"nav":null,"activeClass":"valine"},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="阅读一篇关于事件相机的综述的论文。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="综述阅读--事件相机（下）">
+<meta property="og:url" content="http://example.com/2023/09/02/%E7%BB%BC%E8%BF%B0%E9%98%85%E8%AF%BB-%E4%BA%8B%E4%BB%B6%E7%9B%B8%E6%9C%BA2/index.html">
+<meta property="og:site_name" content="Staskaer">
+<meta property="og:description" content="阅读一篇关于事件相机的综述的论文。">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="http://example.com/2023/09/02/%E7%BB%BC%E8%BF%B0%E9%98%85%E8%AF%BB-%E4%BA%8B%E4%BB%B6%E7%9B%B8%E6%9C%BA2/pic1.png">
+<meta property="og:image" content="http://example.com/2023/09/02/%E7%BB%BC%E8%BF%B0%E9%98%85%E8%AF%BB-%E4%BA%8B%E4%BB%B6%E7%9B%B8%E6%9C%BA2/pic2.png">
+<meta property="article:published_time" content="2023-09-02T14:19:31.000Z">
+<meta property="article:modified_time" content="2025-06-17T15:50:22.397Z">
+<meta property="article:author" content="Staskaer">
+<meta property="article:tag" content="SLAM">
+<meta property="article:tag" content="论文阅读">
+<meta property="article:tag" content="事件相机">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://example.com/2023/09/02/%E7%BB%BC%E8%BF%B0%E9%98%85%E8%AF%BB-%E4%BA%8B%E4%BB%B6%E7%9B%B8%E6%9C%BA2/pic1.png">
+
+<link rel="canonical" href="http://example.com/2023/09/02/%E7%BB%BC%E8%BF%B0%E9%98%85%E8%AF%BB-%E4%BA%8B%E4%BB%B6%E7%9B%B8%E6%9C%BA2/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'en'
+  };
+</script>
+
+  <title>综述阅读--事件相机（下） | Staskaer</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+<style>mjx-container[jax="SVG"] {
+  direction: ltr;
+}
+
+mjx-container[jax="SVG"] > svg {
+  overflow: visible;
+}
+
+mjx-container[jax="SVG"][display="true"] {
+  display: block;
+  text-align: center;
+  margin: 1em 0;
+}
+
+mjx-container[jax="SVG"][justify="left"] {
+  text-align: left;
+}
+
+mjx-container[jax="SVG"][justify="right"] {
+  text-align: right;
+}
+
+g[data-mml-node="merror"] > g {
+  fill: red;
+  stroke: red;
+}
+
+g[data-mml-node="merror"] > rect[data-background] {
+  fill: yellow;
+  stroke: none;
+}
+
+g[data-mml-node="mtable"] > line[data-line] {
+  stroke-width: 70px;
+  fill: none;
+}
+
+g[data-mml-node="mtable"] > rect[data-frame] {
+  stroke-width: 70px;
+  fill: none;
+}
+
+g[data-mml-node="mtable"] > .mjx-dashed {
+  stroke-dasharray: 140;
+}
+
+g[data-mml-node="mtable"] > .mjx-dotted {
+  stroke-linecap: round;
+  stroke-dasharray: 0,140;
+}
+
+g[data-mml-node="mtable"] > svg {
+  overflow: visible;
+}
+
+[jax="SVG"] mjx-tool {
+  display: inline-block;
+  position: relative;
+  width: 0;
+  height: 0;
+}
+
+[jax="SVG"] mjx-tool > mjx-tip {
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+mjx-tool > mjx-tip {
+  display: inline-block;
+  padding: .2em;
+  border: 1px solid #888;
+  font-size: 70%;
+  background-color: #F8F8F8;
+  color: black;
+  box-shadow: 2px 2px 5px #AAAAAA;
+}
+
+g[data-mml-node="maction"][data-toggle] {
+  cursor: pointer;
+}
+
+mjx-status {
+  display: block;
+  position: fixed;
+  left: 1em;
+  bottom: 1em;
+  min-width: 25%;
+  padding: .2em .4em;
+  border: 1px solid #888;
+  font-size: 90%;
+  background-color: #F8F8F8;
+  color: black;
+}
+
+foreignObject[data-mjx-xml] {
+  font-family: initial;
+  line-height: normal;
+  overflow: visible;
+}
+
+.MathJax path {
+  stroke-width: 3;
+}
+
+mjx-container[display="true"] {
+  overflow: auto hidden;
+}
+
+mjx-container[display="true"] + br {
+  display: none;
+}
+</style></head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Staskaer</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">Hi, this is Staskaer</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+        <li class="menu-item menu-item-links">
+
+    <a href="/links/" rel="section"><i class="fa fa-link fa-fw"></i>links</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2023/09/02/%E7%BB%BC%E8%BF%B0%E9%98%85%E8%AF%BB-%E4%BA%8B%E4%BB%B6%E7%9B%B8%E6%9C%BA2/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/imgs/theme_pic/head_img.png">
+      <meta itemprop="name" content="Staskaer">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Staskaer">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          综述阅读--事件相机（下）
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2023-09-02 22:19:31" itemprop="dateCreated datePublished" datetime="2023-09-02T22:19:31+08:00">2023-09-02</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2025-06-17 23:50:22" itemprop="dateModified" datetime="2025-06-17T23:50:22+08:00">2025-06-17</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/SLAM%E5%AD%A6%E4%B9%A0/" itemprop="url" rel="index"><span itemprop="name">SLAM学习</span></a>
+                </span>
+            </span>
+
+          
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Valine: </span>
+    
+    <a title="valine" href="/2023/09/02/%E7%BB%BC%E8%BF%B0%E9%98%85%E8%AF%BB-%E4%BA%8B%E4%BB%B6%E7%9B%B8%E6%9C%BA2/#valine-comments" itemprop="discussionUrl">
+      <span class="post-comments-count valine-comment-count" data-xid="/2023/09/02/%E7%BB%BC%E8%BF%B0%E9%98%85%E8%AF%BB-%E4%BA%8B%E4%BB%B6%E7%9B%B8%E6%9C%BA2/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>阅读一篇关于事件相机的综述的论文。</p>
+<span id="more"></span>
+<h2 id="event-based-vision-a-survey">Event-based Vision: A Survey</h2>
+<p>因为后续可能去做事件相机的相关工作，所以先阅读一下综述，首先被推荐的是这篇论文，所以顺带记录一下。</p>
+<p><a target="_blank" rel="noopener" href="https://rpg.ifi.uzh.ch/docs/EventVisionSurvey.pdf">Event-based Vision: A Survey</a></p>
+<h3 id="算法与应用">算法与应用</h3>
+<p>下面将回顾一些事件相机的算法和应用。首先将讨论一些低级视觉，比如特征检测、跟踪和光流估计；然后再讨论一些与场景3D相关任务，比如深度估计，视觉里程计等；最后讨论一些运动分割、识别与控制的耦合感知之类的东西。</p>
+<h4 id="特征检测与追踪">特征检测与追踪</h4>
+<p>事件相机针是基于<strong>异步</strong>的特征检测与追踪，需要适应场景的动态性，同时还需要具有高动态范围和低功耗。</p>
+<h5 id="追踪">追踪</h5>
+<p>由于事件相机只有在运动时才具有输出，所以必须克服这种<strong>运动依赖</strong>的特性，目标追踪需要建立不同时刻之间对应的关系，同时还必须要识别噪声事件，才能稳定的有效地进行追踪。</p>
+<p>早期的目标追踪任务都是相机不动，仅有物体移动，然后去追踪这个移动的物体，并且这些物体可能是形状固定的东西，这时一般使用高斯混合模型来建模，用高斯滤波、粒子滤波或者是霍夫变换即可完成检测；然而对于如果要追踪更加复杂的物体，那么需要使用ICP、梯度下降、meanshift、蒙特卡洛算法或者是粒子滤波之类的算法。</p>
+<p>在大多数跟踪方法中，事件被视为独立的点(没有极性)，并异步地更新系统的状态。<strong>而这些方法的参数一般也是依据实验对象而手动设计，不能自适应调节</strong>，而且可能还需要用户事先输入一些关于对象的信息才行。</p>
+<p>由于上述的特征都是来源于边缘的移动产生的事件，如果移动方向发生改变，对应的边缘产生事件的数量或者强度也会下降，也就是不具有<strong>运动不变性</strong>的特征，如果物体的运动随时间而变化，那么事件也随时间变化，也就会产生漂移现象。</p>
+<p>所以又出现了一种帧与事件组合的算法(frame- and event-based sensor)，它使用帧的harris角点检测器来检测特征位置，而特征的描述子则由周围的事件来描述。另外，由于事件一般都在边缘处触发，所以可以把canny算法检测到的边缘的点集作为追踪的对象。此外，还有一些算法是由帧来确定边缘的描述，而利用最小化光度误差来寻找事件之间的匹配。<strong>事实上，帧其实可以由事件相机给重建出来</strong>，所以理论上只用事件相机就够了。</p>
+<h5 id="关键点检测">关键点检测</h5>
+<p>而对于<strong>关键点检测</strong>而言，就相对容易一点，因为事件本身就是边缘产生的信息，所以角点检测会轻松很多。</p>
+<p>可以将角点看成两个运动边缘的角点，通过拟合事件来确定在时间流上的角点，可以使用RANSAC算法结合最小二乘法来确定角点的位置。</p>
+<p>如果使用<strong>时间面</strong>作为输入数据，那么harris和fast角点可以很好的用在时间面上，但是sift和surf就不行了，因为它们需要计算梯度，而时间面上的梯度是不稳定的。不过一般都会使用比较时间面上的同心圆来代替导数算子，这样能显著加速。当然，这种算法同样会因为移动方向不同，导致产生的事件强度不稳定而出现计算误差。</p>
+<h5 id="小结">小结</h5>
+<p>最后，虽然有很多追踪和检测算法，但是这些算法一般不会再公众数据集上进行比较，所以很难评估它们的性能，而且这些算法都是针对特定的场景而设计的，一般都需要定义相关超参数，所以很难在其他场景上使用。</p>
+<p>下图是一些算法的对比，有些算法提供完整运动流(Full)，而另一些则是局部亮度和边缘的法向分量(Normal)；有些是稠密(Dense)输出，而另一些是稀疏(Sparse)；有些是基于某些运动模型假设(Model-based)，而另一些则是基于学习类算法(ANN)；有些是受神经生物学启发(Bio-inspired)，而另一些则是不受神经生物学启发(Non-bio-inspired)。</p>
+<img src="/2023/09/02/%E7%BB%BC%E8%BF%B0%E9%98%85%E8%AF%BB-%E4%BA%8B%E4%BB%B6%E7%9B%B8%E6%9C%BA2/pic1.png" class="">
+<h4 id="光流估计">光流估计</h4>
+<p>在帧率摄像机中，可以通过连续两帧的图像来计算光流，但是在事件相机中，由于事件是异步的，所以不能直接去计算光流。然而，由于事件相机的<strong>事件往往代表了边缘</strong>，且事件相机延迟很低，所以从事件相机中进行光流估计是非常有意义的。</p>
+<p>最原始的方法就是，直接利用LK光流里面的光度不变假设，来暴力移植到事件相机中进行光流估计，因为前面也说了，事件相机可以近似获得时间上的导数，但是此外<strong>还需要空间上的导数</strong>，所以x-y-t这种3D表示可以更方便的获取到所需要的局部导数(全局导数的话偏差会比较大)。这种方法是基于<strong>事件流</strong>的。</p>
+<p>如果考虑使用<strong>时间面</strong>这种表示方法，在x-t和y-t截面上的斜率就可以表示边缘的运动，因此可以通过拟合平面并从平面系数中读取斜率来估计光流。由于需要拟合平面，<strong>且不是所有像素都有事件，所以需要选择邻域</strong>，邻域过小导致拟合不好；过大又不能具有典型性。</p>
+<p>如果结合仿生物学，又有一种基于灵长目视觉系统的光流估计分层架构。它在事件流上使用一组时空滤波器，在保持事件稀疏表示的同时，对不同的运动速度和方向产生选择性来完成光流的估计。<del>（什么意思？）</del></p>
+<p>还有一种方法是把事件流转化成<strong>事件帧</strong>，然后，假设事件帧的（时空）边缘恒定，光流由滤波器组输出的相位梯度给出，但是只能计算空间上的梯度（感觉结合时间帧中能计算时间上的梯度）</p>
+<p>此外，通过以<strong>自适应速率计算事件帧并应用视频编码技术</strong>（块匹配）来估计光流也是存在的，假设事件帧的外观在短时间内不会发生显着变化，通过定义<strong>块</strong>和<strong>相似性指标</strong>，可以在FPGA上以比较快的速度实现，当然，这个假设是比较强的，所以可以效果不是很好。</p>
+<p>深度学习肯定也是存在的，这不过与之前类似，一般都是存在编码器和解码器的架构，通过编码器-解码器CNN使用自监督方案进行训练，以估计稠密光流。一般使用<strong>时间面</strong>来完成估计，时间面能比较好的减小噪声，并完成运动补偿。</p>
+<h5 id="小结-1">小结</h5>
+<p>不像普通的摄像头，事件相机的光流估计的计算量都是比较大的，而且目前的光流估计的算法，如果出现遮挡或视差，那么效果也不一定很好。</p>
+<p>与上面的特征点检测等问题类似，目前也没有一个公开的数据集来评估光流估计的性能，所以很难比较不同的算法。</p>
+<h4 id="d重建">3D重建</h4>
+<p>事件摄像机的深度估计是一个广泛的领域，可以根据所考虑的场景和摄像机运动来进行划分。</p>
+<h5 id="瞬时双目深度估计instantaneous-stereo">瞬时双目深度估计(Instantaneous Stereo)</h5>
+<p>也就是使用来自两个或多个事件相机在极短的时间内（最好基于每个事件）进行3D重建。由于是事件相机，所以需要进行一次同步操作，同步时，来自不同图像平面的事件共享一个公共时钟。</p>
+<p>与传统的双目测距类似，首先解决跨图像平面的事件对应问题（即对极匹配），然后对3D点的位置进行三角测量。这其中主要的<strong>难点在于寻找对应的事件</strong>，因为事件本身是异步的，要在包含造成的事件中完成匹配不是很容易的。</p>
+<p>在匹配的时候，一般都是<strong>比较一个邻域内的事件数据</strong>，因为单个事件只有极性、时间戳，这是无法实现匹配工作的。同时，对极约束、光度一致性、空间一致性这些用于传统双目测距中的约束也同样可以用于事件相机以提升准确率。另外，通过考虑额外的规律性约束，全局方法比局部方法产生更好的深度估计（即对歧义不太敏感）。</p>
+<p>当然，也有一些深度学习方法用于重建，这些方法由<strong>视差敏感神经元网络组成</strong>，这些神经元接收来自两个相机的事件并执行各种操作（放大、抑制），实现匹配约束（唯一性、连续性）以提取视差。他们不仅使用时间相似性来匹配事件，还使用它们的时空邻域，通过迭代非线性运算产生整体全局最优解。</p>
+<p>此外，也可以<strong>基于优化的方法</strong>，使用马尔可夫随机场上的信念传播或半全局匹配来改善立体匹配。以及，在体素空间中，使用GPU加速的暴力匹配也不失为一种解法。</p>
+<h5 id="非同步的双目重建multi-perspective-panoramas">非同步的双目重建(Multi-Perspective Panoramas)</h5>
+<p>有时候，使用的双目事件相机不是同步的，之前描述的瞬时重建算法就有些不适用。一般将利用受约束的硬件配置（两个具有已知运动的旋转事件摄像机）来先恢复应用传统匹配的灰度图像然后再使用时间戳来进行匹配事件</p>
+<h5 id="单目深度估计monocular-depth-estimation">单目深度估计(Monocular Depth Estimation)</h5>
+<p>传统摄像头要使用单目进行深度估计必须要进行平移(也就是初始化)。而涉及到单目事件相机的深度估计，就要通过整合来自相机随时间变化的事件的信息来恢复场景的半稠密3D重建，需要了解相机运动的信息。因此，一般不追求瞬时深度估计，而是追求SLAM的全局的深度估计(也就是不是real-time的后端吧)</p>
+<h5 id="slam中的多视图重建stereo-depth-for-slam">SLAM中的多视图重建(Stereo Depth for SLAM)</h5>
+<p>这种一般指的是通过利用时间面来优化事件，从而从多个图像平面的局部时空一致性来获得场景的半稠密三维重建。它不是使用三角测量完成的，而是一种前向投影方法，可以在不明确事件对应关系的情况下进行深度估计。</p>
+<h5 id="结构光深度估计depth-estimation-using-structured-light">结构光深度估计(Depth Estimation using Structured Light)</h5>
+<p>跟结构光相机类似，也是把结构光用在事件相机上完成深度估计。</p>
+<h4 id="位姿估计与slam">位姿估计与SLAM</h4>
+<p>使用事件相机解决定位与建图的问题(SLAM)已知都是一个难点。因为大多数针对常规相机(特征检测、匹配等)开发的方法和概念都不适用或不可用于事件相机。</p>
+<p>因为事件相机的具有低延迟的特性，所以它能短时间内异步的输出多个事件，但是每个事件携带的信息又不是特别多，所以一般为<strong>使用每个事件去更新系统的状态</strong>，这也就变成了概率估计问题，所以可以很好的使用贝叶斯滤波器。</p>
+<p>由于事件是由边缘的运动引起的，因此SLAM系统中出现的大多数地图仅由场景边缘组成，也即是<strong>半稠密地图</strong>。但需要注意的是，事件相机并不直接测量强度梯度，只测量强度在时间上变化，因此边缘的位置、方向和强度必须和相机的运动来一起估计。</p>
+<p>关于事件-SLAM重建一般有三个关键问题：<strong>维度、运动类型、场景类型</strong>，其中有些算法会限制运动类型，比如纯旋转；而场景问题是最复杂的，在任意场景下进行重建可能需要引入其他的约束或假设，这会导致重建效果下降。</p>
+<p>下面是一些算法比较，</p>
+<img src="/2023/09/02/%E7%BB%BC%E8%BF%B0%E9%98%85%E8%AF%BB-%E4%BA%8B%E4%BB%B6%E7%9B%B8%E6%9C%BA2/pic2.png" class="">
+<h5 id="相机位姿追踪camera-tracking-methods">相机位姿追踪(Camera Tracking Methods)</h5>
+<p>在相机位姿估计上，最开始使用贝叶斯滤波器来估计当前事件与帧摄像机前一帧的最小位移，但仅仅针对平移运动。而对于旋转运动，一般则是使用粒子滤波的方式来完成，它的似然函数为近似为高斯分布。此外，还有一些方法是最小化事件处光度误差来估计旋转、使用事件概率图来估计边缘，这种方法也是仅仅针对旋转运动。</p>
+<h5 id="跟踪与建图tracking-and-mapping">跟踪与建图(Tracking and Mapping)</h5>
+<p>目前已经有了一种基于事件的2D SLAM系统，但仅限于平面运动和高对比度场景。该方法使用粒子滤波器进行跟踪，因为事件似然函数与事件同地图的重投影误差成反比。同时建立了关于边缘的半稠密地图；它由一个占有率图组成，每个像素代表该像素触发事件的概率。该方法后续被扩展到3D，但它依赖于一个的外部RGB-D相机来进行深度估计，这也使系统失去了事件相机的低延迟和高速率优势。</p>
+<p>基于滤波器的方法可以同时跟踪事件相机的3D旋转方向并创建自然场景的高分辨率全景图。它为两个子任务并行地运行概率滤波器，利用逐像素卡尔曼滤波器构建全景梯度，每个全景梯度估计边缘在其所在位置的方向和强度。然后通过泊松积分将该梯度图升级为具有超分辨率和HDR特性的绝对强度图。在旋转运动中的SLAM也在中提出，其中相机跟踪是通过给定概率边缘地图，在事件位置处最小化光度误差来实现的，它同时建立地图，每个地图点代表事件在该位置产生的概率。因此，它也是一个测量边缘强度的全景稠密地图。</p>
+<p>上述SLAM方法缺乏回环检测来减少漂移。目前，基于事件的SLAM所展示的场景规模远小于基于图像帧的SLAM。然而，因为事件相机可能无法用于解决与标准相机相同的问题，这两种传感器是互补的。基于3D事件的SLAM是一个仍待探索的课题，并且需要设计比现有的单目视觉SLAM更精确、高效和鲁棒的方法（通过与IMU的传感器融合可以提高SLAM系统的鲁棒性）</p>
+<h4 id="视觉里程计vio">视觉里程计(VIO)</h4>
+<p>将事件摄像机与 IMU 结合使用可以提高视觉里程计和 SLAM 系统的稳健性。VIO 系统不会 “失败”，而是会发生漂移，一些事件摄像机集成了IMU来解决这个问题。来自IMU和事件摄像机的数据的时间融合可以通过异步概率滤波器、预积分理论或连续时间框架来实现。</p>
+<h5 id="基于特征的vio">基于特征的VIO</h5>
+<p>基于特征的 VIO 系统包括两个阶段：从事件中提取特征轨迹，然后使用 VIO 算法将其与 IMU 数据融合。目前提出了不同的方法，例如使用经典的卡尔曼滤波跟踪特征，以及使用非线性优化将其与IMU数据相结合。这些方法已在6-DOF运动数据集上进行了基准测试，与以前的方法相比，其性能有所提高。</p>
+<h5 id="基于重投影误差的vio">基于重投影误差的VIO</h5>
+<p>目前已经提出了一种不同的方法，使用<strong>连续时间框架融合事件和IMU数据</strong>。与上述基于特征的方法不同，它以视觉-惯性光束法平差的方式，在相机轨迹的某一段上优化了包含惯性和事件重投影误差项的组合目标。</p>
+<h5 id="总结">总结</h5>
+<p>目前的工作通过首先将事件转换为几何信息，将最先进的帧摄像头的VIO方法应用于事件相机。然而，最好应该可以避免这个转换步骤，直接从事件中恢复相机运动和场景结构；例如，通过优化一个带有光度和惯性误差项的函数，类似于帧率相机的VI-DSO。</p>
+<p>而基于3D事件的VIO是一个未被探索的课题，如何将基于事件的深度估计的思想与SLAM和VIO相结合是很有意义的。此外，还需要探索基于学习的方法来解决上述所有问题。目前，文献以基于模型或假设的方法为主，但是，预计基于学习的方法也将在基于事件的处理中发挥主要作用。</p>
+<h4 id="图像重建image-reconstruction">图像重建(Image Reconstruction)</h4>
+<p>事件代表亮度变化，因此，在理想情况下，事件的积分产生"绝对"亮度。这是直观的，因为事件只是一种非冗余的基于像素的方式来编码场景中内容。图像重建可以解释为"解压缩"事件流中编码的视觉数据。由于事件的时间分辨率非常高，亮度图像可以在非常高的帧率，甚至可以在时间上进行连续重建。</p>
+<p>事件相机输出亮度变化的独立像素，因此，在一个时间间隔内对这些变化进行逐像素整合只产生亮度增量图像，以此来恢复绝对亮度。当然，也可以直接使用空间或事件平滑的特性，来从零初始条件重建亮度信息。</p>
+<p>事件相机图像重建最早是在旋转相机运动和静态场景假设下建立的。这些假设与亮度恒定假设一起被用于视觉地图网络中像素之间的消息传递算法。同样在上述运动和场景假设下，目前也有算法从事件中重建高分辨率全景图，从而推广了基于事件的HDR图像重建思想。全景图像的每个像素使用卡尔曼滤波器估计亮度梯度，然后使用泊松重建进行集成，以产生绝对亮度。还有方法利用平台绕单轴旋转的约束运动来重建图像，然后用于立体深度估计。</p>
+<p>此外，也可以使用时间面的方法对图像进行去噪，或者基于块的学习字典的方法来对稀疏事件进行处理，并通过泊松重建来恢复图像。</p>
+<p>现在又有一种时间平滑滤波器用于融合事件和帧，该滤波器独立作用于每个像素，不需要在图像平面上进行空间正则化来恢复亮度，尽管它以牺牲一些细节，不过也会减少噪声。最近，又提出了一种深度学习方法，该方法比以前的方法取得了相当大的增益，并减轻视觉伪影。现在，能够实现图像重建的运动约束或手工设计的正则器已经被来自自然场景的感知、数据驱动的先验模型所取代，从而产生了更自然的图像。此外，在VO或SLAM中使用的图像重建方法一般需要假设静态场景，而具有弱或无运动假设的方法则可以自然地用于重建任意的视频</p>
+<p>除了基于事件的图像重建外，另一类方法解决了融合事件和帧的问题，从而增强了具有高时间分辨率和事件HDR特性的帧的亮度信息。这些方法也不依赖于运动知识。帧与帧之间以像素为单位进行直接的事件融合。然而，融合后的亮度很快就会被事件噪声所破坏，因此融合是随着每一帧的到来而不断重置的。为了抑制噪声，一般使用每像素的时间互补滤波器来融合事件和帧，该滤波器在事件中高通，在帧中低通。这是一种有效的解决方案，它考虑了事件和帧的互补感知模态：帧携带缓慢变化的亮度信息(即，低时间频率)，而事件携带"变化"信息(即,高时间频频)。融合的方法利用事件的高时间分辨率来额外去除帧中的运动模糊，从单个模糊帧和事件中产生高帧率、清晰的视频。它基于优化框架下的二重积分模型(一个积分用来恢复亮度，另一个积分用来消除模糊)。上述方法的一个局限性是由于事件噪声的存在，它们仍然会受到伪影的影响。如果与基于学习的方法相结合，这些可能会得到缓解。</p>
+<p><strong>重建图像的质量直接受到对比度阈值中噪声的影响，同时也受到传感器空间分辨率的影响。</strong></p>
+<p>图像重建意味着，<strong>理论上可以将事件转换为亮度图像，然后应用成熟的计算机视觉算法</strong>。生成的图像可以捕获高速运动和HDR场景，这在某些应用中可能是有效的，但它会牺牲事件相机的计算成本、延迟和功耗的优势。</p>
+<p>尽管图像重建已经用于支持识别、SLAM或光流估计等任务，但是之前的方法也可以做到，图像重建最有价值的一个方面是它提供了比事件更具有运动不变性的场景表示，也便于建立事件对应关系（这是一些事件数据处理任务的最大挑战之一，例如特征跟踪）</p>
+<h4 id="运动分割motion-segmentation">运动分割(Motion Segmentation)</h4>
+<p>基于事件的视觉中的运动分割是指区分由移动物体触发的事件和由摄像机的自我运动或静态场景引起的事件的过程。对<strong>固定事件摄像机观察的移动物体的分割</strong>相对简单，因为假设照明恒定，事件只能归因于物体的运动。当<strong>相机本身处于运动状态时</strong>，因为在整个图像平面上，事件是由移动的物体和摄像机自我运动引起的静态场景的明显运动触发的，所以需要开发特定的算法。</p>
+<p>已经开发出各种算法来解决基于事件的视觉中的运动分割，包括基于运动补偿事件图像、线性运动模型和迭代聚类的方法。其他信息，例如已知的物体形状或已知的运动，可以用来帮助分割，其他信息的水平决定了所需的监督级别。基于事件的视觉中的运动分割是一个正在进行的研究领域，有可能使用更先进的技术来应对复杂场景和具有挑战性的分割场景。</p>
+<h4 id="目标检测recognition">目标检测(Recognition)</h4>
+<p>显然，在事件相机上进行目标检测，必须要求相机或物体是运动的。早期的目标检测是针对一些形状固定的移动物体，也可以通过与预定义的模板进行匹配来检测形状，这样就不需要描述物体的几何形状。这种模板匹配方法是在早期的硬件中使用卷积实现的。</p>
+<p>对于更复杂的对象，可以使用模板来匹配低级特征而不是整个对象，之后可以使用分类器根据观察到的特征分布进行决策。通常使用最近邻分类器，在特征空间中计算距离。准确率可以通过增加特征不变性来提高，这可以通过使用层次模型来实现，其中每一层的特征复杂度都会增加。有了好的特征选择，在切换任务时只需要重新训练最终的分类器。这就产生了选择使用哪种特征的问题。在早期的工作中使用了手工设计的特征，但是使用学习类算法将会获得更好的效果。</p>
+<p>在最简单的情况下，每个模板都可以从单个样本中获得，但是这样的模板对样本数据中的噪声很敏感。人们可以采用一种生成式的方法，学习能够准确重建输入的特征，比如使用深度信念网络(DBN)。最近的工作通过无监督学习获得特征，对事件数据进行聚类，并使用每个聚类的中心作为特征。</p>
+<p>大多数基于学习的方法将事件/脉冲转换为(稠密)张量，这是基于图像的层次模型的一种方便的表示，例如ANN。每个张量元素的值可以用不同的方法计算。简单的方法可以使用时间曲面，或者事件帧。一个更稳健的方法使用指数衰减的时间曲面或平均时间戳。一些识别方法在推理过程中依赖于将脉冲转换为帧，而另一些识别方法则将训练好的ANN转换为可以直接对事件数据进行操作的SNN。类似的思想可以应用于识别以外的任务，并且随着神经形态硬件的发展，直接在SNN中学习，甚至直接在神经形态硬件本身中学习的工作越来越多。</p>
+<p>但是目前的事件相机的识别工作做的还是相对较少，没法像帧率摄像头那样上来就可以完成猫狗分类、手写数字识别那种复杂的任务。</p>
+<p>不过另一方面，事件相机可以和帧率相机进行融合，帧率可以识别静态物体，而事件相机对于一些带有时序的表示，比如动作识别，就会有很大的帮助。</p>
+<h4 id="神经形态控制neuromorphic-control">神经形态控制(Neuromorphic Control)</h4>
+<p>神经形态控制是指将基于事件的视觉传感器与神经形态处理器集成，以实现高效且受生物启发的控制系统。可以使用基于事件的算法来处理事件摄像机生成的异步事件流，从而实现低延迟和高速处理，其优点包括高时间分辨率、非常高的动态范围、低功耗和减少的运动模糊。</p>
+<p>目前在神经形态控制方面的工作侧重于开发专门的处理器，例如尖峰神经网络，这些处理器可以直接处理来自事件摄像机的事件而无需转换。它的趋势包括开发更加用户友好的编程生态系统，支持适用于移动应用程序的独立系统，以及扩展神经形态处理器的处理能力。</p>
+<h3 id="基于事件的系统与应用">基于事件的系统与应用</h3>
+<p>对于<strong>神经态计算(Neuromorphic Computing)</strong>，这个主要是在硬件设计方法，设计一种专门用于处理事件信号的处理器，比如SNN之类的。这样就不需要把事件信号转换成图像、帧信号再做处理了，是一种更加原生态的处理方式。</p>
+<p>当然，开发一种新的处理器需要包括生态、编译器、仿真器、工具链等等，这些都是需要考虑的。同时新的处理器还需要让开发者能够简单快速的上手。</p>
+<p>目前有一些处理器，比如SpiNNaker、TrueNorth、Loihi、DYNAP、Braindrop等，这些处理器有的是在ARM核上进行软件模拟，有些则是真的有硬件级别的加速。</p>
+<p>而目前也同样有一些事件相机被用在实时机器人上，利用事件相机的高速与高动态特性来完成重建。</p>
+<h3 id="总结-1">总结</h3>
+<p>虽然读了两遍，但是感觉还是好懵，感觉里面好多问题都是共性的，估计还需要继续读一下introduction部分的参考文献才能进一步入门这个领域吧。</p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/SLAM/" rel="tag"># SLAM</a>
+              <a href="/tags/%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB/" rel="tag"># 论文阅读</a>
+              <a href="/tags/%E4%BA%8B%E4%BB%B6%E7%9B%B8%E6%9C%BA/" rel="tag"># 事件相机</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2023/09/01/%E7%BB%BC%E8%BF%B0%E9%98%85%E8%AF%BB-%E4%BA%8B%E4%BB%B6%E7%9B%B8%E6%9C%BA/" rel="prev" title="综述阅读--事件相机（上）">
+      <i class="fa fa-chevron-left"></i> 综述阅读--事件相机（上）
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2023/09/06/%E7%BB%BC%E8%BF%B0%E9%98%85%E8%AF%BB-G2O/" rel="next" title="综述阅读-G2O">
+      综述阅读-G2O <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+    <div class="comments" id="valine-comments"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#event-based-vision-a-survey"><span class="nav-number">1.</span> <span class="nav-text">Event-based Vision: A Survey</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%AE%97%E6%B3%95%E4%B8%8E%E5%BA%94%E7%94%A8"><span class="nav-number">1.1.</span> <span class="nav-text">算法与应用</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E7%89%B9%E5%BE%81%E6%A3%80%E6%B5%8B%E4%B8%8E%E8%BF%BD%E8%B8%AA"><span class="nav-number">1.1.1.</span> <span class="nav-text">特征检测与追踪</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#%E8%BF%BD%E8%B8%AA"><span class="nav-number">1.1.1.1.</span> <span class="nav-text">追踪</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#%E5%85%B3%E9%94%AE%E7%82%B9%E6%A3%80%E6%B5%8B"><span class="nav-number">1.1.1.2.</span> <span class="nav-text">关键点检测</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#%E5%B0%8F%E7%BB%93"><span class="nav-number">1.1.1.3.</span> <span class="nav-text">小结</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%85%89%E6%B5%81%E4%BC%B0%E8%AE%A1"><span class="nav-number">1.1.2.</span> <span class="nav-text">光流估计</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#%E5%B0%8F%E7%BB%93-1"><span class="nav-number">1.1.2.1.</span> <span class="nav-text">小结</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#d%E9%87%8D%E5%BB%BA"><span class="nav-number">1.1.3.</span> <span class="nav-text">3D重建</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#%E7%9E%AC%E6%97%B6%E5%8F%8C%E7%9B%AE%E6%B7%B1%E5%BA%A6%E4%BC%B0%E8%AE%A1instantaneous-stereo"><span class="nav-number">1.1.3.1.</span> <span class="nav-text">瞬时双目深度估计(Instantaneous Stereo)</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#%E9%9D%9E%E5%90%8C%E6%AD%A5%E7%9A%84%E5%8F%8C%E7%9B%AE%E9%87%8D%E5%BB%BAmulti-perspective-panoramas"><span class="nav-number">1.1.3.2.</span> <span class="nav-text">非同步的双目重建(Multi-Perspective Panoramas)</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#%E5%8D%95%E7%9B%AE%E6%B7%B1%E5%BA%A6%E4%BC%B0%E8%AE%A1monocular-depth-estimation"><span class="nav-number">1.1.3.3.</span> <span class="nav-text">单目深度估计(Monocular Depth Estimation)</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#slam%E4%B8%AD%E7%9A%84%E5%A4%9A%E8%A7%86%E5%9B%BE%E9%87%8D%E5%BB%BAstereo-depth-for-slam"><span class="nav-number">1.1.3.4.</span> <span class="nav-text">SLAM中的多视图重建(Stereo Depth for SLAM)</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#%E7%BB%93%E6%9E%84%E5%85%89%E6%B7%B1%E5%BA%A6%E4%BC%B0%E8%AE%A1depth-estimation-using-structured-light"><span class="nav-number">1.1.3.5.</span> <span class="nav-text">结构光深度估计(Depth Estimation using Structured Light)</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E4%BD%8D%E5%A7%BF%E4%BC%B0%E8%AE%A1%E4%B8%8Eslam"><span class="nav-number">1.1.4.</span> <span class="nav-text">位姿估计与SLAM</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#%E7%9B%B8%E6%9C%BA%E4%BD%8D%E5%A7%BF%E8%BF%BD%E8%B8%AAcamera-tracking-methods"><span class="nav-number">1.1.4.1.</span> <span class="nav-text">相机位姿追踪(Camera Tracking Methods)</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#%E8%B7%9F%E8%B8%AA%E4%B8%8E%E5%BB%BA%E5%9B%BEtracking-and-mapping"><span class="nav-number">1.1.4.2.</span> <span class="nav-text">跟踪与建图(Tracking and Mapping)</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E8%A7%86%E8%A7%89%E9%87%8C%E7%A8%8B%E8%AE%A1vio"><span class="nav-number">1.1.5.</span> <span class="nav-text">视觉里程计(VIO)</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#%E5%9F%BA%E4%BA%8E%E7%89%B9%E5%BE%81%E7%9A%84vio"><span class="nav-number">1.1.5.1.</span> <span class="nav-text">基于特征的VIO</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#%E5%9F%BA%E4%BA%8E%E9%87%8D%E6%8A%95%E5%BD%B1%E8%AF%AF%E5%B7%AE%E7%9A%84vio"><span class="nav-number">1.1.5.2.</span> <span class="nav-text">基于重投影误差的VIO</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#%E6%80%BB%E7%BB%93"><span class="nav-number">1.1.5.3.</span> <span class="nav-text">总结</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%9B%BE%E5%83%8F%E9%87%8D%E5%BB%BAimage-reconstruction"><span class="nav-number">1.1.6.</span> <span class="nav-text">图像重建(Image Reconstruction)</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E8%BF%90%E5%8A%A8%E5%88%86%E5%89%B2motion-segmentation"><span class="nav-number">1.1.7.</span> <span class="nav-text">运动分割(Motion Segmentation)</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E7%9B%AE%E6%A0%87%E6%A3%80%E6%B5%8Brecognition"><span class="nav-number">1.1.8.</span> <span class="nav-text">目标检测(Recognition)</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E7%A5%9E%E7%BB%8F%E5%BD%A2%E6%80%81%E6%8E%A7%E5%88%B6neuromorphic-control"><span class="nav-number">1.1.9.</span> <span class="nav-text">神经形态控制(Neuromorphic Control)</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%9F%BA%E4%BA%8E%E4%BA%8B%E4%BB%B6%E7%9A%84%E7%B3%BB%E7%BB%9F%E4%B8%8E%E5%BA%94%E7%94%A8"><span class="nav-number">1.2.</span> <span class="nav-text">基于事件的系统与应用</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%80%BB%E7%BB%93-1"><span class="nav-number">1.3.</span> <span class="nav-text">总结</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Staskaer"
+      src="/imgs/theme_pic/head_img.png">
+  <p class="site-author-name" itemprop="name">Staskaer</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">97</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">10</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">24</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/Staskaer" title="Github → https:&#x2F;&#x2F;github.com&#x2F;Staskaer" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:liujiaxin011121@gmail.com" title="E-Mail → mailto:liujiaxin011121@gmail.com" rel="noopener" target="_blank"><i class="fa fa-envelope fa-fw"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://www.zhihu.com/people/staskaer" title="Zhihu → https:&#x2F;&#x2F;www.zhihu.com&#x2F;people&#x2F;staskaer" rel="noopener" target="_blank"><i class="fab fa-zhihu fa-fw"></i></a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2025</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Staskaer</span>
+</div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+
+<script>
+NexT.utils.loadComments(document.querySelector('#valine-comments'), () => {
+  NexT.utils.getScript('https://cdn.jsdelivr.net/npm/valine@1.5.1/dist/Valine.min.js', () => {
+    var GUEST = ['nick', 'mail', 'link'];
+    var guest = 'nick,mail,link';
+    guest = guest.split(',').filter(item => {
+      return GUEST.includes(item);
+    });
+    new Valine({
+      el         : '#valine-comments',
+      verify     : false,
+      notify     : false,
+      appId      : 'xH8NDrh9u4SQrUpQOd0lICnX-MdYXbMMI',
+      appKey     : 'jl3JjPS4jsosZG29Zv24Y7LE',
+      placeholder: "Just go go",
+      avatar     : 'mm',
+      meta       : guest,
+      pageSize   : '10' || 10,
+      visitor    : false,
+      lang       : 'zh-Hans' || 'zh-cn',
+      path       : location.pathname,
+      recordIP   : false,
+      serverURLs : 'https://xh8ndrh9.api.lncldglobal.com'
+    });
+  }, window.Valine);
+});
+</script>
+
+</body>
+</html>
+

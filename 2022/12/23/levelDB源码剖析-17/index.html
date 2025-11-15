@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 6.2.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/imgs/theme_pic/staskaer.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/imgs/theme_pic/staskaer.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/imgs/theme_pic/staskaer.png">
+  <link rel="mask-icon" href="/imgs/theme_pic/staskaer.png" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Gemini","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"mac"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"valine","storage":true,"lazyload":false,"nav":null,"activeClass":"valine"},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="Recover">
+<meta property="og:type" content="article">
+<meta property="og:title" content="levelDB源码剖析(17)--Recover">
+<meta property="og:url" content="http://example.com/2022/12/23/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-17/index.html">
+<meta property="og:site_name" content="Staskaer">
+<meta property="og:description" content="Recover">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="http://example.com/2022/12/23/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-17/pic1.jpg">
+<meta property="article:published_time" content="2022-12-23T03:17:59.000Z">
+<meta property="article:modified_time" content="2025-06-17T15:50:22.331Z">
+<meta property="article:author" content="Staskaer">
+<meta property="article:tag" content="C++">
+<meta property="article:tag" content="levelDB">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://example.com/2022/12/23/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-17/pic1.jpg">
+
+<link rel="canonical" href="http://example.com/2022/12/23/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-17/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'en'
+  };
+</script>
+
+  <title>levelDB源码剖析(17)--Recover | Staskaer</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+<style>mjx-container[jax="SVG"] {
+  direction: ltr;
+}
+
+mjx-container[jax="SVG"] > svg {
+  overflow: visible;
+}
+
+mjx-container[jax="SVG"][display="true"] {
+  display: block;
+  text-align: center;
+  margin: 1em 0;
+}
+
+mjx-container[jax="SVG"][justify="left"] {
+  text-align: left;
+}
+
+mjx-container[jax="SVG"][justify="right"] {
+  text-align: right;
+}
+
+g[data-mml-node="merror"] > g {
+  fill: red;
+  stroke: red;
+}
+
+g[data-mml-node="merror"] > rect[data-background] {
+  fill: yellow;
+  stroke: none;
+}
+
+g[data-mml-node="mtable"] > line[data-line] {
+  stroke-width: 70px;
+  fill: none;
+}
+
+g[data-mml-node="mtable"] > rect[data-frame] {
+  stroke-width: 70px;
+  fill: none;
+}
+
+g[data-mml-node="mtable"] > .mjx-dashed {
+  stroke-dasharray: 140;
+}
+
+g[data-mml-node="mtable"] > .mjx-dotted {
+  stroke-linecap: round;
+  stroke-dasharray: 0,140;
+}
+
+g[data-mml-node="mtable"] > svg {
+  overflow: visible;
+}
+
+[jax="SVG"] mjx-tool {
+  display: inline-block;
+  position: relative;
+  width: 0;
+  height: 0;
+}
+
+[jax="SVG"] mjx-tool > mjx-tip {
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+mjx-tool > mjx-tip {
+  display: inline-block;
+  padding: .2em;
+  border: 1px solid #888;
+  font-size: 70%;
+  background-color: #F8F8F8;
+  color: black;
+  box-shadow: 2px 2px 5px #AAAAAA;
+}
+
+g[data-mml-node="maction"][data-toggle] {
+  cursor: pointer;
+}
+
+mjx-status {
+  display: block;
+  position: fixed;
+  left: 1em;
+  bottom: 1em;
+  min-width: 25%;
+  padding: .2em .4em;
+  border: 1px solid #888;
+  font-size: 90%;
+  background-color: #F8F8F8;
+  color: black;
+}
+
+foreignObject[data-mjx-xml] {
+  font-family: initial;
+  line-height: normal;
+  overflow: visible;
+}
+
+.MathJax path {
+  stroke-width: 3;
+}
+
+mjx-container[display="true"] {
+  overflow: auto hidden;
+}
+
+mjx-container[display="true"] + br {
+  display: none;
+}
+</style></head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Staskaer</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">Hi, this is Staskaer</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+        <li class="menu-item menu-item-links">
+
+    <a href="/links/" rel="section"><i class="fa fa-link fa-fw"></i>links</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2022/12/23/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-17/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/imgs/theme_pic/head_img.png">
+      <meta itemprop="name" content="Staskaer">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Staskaer">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          levelDB源码剖析(17)--Recover
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2022-12-23 11:17:59" itemprop="dateCreated datePublished" datetime="2022-12-23T11:17:59+08:00">2022-12-23</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2025-06-17 23:50:22" itemprop="dateModified" datetime="2025-06-17T23:50:22+08:00">2025-06-17</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/" itemprop="url" rel="index"><span itemprop="name">levelDB源码剖析</span></a>
+                </span>
+            </span>
+
+          
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Valine: </span>
+    
+    <a title="valine" href="/2022/12/23/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-17/#valine-comments" itemprop="discussionUrl">
+      <span class="post-comments-count valine-comment-count" data-xid="/2022/12/23/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-17/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h2 id="recover">Recover</h2>
+<span id="more"></span>
+<p>LevelDB打开需要做以下事情：</p>
+<ul>
+<li>如果数据库目录不存在，创建目录</li>
+<li>加文件锁，锁住整个数据库</li>
+<li>读取MANIFEST文件，恢复系统关闭时的元数据，也就是版本信息，或者新建MAINFEST文件</li>
+<li>如果上一次关闭时，MemTable里有数据，或者Immutable MemTable写入到SSTable未完成，那么需要做数据恢复，从WAL恢复数据</li>
+<li>创建数据库相关的内存数据结构，如Version、VersionSet等</li>
+</ul>
+<img src="/2022/12/23/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-17/pic1.jpg" class="">
+<p>打开数据库的接口是DB::Open，在其中调用DBImpl::Recover来完成主要的工作，如果调用成功，则创建MemTable和WAL相关的数据结构，重写MANIFEST文件。</p>
+<p>而DBImpl::Recover做了以下事情：</p>
+<ul>
+<li>创建数据库目录</li>
+<li>对这个数据库里面的LOCK文件加文件锁，LevelDB是单进程多线程的，需要保证每次只有一个进程能够打开数据库，方式就是使用了文件锁，如果有其它进程打开了数据库，那么加锁就会失败</li>
+<li>如果数据库不存在，那么调用DBImpl::NewDB创建新的数据库</li>
+<li>调用VersionSet::Recover来读取MANIFEST，恢复版本信息</li>
+<li>根据版本信息，搜索数据库目录，找到关闭时没有写入到SSTable的日志，按日志写入顺序逐个恢复日志数据。DBImpl::RecoverLogFile会创建一个MemTable，开始读取日志信息，将日志的数据插入到MemTable，并根据需要调用DBImpl::WriteLevel0Table将MemTable写入到SSTable中，这里不过多介绍</li>
+</ul>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br><span class="line">144</span><br><span class="line">145</span><br><span class="line">146</span><br><span class="line">147</span><br><span class="line">148</span><br><span class="line">149</span><br><span class="line">150</span><br><span class="line">151</span><br><span class="line">152</span><br><span class="line">153</span><br><span class="line">154</span><br><span class="line">155</span><br><span class="line">156</span><br><span class="line">157</span><br><span class="line">158</span><br><span class="line">159</span><br><span class="line">160</span><br><span class="line">161</span><br><span class="line">162</span><br><span class="line">163</span><br><span class="line">164</span><br><span class="line">165</span><br><span class="line">166</span><br><span class="line">167</span><br><span class="line">168</span><br><span class="line">169</span><br><span class="line">170</span><br><span class="line">171</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="function">Status <span class="title">DB::Open</span><span class="params">(<span class="type">const</span> Options &amp;options, <span class="type">const</span> std::string &amp;dbname, DB **dbptr)</span></span></span><br><span class="line"><span class="function"></span>{</span><br><span class="line">    *dbptr = <span class="literal">nullptr</span>;</span><br><span class="line"></span><br><span class="line">    DBImpl *impl = <span class="keyword">new</span> <span class="built_in">DBImpl</span>(options, dbname);</span><br><span class="line">    impl-&gt;mutex_.<span class="built_in">Lock</span>();</span><br><span class="line">    VersionEdit edit;</span><br><span class="line">    <span class="comment">// Recover handles create_if_missing, error_if_exists</span></span><br><span class="line">    <span class="type">bool</span> save_manifest = <span class="literal">false</span>;</span><br><span class="line">    Status s = impl-&gt;<span class="built_in">Recover</span>(&amp;edit, &amp;save_manifest);</span><br><span class="line">    <span class="keyword">if</span> (s.<span class="built_in">ok</span>() &amp;&amp; impl-&gt;mem_ == <span class="literal">nullptr</span>)</span><br><span class="line">    {</span><br><span class="line">        <span class="comment">// Create new log and a corresponding memtable.</span></span><br><span class="line">        <span class="comment">// 如果需要重写MANIFEST文件，那么做一个版本变更，这里面会创建一个新的MANIFEST</span></span><br><span class="line">        <span class="comment">// 将当前的版本信息写入，然后将edit的内容写入。</span></span><br><span class="line">        <span class="type">uint64_t</span> new_log_number = impl-&gt;versions_-&gt;<span class="built_in">NewFileNumber</span>();</span><br><span class="line">        WritableFile *lfile;</span><br><span class="line">        s = options.env-&gt;<span class="built_in">NewWritableFile</span>(<span class="built_in">LogFileName</span>(dbname, new_log_number),</span><br><span class="line">                                         &amp;lfile);</span><br><span class="line">        <span class="keyword">if</span> (s.<span class="built_in">ok</span>())</span><br><span class="line">        {</span><br><span class="line">            edit.<span class="built_in">SetLogNumber</span>(new_log_number);</span><br><span class="line">            impl-&gt;logfile_ = lfile;</span><br><span class="line">            impl-&gt;logfile_number_ = new_log_number;</span><br><span class="line">            impl-&gt;log_ = <span class="keyword">new</span> log::<span class="built_in">Writer</span>(lfile);</span><br><span class="line">            impl-&gt;mem_ = <span class="keyword">new</span> <span class="built_in">MemTable</span>(impl-&gt;internal_comparator_);</span><br><span class="line">            impl-&gt;mem_-&gt;<span class="built_in">Ref</span>();</span><br><span class="line">        }</span><br><span class="line">    }</span><br><span class="line">    <span class="keyword">if</span> (s.<span class="built_in">ok</span>() &amp;&amp; save_manifest)</span><br><span class="line">    {</span><br><span class="line">        edit.<span class="built_in">SetPrevLogNumber</span>(<span class="number">0</span>); <span class="comment">// No older logs needed after recovery.</span></span><br><span class="line">        edit.<span class="built_in">SetLogNumber</span>(impl-&gt;logfile_number_);</span><br><span class="line">        s = impl-&gt;versions_-&gt;<span class="built_in">LogAndApply</span>(&amp;edit, &amp;impl-&gt;mutex_);</span><br><span class="line">    }</span><br><span class="line">    <span class="keyword">if</span> (s.<span class="built_in">ok</span>())</span><br><span class="line">    {</span><br><span class="line">        impl-&gt;<span class="built_in">RemoveObsoleteFiles</span>();</span><br><span class="line">        impl-&gt;<span class="built_in">MaybeScheduleCompaction</span>();</span><br><span class="line">    }</span><br><span class="line">    impl-&gt;mutex_.<span class="built_in">Unlock</span>();</span><br><span class="line">    <span class="keyword">if</span> (s.<span class="built_in">ok</span>())</span><br><span class="line">    {</span><br><span class="line">        <span class="built_in">assert</span>(impl-&gt;mem_ != <span class="literal">nullptr</span>);</span><br><span class="line">        *dbptr = impl;</span><br><span class="line">    }</span><br><span class="line">    <span class="keyword">else</span></span><br><span class="line">    {</span><br><span class="line">        <span class="keyword">delete</span> impl;</span><br><span class="line">    }</span><br><span class="line">    <span class="keyword">return</span> s;</span><br><span class="line">}</span><br><span class="line"></span><br><span class="line"><span class="function">Status <span class="title">DBImpl::Recover</span><span class="params">(VersionEdit *edit, <span class="type">bool</span> *save_manifest)</span></span></span><br><span class="line"><span class="function"></span>{</span><br><span class="line">    mutex_.<span class="built_in">AssertHeld</span>();</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Ignore error from CreateDir since the creation of the DB is</span></span><br><span class="line">    <span class="comment">// committed only when the descriptor is created, and this directory</span></span><br><span class="line">    <span class="comment">// may already exist from a previous failed creation attempt.</span></span><br><span class="line">    env_-&gt;<span class="built_in">CreateDir</span>(dbname_); <span class="comment">// 创建数据库目录</span></span><br><span class="line">    <span class="built_in">assert</span>(db_lock_ == <span class="literal">nullptr</span>);</span><br><span class="line">    <span class="comment">// 加文件锁，防止其他进程进入</span></span><br><span class="line">    Status s = env_-&gt;<span class="built_in">LockFile</span>(<span class="built_in">LockFileName</span>(dbname_), &amp;db_lock_);</span><br><span class="line">    <span class="keyword">if</span> (!s.<span class="built_in">ok</span>())</span><br><span class="line">    {</span><br><span class="line">        <span class="keyword">return</span> s;</span><br><span class="line">    }</span><br><span class="line">    <span class="comment">// 如果CURRENT文件不存在，说明需要新创建数据库</span></span><br><span class="line">    <span class="keyword">if</span> (!env_-&gt;<span class="built_in">FileExists</span>(<span class="built_in">CurrentFileName</span>(dbname_)))</span><br><span class="line">    {</span><br><span class="line">        <span class="keyword">if</span> (options_.create_if_missing)</span><br><span class="line">        {</span><br><span class="line">            <span class="built_in">Log</span>(options_.info_log, <span class="string">"Creating DB %s since it was missing."</span>,</span><br><span class="line">                dbname_.<span class="built_in">c_str</span>());</span><br><span class="line">            s = <span class="built_in">NewDB</span>();</span><br><span class="line">            <span class="keyword">if</span> (!s.<span class="built_in">ok</span>())</span><br><span class="line">            {</span><br><span class="line">                <span class="keyword">return</span> s;</span><br><span class="line">            }</span><br><span class="line">        }</span><br><span class="line">        <span class="keyword">else</span></span><br><span class="line">        {</span><br><span class="line">            <span class="keyword">return</span> Status::<span class="built_in">InvalidArgument</span>(</span><br><span class="line">                dbname_, <span class="string">"does not exist (create_if_missing is false)"</span>);</span><br><span class="line">        }</span><br><span class="line">    }</span><br><span class="line">    <span class="keyword">else</span></span><br><span class="line">    {</span><br><span class="line">        <span class="keyword">if</span> (options_.error_if_exists)</span><br><span class="line">        {</span><br><span class="line">            <span class="keyword">return</span> Status::<span class="built_in">InvalidArgument</span>(dbname_,</span><br><span class="line">                                           <span class="string">"exists (error_if_exists is true)"</span>);</span><br><span class="line">        }</span><br><span class="line">    }</span><br><span class="line">    <span class="comment">// 读取MANIFEST文件进行版本信息的恢复</span></span><br><span class="line">    s = versions_-&gt;<span class="built_in">Recover</span>(save_manifest);</span><br><span class="line">    <span class="keyword">if</span> (!s.<span class="built_in">ok</span>())</span><br><span class="line">    {</span><br><span class="line">        <span class="keyword">return</span> s;</span><br><span class="line">    }</span><br><span class="line">    <span class="function">SequenceNumber <span class="title">max_sequence</span><span class="params">(<span class="number">0</span>)</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Recover from all newer log files than the ones named in the</span></span><br><span class="line">    <span class="comment">// descriptor (new log files may have been added by the previous</span></span><br><span class="line">    <span class="comment">// incarnation without registering them in the descriptor).</span></span><br><span class="line">    <span class="comment">//</span></span><br><span class="line">    <span class="comment">// Note that PrevLogNumber() is no longer used, but we pay</span></span><br><span class="line">    <span class="comment">// attention to it in case we are recovering a database</span></span><br><span class="line">    <span class="comment">// produced by an older version of leveldb.</span></span><br><span class="line">    <span class="type">const</span> <span class="type">uint64_t</span> min_log = versions_-&gt;<span class="built_in">LogNumber</span>();</span><br><span class="line">    <span class="type">const</span> <span class="type">uint64_t</span> prev_log = versions_-&gt;<span class="built_in">PrevLogNumber</span>();</span><br><span class="line">    std::vector&lt;std::string&gt; filenames;</span><br><span class="line">    s = env_-&gt;<span class="built_in">GetChildren</span>(dbname_, &amp;filenames);</span><br><span class="line">    <span class="keyword">if</span> (!s.<span class="built_in">ok</span>())</span><br><span class="line">    {</span><br><span class="line">        <span class="keyword">return</span> s;</span><br><span class="line">    }</span><br><span class="line">    std::set&lt;<span class="type">uint64_t</span>&gt; expected;</span><br><span class="line">    versions_-&gt;<span class="built_in">AddLiveFiles</span>(&amp;expected);</span><br><span class="line">    <span class="type">uint64_t</span> number;</span><br><span class="line">    FileType type;</span><br><span class="line">    std::vector&lt;<span class="type">uint64_t</span>&gt; logs;</span><br><span class="line">    <span class="comment">// 之前的MANIFEST恢复，会得到版本信息，里面包含了之前的log number</span></span><br><span class="line">    <span class="comment">// 搜索文件系统里的log，如果这些日志的编号 &gt;= 这个log number，那么这些</span></span><br><span class="line">    <span class="comment">// 日志都是关闭时丢失的数据，需要恢复，这里将日志按顺序存储在logs里面</span></span><br><span class="line"></span><br><span class="line">    <span class="comment">// 逐个恢复日志的内容</span></span><br><span class="line">    <span class="keyword">for</span> (<span class="type">size_t</span> i = <span class="number">0</span>; i &lt; filenames.<span class="built_in">size</span>(); i++)</span><br><span class="line">    {</span><br><span class="line">        <span class="keyword">if</span> (<span class="built_in">ParseFileName</span>(filenames[i], &amp;number, &amp;type))</span><br><span class="line">        {</span><br><span class="line">            expected.<span class="built_in">erase</span>(number);</span><br><span class="line">            <span class="keyword">if</span> (type == kLogFile &amp;&amp; ((number &gt;= min_log) || (number == prev_log)))</span><br><span class="line">                logs.<span class="built_in">push_back</span>(number);</span><br><span class="line">        }</span><br><span class="line">    }</span><br><span class="line">    <span class="keyword">if</span> (!expected.<span class="built_in">empty</span>())</span><br><span class="line">    {</span><br><span class="line">        <span class="type">char</span> buf[<span class="number">50</span>];</span><br><span class="line">        std::<span class="built_in">snprintf</span>(buf, <span class="built_in">sizeof</span>(buf), <span class="string">"%d missing files; e.g."</span>,</span><br><span class="line">                      <span class="built_in">static_cast</span>&lt;<span class="type">int</span>&gt;(expected.<span class="built_in">size</span>()));</span><br><span class="line">        <span class="keyword">return</span> Status::<span class="built_in">Corruption</span>(buf, <span class="built_in">TableFileName</span>(dbname_, *(expected.<span class="built_in">begin</span>())));</span><br><span class="line">    }</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Recover in the order in which the logs were generated</span></span><br><span class="line">    std::<span class="built_in">sort</span>(logs.<span class="built_in">begin</span>(), logs.<span class="built_in">end</span>());</span><br><span class="line">    <span class="keyword">for</span> (<span class="type">size_t</span> i = <span class="number">0</span>; i &lt; logs.<span class="built_in">size</span>(); i++)</span><br><span class="line">    {</span><br><span class="line">        s = <span class="built_in">RecoverLogFile</span>(logs[i], (i == logs.<span class="built_in">size</span>() - <span class="number">1</span>), save_manifest, edit,</span><br><span class="line">                           &amp;max_sequence);</span><br><span class="line">        <span class="keyword">if</span> (!s.<span class="built_in">ok</span>())</span><br><span class="line">        {</span><br><span class="line">            <span class="keyword">return</span> s;</span><br><span class="line">        }</span><br><span class="line"></span><br><span class="line">        <span class="comment">// The previous incarnation may not have written any MANIFEST</span></span><br><span class="line">        <span class="comment">// records after allocating this log number.  So we manually</span></span><br><span class="line">        <span class="comment">// update the file number allocation counter in VersionSet.</span></span><br><span class="line">        versions_-&gt;<span class="built_in">MarkFileNumberUsed</span>(logs[i]);</span><br><span class="line">    }</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (versions_-&gt;<span class="built_in">LastSequence</span>() &lt; max_sequence)</span><br><span class="line">    {</span><br><span class="line">        versions_-&gt;<span class="built_in">SetLastSequence</span>(max_sequence);</span><br><span class="line">    }</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> Status::<span class="built_in">OK</span>();</span><br><span class="line">}</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>而新建数据库时，会调用DBImpl::NewDB，一个新的数据库没有任何数据，所以不需要日志和SSTable，只需要有一个MANIFEST文件，包含一些元数据。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="function">Status <span class="title">DBImpl::NewDB</span><span class="params">()</span></span></span><br><span class="line"><span class="function"></span>{</span><br><span class="line">    VersionEdit new_db;</span><br><span class="line">    <span class="comment">// 保存比较器的名称，下次打开时需要用相同的名称打开</span></span><br><span class="line">    new_db.<span class="built_in">SetComparatorName</span>(<span class="built_in">user_comparator</span>()-&gt;<span class="built_in">Name</span>());</span><br><span class="line">    new_db.<span class="built_in">SetLogNumber</span>(<span class="number">0</span>); <span class="comment">// 分配日志文件的编号为0</span></span><br><span class="line">    new_db.<span class="built_in">SetNextFile</span>(<span class="number">2</span>);  <span class="comment">// 下一个待分配的文件编号是2，因为1分配给了MANIFEST文件</span></span><br><span class="line">    new_db.<span class="built_in">SetLastSequence</span>(<span class="number">0</span>);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 创建MANIFEST文件，将VersionEdit写入</span></span><br><span class="line">    <span class="type">const</span> std::string manifest = <span class="built_in">DescriptorFileName</span>(dbname_, <span class="number">1</span>);</span><br><span class="line">    WritableFile *file;</span><br><span class="line">    Status s = env_-&gt;<span class="built_in">NewWritableFile</span>(manifest, &amp;file);</span><br><span class="line">    <span class="keyword">if</span> (!s.<span class="built_in">ok</span>())</span><br><span class="line">    {</span><br><span class="line">        <span class="keyword">return</span> s;</span><br><span class="line">    }</span><br><span class="line">    {</span><br><span class="line">        <span class="function">log::Writer <span class="title">log</span><span class="params">(file)</span></span>;</span><br><span class="line">        std::string record;</span><br><span class="line">        new_db.<span class="built_in">EncodeTo</span>(&amp;record);</span><br><span class="line">        s = log.<span class="built_in">AddRecord</span>(record);</span><br><span class="line">        <span class="keyword">if</span> (s.<span class="built_in">ok</span>())</span><br><span class="line">        {</span><br><span class="line">            s = file-&gt;<span class="built_in">Sync</span>();</span><br><span class="line">        }</span><br><span class="line">        <span class="keyword">if</span> (s.<span class="built_in">ok</span>())</span><br><span class="line">        {</span><br><span class="line">            s = file-&gt;<span class="built_in">Close</span>();</span><br><span class="line">        }</span><br><span class="line">    }</span><br><span class="line">    <span class="keyword">delete</span> file;</span><br><span class="line">    <span class="keyword">if</span> (s.<span class="built_in">ok</span>())</span><br><span class="line">    {</span><br><span class="line">        <span class="comment">// Make "CURRENT" file that points to the new manifest file.</span></span><br><span class="line">        <span class="comment">// 让CURRENT文件指向这个MANIFEST文件</span></span><br><span class="line">        s = <span class="built_in">SetCurrentFile</span>(env_, dbname_, <span class="number">1</span>);</span><br><span class="line">    }</span><br><span class="line">    <span class="keyword">else</span></span><br><span class="line">    {</span><br><span class="line">        env_-&gt;<span class="built_in">RemoveFile</span>(manifest);</span><br><span class="line">    }</span><br><span class="line">    <span class="keyword">return</span> s;</span><br><span class="line">}</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>可以看到DBImpl::NewDB非常简单，就是创建一个MANIFEST文件，将以下信息写入到MANIFEST文件：</p>
+<ul>
+<li>比较器名称</li>
+<li>当前日志的编号</li>
+<li>下一个使用的文件编号</li>
+<li>上一个使用的SequenceNumber</li>
+<li>最后CURRENT指向新创建的MANIFEST文件</li>
+</ul>
+<p>而VersionSet::Recover完成MANIFEST文件的读取和版本的构造，需要知道数据库里有哪些SSTable文件，每个文件处于哪个Level，当前日志的编号等等信息。</p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/C/" rel="tag"># C++</a>
+              <a href="/tags/levelDB/" rel="tag"># levelDB</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2022/12/21/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-16/" rel="prev" title="levelDB源码剖析(16)--Compaction">
+      <i class="fa fa-chevron-left"></i> levelDB源码剖析(16)--Compaction
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2022/12/25/Python%E5%B0%8F%E6%8A%80%E5%B7%A7-9/" rel="next" title="Python小技巧(9)--元编程">
+      Python小技巧(9)--元编程 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+    <div class="comments" id="valine-comments"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#recover"><span class="nav-number">1.</span> <span class="nav-text">Recover</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Staskaer"
+      src="/imgs/theme_pic/head_img.png">
+  <p class="site-author-name" itemprop="name">Staskaer</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">97</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">10</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">24</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/Staskaer" title="Github → https:&#x2F;&#x2F;github.com&#x2F;Staskaer" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:liujiaxin011121@gmail.com" title="E-Mail → mailto:liujiaxin011121@gmail.com" rel="noopener" target="_blank"><i class="fa fa-envelope fa-fw"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://www.zhihu.com/people/staskaer" title="Zhihu → https:&#x2F;&#x2F;www.zhihu.com&#x2F;people&#x2F;staskaer" rel="noopener" target="_blank"><i class="fab fa-zhihu fa-fw"></i></a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2025</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Staskaer</span>
+</div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+
+<script>
+NexT.utils.loadComments(document.querySelector('#valine-comments'), () => {
+  NexT.utils.getScript('https://cdn.jsdelivr.net/npm/valine@1.5.1/dist/Valine.min.js', () => {
+    var GUEST = ['nick', 'mail', 'link'];
+    var guest = 'nick,mail,link';
+    guest = guest.split(',').filter(item => {
+      return GUEST.includes(item);
+    });
+    new Valine({
+      el         : '#valine-comments',
+      verify     : false,
+      notify     : false,
+      appId      : 'xH8NDrh9u4SQrUpQOd0lICnX-MdYXbMMI',
+      appKey     : 'jl3JjPS4jsosZG29Zv24Y7LE',
+      placeholder: "Just go go",
+      avatar     : 'mm',
+      meta       : guest,
+      pageSize   : '10' || 10,
+      visitor    : false,
+      lang       : 'zh-Hans' || 'zh-cn',
+      path       : location.pathname,
+      recordIP   : false,
+      serverURLs : 'https://xh8ndrh9.api.lncldglobal.com'
+    });
+  }, window.Valine);
+});
+</script>
+
+</body>
+</html>
+

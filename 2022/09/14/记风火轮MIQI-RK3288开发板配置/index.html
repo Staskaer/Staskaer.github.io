@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 6.2.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/imgs/theme_pic/staskaer.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/imgs/theme_pic/staskaer.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/imgs/theme_pic/staskaer.png">
+  <link rel="mask-icon" href="/imgs/theme_pic/staskaer.png" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Gemini","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"mac"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"valine","storage":true,"lazyload":false,"nav":null,"activeClass":"valine"},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="记风火轮MIQI-RK3288开发板的踩坑过程">
+<meta property="og:type" content="article">
+<meta property="og:title" content="记风火轮MIQI-RK3288开发板的踩坑过程">
+<meta property="og:url" content="http://example.com/2022/09/14/%E8%AE%B0%E9%A3%8E%E7%81%AB%E8%BD%AEMIQI-RK3288%E5%BC%80%E5%8F%91%E6%9D%BF%E9%85%8D%E7%BD%AE/index.html">
+<meta property="og:site_name" content="Staskaer">
+<meta property="og:description" content="记风火轮MIQI-RK3288开发板的踩坑过程">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="http://example.com/2022/09/14/%E8%AE%B0%E9%A3%8E%E7%81%AB%E8%BD%AEMIQI-RK3288%E5%BC%80%E5%8F%91%E6%9D%BF%E9%85%8D%E7%BD%AE/pic1.jpg">
+<meta property="og:image" content="http://example.com/2022/09/14/%E8%AE%B0%E9%A3%8E%E7%81%AB%E8%BD%AEMIQI-RK3288%E5%BC%80%E5%8F%91%E6%9D%BF%E9%85%8D%E7%BD%AE/pic3.jpg">
+<meta property="og:image" content="http://example.com/2022/09/14/%E8%AE%B0%E9%A3%8E%E7%81%AB%E8%BD%AEMIQI-RK3288%E5%BC%80%E5%8F%91%E6%9D%BF%E9%85%8D%E7%BD%AE/pic2.png">
+<meta property="og:image" content="http://example.com/2022/09/14/%E8%AE%B0%E9%A3%8E%E7%81%AB%E8%BD%AEMIQI-RK3288%E5%BC%80%E5%8F%91%E6%9D%BF%E9%85%8D%E7%BD%AE/pic4.png">
+<meta property="og:image" content="http://example.com/2022/09/14/%E8%AE%B0%E9%A3%8E%E7%81%AB%E8%BD%AEMIQI-RK3288%E5%BC%80%E5%8F%91%E6%9D%BF%E9%85%8D%E7%BD%AE/pic5.jpg">
+<meta property="article:published_time" content="2022-09-14T14:44:51.000Z">
+<meta property="article:modified_time" content="2025-06-17T15:50:22.397Z">
+<meta property="article:author" content="Staskaer">
+<meta property="article:tag" content="开发板使用">
+<meta property="article:tag" content="RK3288">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://example.com/2022/09/14/%E8%AE%B0%E9%A3%8E%E7%81%AB%E8%BD%AEMIQI-RK3288%E5%BC%80%E5%8F%91%E6%9D%BF%E9%85%8D%E7%BD%AE/pic1.jpg">
+
+<link rel="canonical" href="http://example.com/2022/09/14/%E8%AE%B0%E9%A3%8E%E7%81%AB%E8%BD%AEMIQI-RK3288%E5%BC%80%E5%8F%91%E6%9D%BF%E9%85%8D%E7%BD%AE/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'en'
+  };
+</script>
+
+  <title>记风火轮MIQI-RK3288开发板的踩坑过程 | Staskaer</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+<style>mjx-container[jax="SVG"] {
+  direction: ltr;
+}
+
+mjx-container[jax="SVG"] > svg {
+  overflow: visible;
+}
+
+mjx-container[jax="SVG"][display="true"] {
+  display: block;
+  text-align: center;
+  margin: 1em 0;
+}
+
+mjx-container[jax="SVG"][justify="left"] {
+  text-align: left;
+}
+
+mjx-container[jax="SVG"][justify="right"] {
+  text-align: right;
+}
+
+g[data-mml-node="merror"] > g {
+  fill: red;
+  stroke: red;
+}
+
+g[data-mml-node="merror"] > rect[data-background] {
+  fill: yellow;
+  stroke: none;
+}
+
+g[data-mml-node="mtable"] > line[data-line] {
+  stroke-width: 70px;
+  fill: none;
+}
+
+g[data-mml-node="mtable"] > rect[data-frame] {
+  stroke-width: 70px;
+  fill: none;
+}
+
+g[data-mml-node="mtable"] > .mjx-dashed {
+  stroke-dasharray: 140;
+}
+
+g[data-mml-node="mtable"] > .mjx-dotted {
+  stroke-linecap: round;
+  stroke-dasharray: 0,140;
+}
+
+g[data-mml-node="mtable"] > svg {
+  overflow: visible;
+}
+
+[jax="SVG"] mjx-tool {
+  display: inline-block;
+  position: relative;
+  width: 0;
+  height: 0;
+}
+
+[jax="SVG"] mjx-tool > mjx-tip {
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+mjx-tool > mjx-tip {
+  display: inline-block;
+  padding: .2em;
+  border: 1px solid #888;
+  font-size: 70%;
+  background-color: #F8F8F8;
+  color: black;
+  box-shadow: 2px 2px 5px #AAAAAA;
+}
+
+g[data-mml-node="maction"][data-toggle] {
+  cursor: pointer;
+}
+
+mjx-status {
+  display: block;
+  position: fixed;
+  left: 1em;
+  bottom: 1em;
+  min-width: 25%;
+  padding: .2em .4em;
+  border: 1px solid #888;
+  font-size: 90%;
+  background-color: #F8F8F8;
+  color: black;
+}
+
+foreignObject[data-mjx-xml] {
+  font-family: initial;
+  line-height: normal;
+  overflow: visible;
+}
+
+.MathJax path {
+  stroke-width: 3;
+}
+
+mjx-container[display="true"] {
+  overflow: auto hidden;
+}
+
+mjx-container[display="true"] + br {
+  display: none;
+}
+</style></head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Staskaer</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">Hi, this is Staskaer</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+        <li class="menu-item menu-item-links">
+
+    <a href="/links/" rel="section"><i class="fa fa-link fa-fw"></i>links</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2022/09/14/%E8%AE%B0%E9%A3%8E%E7%81%AB%E8%BD%AEMIQI-RK3288%E5%BC%80%E5%8F%91%E6%9D%BF%E9%85%8D%E7%BD%AE/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/imgs/theme_pic/head_img.png">
+      <meta itemprop="name" content="Staskaer">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Staskaer">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          记风火轮MIQI-RK3288开发板的踩坑过程
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2022-09-14 22:44:51" itemprop="dateCreated datePublished" datetime="2022-09-14T22:44:51+08:00">2022-09-14</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2025-06-17 23:50:22" itemprop="dateModified" datetime="2025-06-17T23:50:22+08:00">2025-06-17</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E5%B7%A5%E5%85%B7%E6%9D%82%E8%B0%88/" itemprop="url" rel="index"><span itemprop="name">工具杂谈</span></a>
+                </span>
+            </span>
+
+          
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Valine: </span>
+    
+    <a title="valine" href="/2022/09/14/%E8%AE%B0%E9%A3%8E%E7%81%AB%E8%BD%AEMIQI-RK3288%E5%BC%80%E5%8F%91%E6%9D%BF%E9%85%8D%E7%BD%AE/#valine-comments" itemprop="discussionUrl">
+      <span class="post-comments-count valine-comment-count" data-xid="/2022/09/14/%E8%AE%B0%E9%A3%8E%E7%81%AB%E8%BD%AEMIQI-RK3288%E5%BC%80%E5%8F%91%E6%9D%BF%E9%85%8D%E7%BD%AE/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h2 id="记风火轮miqi-rk3288开发板的踩坑过程">记风火轮MIQI-RK3288开发板的踩坑过程</h2>
+<span id="more"></span>
+<p>之前从某鱼上看到了价格比较合适的一块RK3288开发板，就顺便买下来了。记录一下烧录镜像过程中的踩坑记录。</p>
+<img src="/2022/09/14/%E8%AE%B0%E9%A3%8E%E7%81%AB%E8%BD%AEMIQI-RK3288%E5%BC%80%E5%8F%91%E6%9D%BF%E9%85%8D%E7%BD%AE/pic1.jpg" class="">
+<p>我买的就是上面这块板子，配置还是很不错的：RK3288四核处理器、2G DDR3、16G eMMC、4个USB2.0、HDMI、千兆网口、还有串口调试和一大票的GPIO。无论是当作家用服务器还是当超高配单片机或者是学习内核驱动开发感觉都不错，而且价格也比较便宜，这价格也不需要啥自行车。比我之前用的opi PC2这种小水管强多了(其实我就跑跑bot挂个下载器，偶尔当作vsc的远程环境来用，PC2完全是够了)。(<strong>其实PC2的电源设计是有问题的，当CPU高频工作时会跑飞，也许增加电容可以改善这种情况</strong>)</p>
+<img src="/2022/09/14/%E8%AE%B0%E9%A3%8E%E7%81%AB%E8%BD%AEMIQI-RK3288%E5%BC%80%E5%8F%91%E6%9D%BF%E9%85%8D%E7%BD%AE/pic3.jpg" class="">
+<p>上面这个就是我目前的小水管服务器。</p>
+<h3 id="镜像烧录">镜像烧录</h3>
+<p>这块板子到手后我上电发现是Android的系统，而我是要做一个小服务器的，所以我要做的第一步就是烧录一个linux的系统上去。</p>
+<p>由于这块板子自带了eMMC，所以不需要额外的内存卡用于烧写镜像，而是需要特殊的工具来完成烧写。</p>
+<div class="note primary">
+            <p>有一说一，这款产品的网站做的是真垃圾捏。存的资料都是伯度网盘，好多资料都失效了；而且官方也没有详细的教程；wiki页面还全是英文的，里面的图还全都废了，真就不要国内用户了呗。</p><p>这个是<a target="_blank" rel="noopener" href="http://wiki.smartfire.cn/%E9%A6%96%E9%A1%B5"><font color="#0000ff"><u>板子的页面</u></font></a>，可以感受一下。</p>
+          </div>
+<p>首先，我们需要<a target="_blank" rel="noopener" href="https://www.t-firefly.com/doc/download/4.html">下载瑞芯微提供的烧录工具和驱动</a>(RK3288就是瑞芯微的)。我们需要烧录到eMMC中，所以下载AndroidTools和对应的驱动并安装(现在这俩东西叫RKDevTool和RK驱动助手)。</p>
+<img src="/2022/09/14/%E8%AE%B0%E9%A3%8E%E7%81%AB%E8%BD%AEMIQI-RK3288%E5%BC%80%E5%8F%91%E6%9D%BF%E9%85%8D%E7%BD%AE/pic2.png" class="">
+<p>然后还需要下载我们需要的镜像。可以在<a target="_blank" rel="noopener" href="https://pan.baidu.com/s/1qG8kNPaH1uARfxas7_CPvA">这里下载(提取码：4m0o)</a>，镜像在firmwares文件夹里。不过似乎<a target="_blank" rel="noopener" href="https://www.t-firefly.com/doc/download/4.html">这里</a>的也能用，后面的镜像更新，所以推荐去这里下。但是这个官网的下载速度和伯度网盘差不多，我以我就找个小的下，我选了RK3288_Server_Ubuntu这个镜像，毕竟平时我也是需要关闭掉图形化显示的，所以不如干脆选一个不带图形化的界面的版本。</p>
+<p>烧录前先把之前说的驱动装好，然后摁住板子后面的唯一一个按键不松手，把板子和电脑相连后等待几秒再松开那个按键，这样就进入了LOADER模式。打开那个AndroidTools，然后在升级固件的窗口中选择固件，然后点击烧录就完成了。</p>
+<img src="/2022/09/14/%E8%AE%B0%E9%A3%8E%E7%81%AB%E8%BD%AEMIQI-RK3288%E5%BC%80%E5%8F%91%E6%9D%BF%E9%85%8D%E7%BD%AE/pic4.png" class="">
+<p>然后断电再重新上电，随便找个显示器装上，就能看到成功启动了。不过由于我们没有装图形化显示界面，所以全是黑框框。<strong>以及这个默认的账号和密码都是firefly，它官网说的都不对，不过这种一般都是拿自己的公司来作为账号和密码，还是很好猜的</strong>。</p>
+<img src="/2022/09/14/%E8%AE%B0%E9%A3%8E%E7%81%AB%E8%BD%AEMIQI-RK3288%E5%BC%80%E5%8F%91%E6%9D%BF%E9%85%8D%E7%BD%AE/pic5.jpg" class="">
+<h3 id="配置网络">配置网络</h3>
+<p>很显然我们不能每次使用这块板子就找来显示屏和鼠标键盘这种东西连上去，否则就显得太蠢了。</p>
+<p>我们首先需要找个好地方来放板子，这个好地方需要满足以下条件：</p>
+<ul>
+<li>离路由器或者交换机近，可以提供网线直连。因为板子的USB是2.0，就不要接一个愚蠢的usb网卡了，而且作为一台服务器，使用无线传输方式来接入互联网真是太掉价了。</li>
+<li>有足够的充电设备，因为后续扩展硬盘上去是需要额外供电设备的。</li>
+<li>比较阴凉，虽然本身散热还行，但是最好还是找个阴凉的地方。</li>
+</ul>
+<p>我选择把这台小服务器扔在宿舍里，虽然在实验室里可能会更好(宿舍限电，说不定啥时候就崩了)，但是实验室的交换机离我有点远，要拉一根很长的网线才行。</p>
+<p>配置网络的时候最好将其配置成局域网内的静态IP，而不要DHCP分配。因为前者在局域网内访问会很方便，而且我这个路由器又是捡垃圾捡来的，它那个地址续租好像有点问题(不是很确定，但是非静态地址过一段时间会断网)。</p>
+<p>首先输入<code>ifconfig</code>查看网卡和当前ip地址，然后通过修改<code>/etc/network/interfaces</code>文件来修改网卡配置信息。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">sudo vim /etc/network/interfaces</span><br><span class="line"></span><br><span class="line"><span class="comment"># 下面是interfaces文件中的内容</span></span><br><span class="line"></span><br><span class="line">auto eth0</span><br><span class="line">iface eth0 inet static</span><br><span class="line">address 192.168.1.205</span><br><span class="line">gateway 192.168.1.1</span><br><span class="line">netmask 255.255.255.0</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>这样就配置好了静态IP。</p>
+<h3 id="配置frp内网穿透">配置frp内网穿透</h3>
+<p>由于这台服务器位于内网，我们要访问它就需要和它连接在一个子网内，但是这很明显不方便。而为了能够在外网访问它，我们需要使用内网穿透工具，此处选用了frp。</p>
+<p>使用frp时，要保证我们拥有一个公网ip，frp的配置分为客户端与服务器，客户端即为我们的板子，服务器是拥有公网ip的主机。</p>
+<p>我们首先进入frp的<a target="_blank" rel="noopener" href="https://github.com/fatedier/frp/releases">github页面</a>，下载我们需要的frp程序，注意，这个程序是同步需要在我们的板子和远程主机上下载并启动的，且需要对应架构。</p>
+<h4 id="客户端配置">客户端配置</h4>
+<p>由于我们的板子是32位arm架构的(你可以输入<code>arch</code>来查看架构)，所以我们需要下载arm版本的frp程序并解压。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">wget https://github.com/fatedier/frp/releases/download/v0.44.0/frp_0.44.0_linux_arm.tar.gz</span><br><span class="line"></span><br><span class="line">tar -zxvf frp_0.44.0_linux_arm.tar.gz</span><br><span class="line"></span><br><span class="line"><span class="built_in">cd</span> frp_0.44.0_linux_arm</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>然后开始配置frp客户端，我们先将ssh进行穿透。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">vim frpc.ini</span><br><span class="line"></span><br><span class="line"><span class="comment"># 下面是配置文件内容</span></span><br><span class="line"></span><br><span class="line">[common]</span><br><span class="line">server_addr = 127.0.0.1 <span class="comment"># 这个是服务器端的公网ip</span></span><br><span class="line">server_port = 7000 <span class="comment"># 这个是服务器端开放的端口，可以参见服务器端配置</span></span><br><span class="line"></span><br><span class="line">[ssh]</span><br><span class="line"><span class="built_in">type</span> = tcp</span><br><span class="line">local_ip = 127.0.0.1</span><br><span class="line">local_port = 22</span><br><span class="line">remote_port = 6000</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>然后就可以输入<code>./frpc -c frpc.ini</code>启动一下看看效果，正常启动就没问题。</p>
+<h4 id="服务器端配置">服务器端配置</h4>
+<p>仅仅配置了客户端我们目前还是没有办法进行远程登录，还需要额外配置服务器端的frp程序。</p>
+<p>我手上的这台服务器是<code>x86_64</code>架构的，所以我们需要下载对应架构的frp程序。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">wget https://github.com/fatedier/frp/releases/download/v0.44.0/frp_0.44.0_linux_amd64.tar.gz</span><br><span class="line"></span><br><span class="line">tar -zxvf frp_0.44.0_linux_amd64.tar.gz</span><br><span class="line"></span><br><span class="line"><span class="built_in">cd</span> frp_0.44.0_linux_amd64</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>然后类似的，我们也需要修改服务器端的配置文件。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">vim frps.ini</span><br><span class="line"></span><br><span class="line"><span class="comment"># 下面是配置文件内容</span></span><br><span class="line"></span><br><span class="line">[common]</span><br><span class="line">bind_port = 7000 <span class="comment"># 这个就是前面说的服务器端使用的ip地址</span></span><br><span class="line">dashboard_port = 7500 <span class="comment"># 这个是提供统计信息的界面，在浏览器中输入http://{服务器ip}:7500就能看到</span></span><br><span class="line">dashboard_user = admin <span class="comment"># 下面这俩是统计信息界面的账号密码，可以自己设置。</span></span><br><span class="line">dashboard_pwd = admin</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>配置完成后我们输入<code>./frps -c frps.ini</code>来启动服务器端程序看看运行结果，正常运行就是ok的。</p>
+<p>最后注意需要在云服务器中的安全组里打开防火墙不然可能无法连接。</p>
+<h4 id="自启动与后台执行">自启动与后台执行</h4>
+<p>但是这样的话就会出现几个问题:</p>
+<ul>
+<li>板子每次重启都需要在内网内启动frpc程序</li>
+<li>远程服务器的ssh不能断开，否则frps程序会随着ssh断开而关闭</li>
+</ul>
+<p>我们先来解决第二个问题，因为可以通过screen来快速解决。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">screen -S frps <span class="comment"># 先创建一个screen窗口</span></span><br><span class="line">./frps -c frps.ini <span class="comment"># 在窗口内执行</span></span><br><span class="line"></span><br><span class="line">CTRL^A D <span class="comment"># 按下ctrl^a 再按下d，此时这个窗口连同执行的程序就会进入后台。</span></span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>如果我们想重新连入这个窗口可以输入<code>screen -r frp</code>，这样可以很方便的查看日志，彻底关闭这个窗口可以按下ctrl^a 再按下k。</p>
+<p>对于第一个问题，我们的解决方法是写一个bash脚本然后每次开机都自启动这个脚本。</p>
+<p>我们先写一个我们需要被自启动的脚本</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">vim start.sh</span><br><span class="line"></span><br><span class="line"><span class="comment"># 下面是脚本内容</span></span><br><span class="line"></span><br><span class="line"><span class="built_in">cd</span> /usr/local/frp_0.39.1_linux_arm64</span><br><span class="line"><span class="built_in">nohup</span> ./frpc -c frpc.ini &amp;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>然后我们编辑<code>/etc/rc.local</code>，如果没有这个文件可以参考<a target="_blank" rel="noopener" href="https://www.linuxprobe.com/linux-rc-local.html">这里</a>。然后把我们的启动脚本添加进去。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">sudo vim /etc/rc.local</span><br><span class="line"></span><br><span class="line"><span class="comment"># 下面是添加的内容 在exit 0之前</span></span><br><span class="line"></span><br><span class="line">bash /usr/local/start.sh &amp;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>这样就完成了。</p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/%E5%BC%80%E5%8F%91%E6%9D%BF%E4%BD%BF%E7%94%A8/" rel="tag"># 开发板使用</a>
+              <a href="/tags/RK3288/" rel="tag"># RK3288</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2022/09/14/CUDA%E9%AB%98%E6%80%A7%E8%83%BD%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-12/" rel="prev" title="CUDA高性能并行计算(12)--CUDA标准库与生态">
+      <i class="fa fa-chevron-left"></i> CUDA高性能并行计算(12)--CUDA标准库与生态
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2022/09/20/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-5/" rel="next" title="levelDB源码剖析(5)--字符串Slice">
+      levelDB源码剖析(5)--字符串Slice <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+    <div class="comments" id="valine-comments"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%AE%B0%E9%A3%8E%E7%81%AB%E8%BD%AEmiqi-rk3288%E5%BC%80%E5%8F%91%E6%9D%BF%E7%9A%84%E8%B8%A9%E5%9D%91%E8%BF%87%E7%A8%8B"><span class="nav-number">1.</span> <span class="nav-text">记风火轮MIQI-RK3288开发板的踩坑过程</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%95%9C%E5%83%8F%E7%83%A7%E5%BD%95"><span class="nav-number">1.1.</span> <span class="nav-text">镜像烧录</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%85%8D%E7%BD%AE%E7%BD%91%E7%BB%9C"><span class="nav-number">1.2.</span> <span class="nav-text">配置网络</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%85%8D%E7%BD%AEfrp%E5%86%85%E7%BD%91%E7%A9%BF%E9%80%8F"><span class="nav-number">1.3.</span> <span class="nav-text">配置frp内网穿透</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%AE%A2%E6%88%B7%E7%AB%AF%E9%85%8D%E7%BD%AE"><span class="nav-number">1.3.1.</span> <span class="nav-text">客户端配置</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%9C%8D%E5%8A%A1%E5%99%A8%E7%AB%AF%E9%85%8D%E7%BD%AE"><span class="nav-number">1.3.2.</span> <span class="nav-text">服务器端配置</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E8%87%AA%E5%90%AF%E5%8A%A8%E4%B8%8E%E5%90%8E%E5%8F%B0%E6%89%A7%E8%A1%8C"><span class="nav-number">1.3.3.</span> <span class="nav-text">自启动与后台执行</span></a></li></ol></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Staskaer"
+      src="/imgs/theme_pic/head_img.png">
+  <p class="site-author-name" itemprop="name">Staskaer</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">97</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">10</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">24</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/Staskaer" title="Github → https:&#x2F;&#x2F;github.com&#x2F;Staskaer" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:liujiaxin011121@gmail.com" title="E-Mail → mailto:liujiaxin011121@gmail.com" rel="noopener" target="_blank"><i class="fa fa-envelope fa-fw"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://www.zhihu.com/people/staskaer" title="Zhihu → https:&#x2F;&#x2F;www.zhihu.com&#x2F;people&#x2F;staskaer" rel="noopener" target="_blank"><i class="fab fa-zhihu fa-fw"></i></a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2025</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Staskaer</span>
+</div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+
+<script>
+NexT.utils.loadComments(document.querySelector('#valine-comments'), () => {
+  NexT.utils.getScript('https://cdn.jsdelivr.net/npm/valine@1.5.1/dist/Valine.min.js', () => {
+    var GUEST = ['nick', 'mail', 'link'];
+    var guest = 'nick,mail,link';
+    guest = guest.split(',').filter(item => {
+      return GUEST.includes(item);
+    });
+    new Valine({
+      el         : '#valine-comments',
+      verify     : false,
+      notify     : false,
+      appId      : 'xH8NDrh9u4SQrUpQOd0lICnX-MdYXbMMI',
+      appKey     : 'jl3JjPS4jsosZG29Zv24Y7LE',
+      placeholder: "Just go go",
+      avatar     : 'mm',
+      meta       : guest,
+      pageSize   : '10' || 10,
+      visitor    : false,
+      lang       : 'zh-Hans' || 'zh-cn',
+      path       : location.pathname,
+      recordIP   : false,
+      serverURLs : 'https://xh8ndrh9.api.lncldglobal.com'
+    });
+  }, window.Valine);
+});
+</script>
+
+</body>
+</html>
+

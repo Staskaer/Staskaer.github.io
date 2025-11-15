@@ -1,0 +1,712 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 6.2.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/imgs/theme_pic/staskaer.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/imgs/theme_pic/staskaer.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/imgs/theme_pic/staskaer.png">
+  <link rel="mask-icon" href="/imgs/theme_pic/staskaer.png" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Gemini","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"mac"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"valine","storage":true,"lazyload":false,"nav":null,"activeClass":"valine"},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="CUDA内存组织与使用">
+<meta property="og:type" content="article">
+<meta property="og:title" content="CUDA高性能并行计算(6)--CUDA内存组织与使用">
+<meta property="og:url" content="http://example.com/2022/09/08/CUDA%E9%AB%98%E6%80%A7%E8%83%BD%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-6/index.html">
+<meta property="og:site_name" content="Staskaer">
+<meta property="og:description" content="CUDA内存组织与使用">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="http://example.com/2022/09/08/CUDA%E9%AB%98%E6%80%A7%E8%83%BD%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-6/pic1.jpg">
+<meta property="article:published_time" content="2022-09-08T12:19:17.000Z">
+<meta property="article:modified_time" content="2025-06-17T15:50:22.305Z">
+<meta property="article:author" content="Staskaer">
+<meta property="article:tag" content="CUDA">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://example.com/2022/09/08/CUDA%E9%AB%98%E6%80%A7%E8%83%BD%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-6/pic1.jpg">
+
+<link rel="canonical" href="http://example.com/2022/09/08/CUDA%E9%AB%98%E6%80%A7%E8%83%BD%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-6/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'en'
+  };
+</script>
+
+  <title>CUDA高性能并行计算(6)--CUDA内存组织与使用 | Staskaer</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+<style>mjx-container[jax="SVG"] {
+  direction: ltr;
+}
+
+mjx-container[jax="SVG"] > svg {
+  overflow: visible;
+}
+
+mjx-container[jax="SVG"][display="true"] {
+  display: block;
+  text-align: center;
+  margin: 1em 0;
+}
+
+mjx-container[jax="SVG"][justify="left"] {
+  text-align: left;
+}
+
+mjx-container[jax="SVG"][justify="right"] {
+  text-align: right;
+}
+
+g[data-mml-node="merror"] > g {
+  fill: red;
+  stroke: red;
+}
+
+g[data-mml-node="merror"] > rect[data-background] {
+  fill: yellow;
+  stroke: none;
+}
+
+g[data-mml-node="mtable"] > line[data-line] {
+  stroke-width: 70px;
+  fill: none;
+}
+
+g[data-mml-node="mtable"] > rect[data-frame] {
+  stroke-width: 70px;
+  fill: none;
+}
+
+g[data-mml-node="mtable"] > .mjx-dashed {
+  stroke-dasharray: 140;
+}
+
+g[data-mml-node="mtable"] > .mjx-dotted {
+  stroke-linecap: round;
+  stroke-dasharray: 0,140;
+}
+
+g[data-mml-node="mtable"] > svg {
+  overflow: visible;
+}
+
+[jax="SVG"] mjx-tool {
+  display: inline-block;
+  position: relative;
+  width: 0;
+  height: 0;
+}
+
+[jax="SVG"] mjx-tool > mjx-tip {
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+mjx-tool > mjx-tip {
+  display: inline-block;
+  padding: .2em;
+  border: 1px solid #888;
+  font-size: 70%;
+  background-color: #F8F8F8;
+  color: black;
+  box-shadow: 2px 2px 5px #AAAAAA;
+}
+
+g[data-mml-node="maction"][data-toggle] {
+  cursor: pointer;
+}
+
+mjx-status {
+  display: block;
+  position: fixed;
+  left: 1em;
+  bottom: 1em;
+  min-width: 25%;
+  padding: .2em .4em;
+  border: 1px solid #888;
+  font-size: 90%;
+  background-color: #F8F8F8;
+  color: black;
+}
+
+foreignObject[data-mjx-xml] {
+  font-family: initial;
+  line-height: normal;
+  overflow: visible;
+}
+
+.MathJax path {
+  stroke-width: 3;
+}
+
+mjx-container[display="true"] {
+  overflow: auto hidden;
+}
+
+mjx-container[display="true"] + br {
+  display: none;
+}
+</style></head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Staskaer</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">Hi, this is Staskaer</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+        <li class="menu-item menu-item-links">
+
+    <a href="/links/" rel="section"><i class="fa fa-link fa-fw"></i>links</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2022/09/08/CUDA%E9%AB%98%E6%80%A7%E8%83%BD%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-6/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/imgs/theme_pic/head_img.png">
+      <meta itemprop="name" content="Staskaer">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Staskaer">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          CUDA高性能并行计算(6)--CUDA内存组织与使用
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2022-09-08 20:19:17" itemprop="dateCreated datePublished" datetime="2022-09-08T20:19:17+08:00">2022-09-08</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2025-06-17 23:50:22" itemprop="dateModified" datetime="2025-06-17T23:50:22+08:00">2025-06-17</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/CUDA%E5%B9%B6%E8%A1%8C%E7%A8%8B%E5%BA%8F%E8%AE%BE%E8%AE%A1/" itemprop="url" rel="index"><span itemprop="name">CUDA并行程序设计</span></a>
+                </span>
+            </span>
+
+          
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Valine: </span>
+    
+    <a title="valine" href="/2022/09/08/CUDA%E9%AB%98%E6%80%A7%E8%83%BD%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-6/#valine-comments" itemprop="discussionUrl">
+      <span class="post-comments-count valine-comment-count" data-xid="/2022/09/08/CUDA%E9%AB%98%E6%80%A7%E8%83%BD%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-6/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h2 id="cuda内存组织与使用">CUDA内存组织与使用</h2>
+<span id="more"></span>
+<h3 id="cuda的内存组织结构">CUDA的内存组织结构</h3>
+<p>与CPU的内存结构相似，GPU也是存在类似L1、L2之类的高速缓存的东西，而且CUDA为程序员提供更多的控制权，下面列出CUDA的内存模型。</p>
+<table>
+<thead>
+<tr class="header">
+<th style="text-align: center;">内存类型</th>
+<th style="text-align: center;">物理位置</th>
+<th style="text-align: center;">访问权限</th>
+<th style="text-align: center;">可见范围</th>
+<th style="text-align: center;">生命周期</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: center;">全局内存</td>
+<td style="text-align: center;">芯片外</td>
+<td style="text-align: center;">R/W</td>
+<td style="text-align: center;">所有线程和主机端</td>
+<td style="text-align: center;">主机分配和释放</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">常量内存</td>
+<td style="text-align: center;">芯片外</td>
+<td style="text-align: center;">R</td>
+<td style="text-align: center;">所有线程和主机端</td>
+<td style="text-align: center;">主机分配和释放</td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;">纹理和表面内存</td>
+<td style="text-align: center;">芯片外</td>
+<td style="text-align: center;">R</td>
+<td style="text-align: center;">所有线程和主机端</td>
+<td style="text-align: center;">主机分配和释放</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">寄存器内存</td>
+<td style="text-align: center;">芯片内</td>
+<td style="text-align: center;">R/W</td>
+<td style="text-align: center;">单个线程</td>
+<td style="text-align: center;">所在线程</td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;">局部内存</td>
+<td style="text-align: center;">芯片外</td>
+<td style="text-align: center;">R/W</td>
+<td style="text-align: center;">单个线程</td>
+<td style="text-align: center;">所在线程</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">共享内存</td>
+<td style="text-align: center;">芯片内</td>
+<td style="text-align: center;">R/W</td>
+<td style="text-align: center;">单个线程块</td>
+<td style="text-align: center;">所在线程块</td>
+</tr>
+</tbody>
+</table>
+<img src="/2022/09/08/CUDA%E9%AB%98%E6%80%A7%E8%83%BD%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-6/pic1.jpg" class="">
+<p>下面对这些内存逐一阐述</p>
+<h4 id="全局内存">全局内存</h4>
+<p>全局内存是指核函数中所有线程都访问的内存，与C语言中的全局内存概念上存在差异。其容量是最大的，基本上就是显存容量。当然，其访问速度也是相对比较低的。</p>
+<p>全局内存的主要目的就是为核函数提供数据、在主机与设备和在设备与设备之间传递数据。</p>
+<p>全局内存对所有线程可见，且其是完全由主机端来进行分配和回收的，另外，全局内存是线性排列的。</p>
+<p>我们通过使用cudaMalloc()函数可以动态地在全局内存中分配，但是我们也可以在全局内存上分配静态内存，这样的<code>全局的静态全局内存变量</code>必须在所有函数外部定义，即类似与C语言中的全局变量的定义，同样是所有线程可访问，且大小在编译时确定。</p>
+<p>定义方法如下所示</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">__device__ T x; <span class="comment">// 单个类型为T的变量</span></span><br><span class="line">__device__ T x[<span class="number">120</span>]; <span class="comment">// 固定长度的数组</span></span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>在核函数内可以对这些<code>全局的静态全局内存变量</code>进行访问，而不需要显示传递，但是这些变量对主机端不可见。</p>
+<p>要想让主机端访问这些变量，或者在主机端和设备之间传递这些数据，需要用到<code>cudaMemcpyToSymbol(symbol:设备符号, src:主机符号, count:长度, offset:设备偏移量, Flag:方向)</code>和<code>cudaMemcpyFromSymbol(dst:主机, symbol:设备, count:长度, offset:设备偏移量,Flag:方向)</code>来进行传递。</p>
+<h4 id="常量内存">常量内存</h4>
+<p>常量内存是有常量缓存的内存，数量有限，只有64K，其可见范围与生存周期与全局内存一样。不过常量内存仅可读，不可写。但是由于其存在缓存，所以速度会高很多。如果想得到高速的访问速度，需要保证线程束中的线程(线程块中相邻的32个线程)读取相同的常量内存(这样高速缓存才会命中)，(每个线程束由一个SM负责处理)。</p>
+<p>定义常量内存的方式是使用<code>__constant__</code>关键字来修饰变量，并使用<code>cudaMemcpyToSymbol()</code>来将数据复制到设备端。一般来说，给核函数按指传递的数据就放在常量内存中，但给核函数传递的参数最多在核函数内使用4KB常量内存。</p>
+<h4 id="纹理内存与表面内存">纹理内存与表面内存</h4>
+<p>纹理内存与表面内存类似与常量内存，有相同的可见范围与生命周期，但是其容量更大，使用方式也略微有些区别。</p>
+<p>对比较新的架构，对全局只读内存使用<code>__ldg(*addr)</code>函数可以通过全局只读缓存读取，这样速度会快一些。</p>
+<h4 id="寄存器">寄存器</h4>
+<p>核函数中定义的不加任何修饰符的变量就位于寄存器，gridDim这些也位于特殊的寄存器，所以访问的很快。在核函数中定义的数组有可能放在寄存器中，这取决于数组大小。</p>
+<p>寄存器变量位于芯片中，是访问速度最高的，且与所属线程生命周期一样长。</p>
+<h4 id="局部内存">局部内存</h4>
+<p>局部内存是全局内存的一部分，所以延迟很高，但是其使用方式跟寄存器内存一致。即在核函数内定义的不加修饰的变量或数组，存的下的位于寄存器，存不下的位于局部内存。</p>
+<p>每个线程最多使用512k的局部内存，但是使用过多会降低性能。</p>
+<h4 id="共享内存">共享内存</h4>
+<p>共享内存位于芯片上，读写速度仅次于寄存器，不过其声明周期是与线程块一样长。线程块内的所有线程都可以访问共享内存。</p>
+<h4 id="缓存">缓存</h4>
+<p>一般来说，高速缓存是不能被编程的，其执行过程是自动的，但是其对优化程序速度非常大。</p>
+<p>GPU的缓存有L1缓存(SM层次)、L2缓存(设备层次)，但是从硬件角度看L1缓存、纹理缓存和共享内存使用的相同的物理结构。</p>
+<div class="note primary">
+            <p>此处仅考虑图灵架构，因为图灵架构是最新的架构。</p>
+          </div>
+<p>因此，共享内存其实就可以看成是可以编程的缓存。</p>
+<h3 id="sm中的资源数目">SM中的资源数目</h3>
+<p>一个GPU是由多个SM组成的，一个SM包含以下资源：</p>
+<ul>
+<li>一定数量的寄存器</li>
+<li>一定数量的共享内存</li>
+<li>常量内存缓存</li>
+<li>纹理和表面内存缓存</li>
+<li>L1缓存</li>
+<li>线程束调度器，用于对就绪线程发出执行命令</li>
+<li>执行核心
+<ul>
+<li>若干整型运算核心INT32</li>
+<li>若干单精度浮点数运算核心FP32</li>
+<li>若干双精度浮点数运算核心FP64</li>
+<li>若干单精度浮点数超越函数的函数单元SFUs</li>
+<li>若干混合精度的张量核心tensor core</li>
+</ul></li>
+</ul>
+<p>因为一个SM的资源是有限的，所以有些情况下SM中驻留的线程数可能达不到理想的最大值，也就是SM的占有率不足100%。</p>
+<p>一般来说，让SM占有率保持在一个值(25%)以上，才可能获得高性能计算。</p>
+<p>另外，在图灵架构中，一个SM最多拥有16个线程块，且一个SM中最多有1024个线程（注意一个线程块中最多线程数目也是1024，而一个线程束大小为32）</p>
+<h4 id="运行时api查询设备">运行时API查询设备</h4>
+<p>通过一些运行时API来查询设备资源，可以用于编写针对不同架构的的显卡的程序。</p>
+<p>下面给出一个代码示例：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;device_launch_parameters.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;cuda_runtime.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;stdlib.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;stdio.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;math.h&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> TARGET 1</span></span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> CHECK(call)                                   \</span></span><br><span class="line"><span class="meta">do                                                    \</span></span><br><span class="line"><span class="meta">{                                                     \</span></span><br><span class="line"><span class="meta">    const cudaError_t error_code = call;              \</span></span><br><span class="line"><span class="meta">    <span class="keyword">if</span> (error_code != cudaSuccess)                    \</span></span><br><span class="line"><span class="meta">    {                                                 \</span></span><br><span class="line"><span class="meta">        printf(<span class="string">"CUDA Error:\n"</span>);                      \</span></span><br><span class="line"><span class="meta">        printf(<span class="string">"    File:       %s\n"</span>, __FILE__);     \</span></span><br><span class="line"><span class="meta">        printf(<span class="string">"    Line:       %d\n"</span>, __LINE__);     \</span></span><br><span class="line"><span class="meta">        printf(<span class="string">"    Error code: %d\n"</span>, error_code);   \</span></span><br><span class="line"><span class="meta">        printf(<span class="string">"    Error text: %s\n"</span>,                \</span></span><br><span class="line"><span class="meta">            cudaGetErrorString(error_code));          \</span></span><br><span class="line"><span class="meta">        exit(1);                                      \</span></span><br><span class="line"><span class="meta">    }                                                 \</span></span><br><span class="line"><span class="meta">} while (0)</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="keyword">if</span> TARGET == 1</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">int</span> <span class="title">main</span><span class="params">()</span></span></span><br><span class="line"><span class="function"></span>{</span><br><span class="line">	<span class="type">int</span> device_id = <span class="number">0</span>;</span><br><span class="line"></span><br><span class="line">	cudaDeviceProp prop;</span><br><span class="line">	<span class="built_in">CHECK</span>(<span class="built_in">cudaGetDeviceProperties</span>(&amp;prop, device_id)); <span class="comment">// 获取设备数据</span></span><br><span class="line"></span><br><span class="line">	<span class="built_in">printf</span>(<span class="string">"device id : %d \n"</span>, device_id);</span><br><span class="line">	<span class="built_in">printf</span>(<span class="string">"device name : %s \n"</span>, prop.name);</span><br><span class="line">	<span class="built_in">printf</span>(<span class="string">"compute capability %d.%d\n"</span>, prop.major, prop.minor);</span><br><span class="line">	<span class="built_in">printf</span>(<span class="string">"global mem : %g GB\n"</span>, prop.totalGlobalMem / (<span class="number">1024.0</span> * <span class="number">1024</span> * <span class="number">1024</span>));</span><br><span class="line">	<span class="built_in">printf</span>(<span class="string">"constant mem : %g kb\n"</span>, prop.totalConstMem / <span class="number">1024.0</span>);</span><br><span class="line">	<span class="built_in">printf</span>(<span class="string">"max grid size : (%d, %d, %d)\n"</span>, prop.maxGridSize[<span class="number">0</span>], prop.maxGridSize[<span class="number">1</span>], prop.maxGridSize[<span class="number">2</span>]);</span><br><span class="line">	<span class="built_in">printf</span>(<span class="string">"max block size : (%d, %d, %d)\n"</span>, prop.maxThreadsDim[<span class="number">0</span>], prop.maxThreadsDim[<span class="number">1</span>], prop.maxThreadsDim[<span class="number">2</span>]);</span><br><span class="line">	<span class="built_in">printf</span>(<span class="string">"numbers of SM : %d\n"</span>, prop.multiGpuBoardGroupID);</span><br><span class="line">	<span class="built_in">printf</span>(<span class="string">"max shared mem per block : %g kb\n"</span>, prop.sharedMemPerBlock / <span class="number">1024.0</span>);</span><br><span class="line">	<span class="built_in">printf</span>(<span class="string">"max numbers of register per block : %d K\n"</span>, prop.regsPerBlock);</span><br><span class="line">	<span class="built_in">printf</span>(<span class="string">"max numbers of register per SM : %d K\n"</span>, prop.regsPerMultiprocessor/<span class="number">1024</span>);</span><br><span class="line">	<span class="built_in">printf</span>(<span class="string">"max number of threads per block : %d\n"</span>, prop.maxThreadsPerBlock);</span><br><span class="line">	<span class="built_in">printf</span>(<span class="string">"max number of threads per SM : %d\n"</span>, prop.maxThreadsPerMultiProcessor);</span><br><span class="line">}</span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="keyword">endif</span></span></span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/CUDA/" rel="tag"># CUDA</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2022/09/06/CUDA%E9%AB%98%E6%80%A7%E8%83%BD%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-4/" rel="prev" title="CUDA高性能并行计算(4)--CUDA错误检测与程序计时">
+      <i class="fa fa-chevron-left"></i> CUDA高性能并行计算(4)--CUDA错误检测与程序计时
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2022/09/08/CUDA%E9%AB%98%E6%80%A7%E8%83%BD%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-5/" rel="next" title="CUDA高性能并行计算(5)--CUDA二维计算网格">
+      CUDA高性能并行计算(5)--CUDA二维计算网格 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+    <div class="comments" id="valine-comments"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#cuda%E5%86%85%E5%AD%98%E7%BB%84%E7%BB%87%E4%B8%8E%E4%BD%BF%E7%94%A8"><span class="nav-number">1.</span> <span class="nav-text">CUDA内存组织与使用</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#cuda%E7%9A%84%E5%86%85%E5%AD%98%E7%BB%84%E7%BB%87%E7%BB%93%E6%9E%84"><span class="nav-number">1.1.</span> <span class="nav-text">CUDA的内存组织结构</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%85%A8%E5%B1%80%E5%86%85%E5%AD%98"><span class="nav-number">1.1.1.</span> <span class="nav-text">全局内存</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%B8%B8%E9%87%8F%E5%86%85%E5%AD%98"><span class="nav-number">1.1.2.</span> <span class="nav-text">常量内存</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E7%BA%B9%E7%90%86%E5%86%85%E5%AD%98%E4%B8%8E%E8%A1%A8%E9%9D%A2%E5%86%85%E5%AD%98"><span class="nav-number">1.1.3.</span> <span class="nav-text">纹理内存与表面内存</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%AF%84%E5%AD%98%E5%99%A8"><span class="nav-number">1.1.4.</span> <span class="nav-text">寄存器</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%B1%80%E9%83%A8%E5%86%85%E5%AD%98"><span class="nav-number">1.1.5.</span> <span class="nav-text">局部内存</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%85%B1%E4%BA%AB%E5%86%85%E5%AD%98"><span class="nav-number">1.1.6.</span> <span class="nav-text">共享内存</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E7%BC%93%E5%AD%98"><span class="nav-number">1.1.7.</span> <span class="nav-text">缓存</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#sm%E4%B8%AD%E7%9A%84%E8%B5%84%E6%BA%90%E6%95%B0%E7%9B%AE"><span class="nav-number">1.2.</span> <span class="nav-text">SM中的资源数目</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E8%BF%90%E8%A1%8C%E6%97%B6api%E6%9F%A5%E8%AF%A2%E8%AE%BE%E5%A4%87"><span class="nav-number">1.2.1.</span> <span class="nav-text">运行时API查询设备</span></a></li></ol></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Staskaer"
+      src="/imgs/theme_pic/head_img.png">
+  <p class="site-author-name" itemprop="name">Staskaer</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">97</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">10</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">24</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/Staskaer" title="Github → https:&#x2F;&#x2F;github.com&#x2F;Staskaer" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:liujiaxin011121@gmail.com" title="E-Mail → mailto:liujiaxin011121@gmail.com" rel="noopener" target="_blank"><i class="fa fa-envelope fa-fw"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://www.zhihu.com/people/staskaer" title="Zhihu → https:&#x2F;&#x2F;www.zhihu.com&#x2F;people&#x2F;staskaer" rel="noopener" target="_blank"><i class="fab fa-zhihu fa-fw"></i></a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2025</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Staskaer</span>
+</div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+
+<script>
+NexT.utils.loadComments(document.querySelector('#valine-comments'), () => {
+  NexT.utils.getScript('https://cdn.jsdelivr.net/npm/valine@1.5.1/dist/Valine.min.js', () => {
+    var GUEST = ['nick', 'mail', 'link'];
+    var guest = 'nick,mail,link';
+    guest = guest.split(',').filter(item => {
+      return GUEST.includes(item);
+    });
+    new Valine({
+      el         : '#valine-comments',
+      verify     : false,
+      notify     : false,
+      appId      : 'xH8NDrh9u4SQrUpQOd0lICnX-MdYXbMMI',
+      appKey     : 'jl3JjPS4jsosZG29Zv24Y7LE',
+      placeholder: "Just go go",
+      avatar     : 'mm',
+      meta       : guest,
+      pageSize   : '10' || 10,
+      visitor    : false,
+      lang       : 'zh-Hans' || 'zh-cn',
+      path       : location.pathname,
+      recordIP   : false,
+      serverURLs : 'https://xh8ndrh9.api.lncldglobal.com'
+    });
+  }, window.Valine);
+});
+</script>
+
+</body>
+</html>
+

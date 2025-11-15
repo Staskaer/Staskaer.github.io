@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 6.2.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/imgs/theme_pic/staskaer.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/imgs/theme_pic/staskaer.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/imgs/theme_pic/staskaer.png">
+  <link rel="mask-icon" href="/imgs/theme_pic/staskaer.png" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Gemini","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"mac"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"valine","storage":true,"lazyload":false,"nav":null,"activeClass":"valine"},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="物理内存、虚拟内存、转换">
+<meta property="og:type" content="article">
+<meta property="og:title" content="从ucore来总结操作系统(2)----物理内存、虚拟内存、转换">
+<meta property="og:url" content="http://example.com/2023/01/16/%E4%BB%8Eucore%E6%9D%A5%E6%80%BB%E7%BB%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-2/index.html">
+<meta property="og:site_name" content="Staskaer">
+<meta property="og:description" content="物理内存、虚拟内存、转换">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="http://example.com/2023/01/16/%E4%BB%8Eucore%E6%9D%A5%E6%80%BB%E7%BB%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-2/pic1.png">
+<meta property="og:image" content="http://example.com/2023/01/16/%E4%BB%8Eucore%E6%9D%A5%E6%80%BB%E7%BB%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-2/pic2.png">
+<meta property="og:image" content="http://example.com/2023/01/16/%E4%BB%8Eucore%E6%9D%A5%E6%80%BB%E7%BB%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-2/pic3.0.jpg">
+<meta property="og:image" content="http://example.com/2023/01/16/%E4%BB%8Eucore%E6%9D%A5%E6%80%BB%E7%BB%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-2/pic3.jpg">
+<meta property="og:image" content="http://example.com/2023/01/16/%E4%BB%8Eucore%E6%9D%A5%E6%80%BB%E7%BB%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-2/pic4.png">
+<meta property="article:published_time" content="2023-01-16T03:20:32.000Z">
+<meta property="article:modified_time" content="2025-06-17T15:50:22.378Z">
+<meta property="article:author" content="Staskaer">
+<meta property="article:tag" content="ucore操作系统">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://example.com/2023/01/16/%E4%BB%8Eucore%E6%9D%A5%E6%80%BB%E7%BB%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-2/pic1.png">
+
+<link rel="canonical" href="http://example.com/2023/01/16/%E4%BB%8Eucore%E6%9D%A5%E6%80%BB%E7%BB%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-2/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'en'
+  };
+</script>
+
+  <title>从ucore来总结操作系统(2)----物理内存、虚拟内存、转换 | Staskaer</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+<style>mjx-container[jax="SVG"] {
+  direction: ltr;
+}
+
+mjx-container[jax="SVG"] > svg {
+  overflow: visible;
+}
+
+mjx-container[jax="SVG"][display="true"] {
+  display: block;
+  text-align: center;
+  margin: 1em 0;
+}
+
+mjx-container[jax="SVG"][justify="left"] {
+  text-align: left;
+}
+
+mjx-container[jax="SVG"][justify="right"] {
+  text-align: right;
+}
+
+g[data-mml-node="merror"] > g {
+  fill: red;
+  stroke: red;
+}
+
+g[data-mml-node="merror"] > rect[data-background] {
+  fill: yellow;
+  stroke: none;
+}
+
+g[data-mml-node="mtable"] > line[data-line] {
+  stroke-width: 70px;
+  fill: none;
+}
+
+g[data-mml-node="mtable"] > rect[data-frame] {
+  stroke-width: 70px;
+  fill: none;
+}
+
+g[data-mml-node="mtable"] > .mjx-dashed {
+  stroke-dasharray: 140;
+}
+
+g[data-mml-node="mtable"] > .mjx-dotted {
+  stroke-linecap: round;
+  stroke-dasharray: 0,140;
+}
+
+g[data-mml-node="mtable"] > svg {
+  overflow: visible;
+}
+
+[jax="SVG"] mjx-tool {
+  display: inline-block;
+  position: relative;
+  width: 0;
+  height: 0;
+}
+
+[jax="SVG"] mjx-tool > mjx-tip {
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+mjx-tool > mjx-tip {
+  display: inline-block;
+  padding: .2em;
+  border: 1px solid #888;
+  font-size: 70%;
+  background-color: #F8F8F8;
+  color: black;
+  box-shadow: 2px 2px 5px #AAAAAA;
+}
+
+g[data-mml-node="maction"][data-toggle] {
+  cursor: pointer;
+}
+
+mjx-status {
+  display: block;
+  position: fixed;
+  left: 1em;
+  bottom: 1em;
+  min-width: 25%;
+  padding: .2em .4em;
+  border: 1px solid #888;
+  font-size: 90%;
+  background-color: #F8F8F8;
+  color: black;
+}
+
+foreignObject[data-mjx-xml] {
+  font-family: initial;
+  line-height: normal;
+  overflow: visible;
+}
+
+.MathJax path {
+  stroke-width: 3;
+}
+
+mjx-container[display="true"] {
+  overflow: auto hidden;
+}
+
+mjx-container[display="true"] + br {
+  display: none;
+}
+</style></head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Staskaer</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">Hi, this is Staskaer</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+        <li class="menu-item menu-item-links">
+
+    <a href="/links/" rel="section"><i class="fa fa-link fa-fw"></i>links</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2023/01/16/%E4%BB%8Eucore%E6%9D%A5%E6%80%BB%E7%BB%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-2/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/imgs/theme_pic/head_img.png">
+      <meta itemprop="name" content="Staskaer">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Staskaer">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          从ucore来总结操作系统(2)----物理内存、虚拟内存、转换
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2023-01-16 11:20:32" itemprop="dateCreated datePublished" datetime="2023-01-16T11:20:32+08:00">2023-01-16</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2025-06-17 23:50:22" itemprop="dateModified" datetime="2025-06-17T23:50:22+08:00">2025-06-17</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/" itemprop="url" rel="index"><span itemprop="name">操作系统</span></a>
+                </span>
+            </span>
+
+          
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Valine: </span>
+    
+    <a title="valine" href="/2023/01/16/%E4%BB%8Eucore%E6%9D%A5%E6%80%BB%E7%BB%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-2/#valine-comments" itemprop="discussionUrl">
+      <span class="post-comments-count valine-comment-count" data-xid="/2023/01/16/%E4%BB%8Eucore%E6%9D%A5%E6%80%BB%E7%BB%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-2/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h2 id="物理内存虚拟内存转换">物理内存、虚拟内存、转换</h2>
+<span id="more"></span>
+<p>这篇是lab2的内容，主要就是实操一下页表和段页式的虚拟内存管理机制。</p>
+<h3 id="x00-环境准备">0X00 环境准备</h3>
+<p>首先，lab2是基于lab1的，所以需要把lab1的内容合并到lab2中，这里就不赘述了。</p>
+<p>在正式开始编程之前，还是有必要来了解下ucore中已有的代码和机制。</p>
+<p>本lab中，我们需要修改<code>defalult_pmm.c</code>中的default_init,default_init_memmap,default_alloc_pages, default_free_pages这些函数来完成相应的功能。</p>
+<p><strong>当ucore被启动之后，最重要的事情就是知道还有多少内存可用</strong>，一般来说，获取内存大小的方法由<em>BIOS中断调用</em>和<em>直接探测</em>两种。BIOS中断调用方法是一般只能在实模式下完成，而直接探测方法必须在保护模式下完成。ucore是通过BIOS中断调用来帮助完成的，由于BIOS中断调用必须在实模式下进行，所以在bootloader进入保护模式前完成这部分工作相对比较合适。通过BIOS中断获取内存可调用参数为e820h的INT 15h BIOS中断，BIOS通过系统内存映射地址描述符（Address Range Descriptor）格式来表示系统物理内存布局。</p>
+<p>探测功能在bootasm.S中实现，使用<code>INT 15</code>软中断来要求BIOS返回系统内存布局信息，然后把探查出来的信息存放在物理地址0x8000中，程序使用结构体struct e820map作为保存地址范围描述符结构的缓冲区来保存内存布局，e820map定义在<code>kern/mm/memlayout.h</code>：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="comment">// some constants for bios interrupt 15h AX = 0xE820</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> E820MAX             20      <span class="comment">// number of entries in E820MAP</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> E820_ARM            1       <span class="comment">// address range memory</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> E820_ARR            2       <span class="comment">// address range reserved</span></span></span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">e820map</span> {</span></span><br><span class="line">    <span class="type">int</span> nr_map;</span><br><span class="line">    <span class="class"><span class="keyword">struct</span> {</span></span><br><span class="line">        <span class="type">uint64_t</span> addr;</span><br><span class="line">        <span class="type">uint64_t</span> size;</span><br><span class="line">        <span class="type">uint32_t</span> type;</span><br><span class="line">    } __attribute__((packed)) <span class="built_in">map</span>[E820MAX];</span><br><span class="line">};</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p><strong>完成物理内存页管理初始化工作后，其物理地址的分布空间如下</strong></p>
+<img src="/2023/01/16/%E4%BB%8Eucore%E6%9D%A5%E6%80%BB%E7%BB%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-2/pic1.png" class="">
+<p><strong>在获得可用物理内存范围后，系统需要建立相应的数据结构来管理以物理页（按4KB对齐，且大小为4KB的物理内存单元）为最小单位的整个物理内存，以配合后续涉及的分页管理机制。</strong>每个物理页可以用一个Page数据结构来表示。Page定义在<code>kern/mm/memlayout.h</code>中：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="comment">/* *</span></span><br><span class="line"><span class="comment"> * struct Page - Page descriptor structures. Each Page describes one</span></span><br><span class="line"><span class="comment"> * physical page. In kern/mm/pmm.h, you can find lots of useful functions</span></span><br><span class="line"><span class="comment"> * that convert Page to other data types, such as phyical address.</span></span><br><span class="line"><span class="comment"> * */</span></span><br><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">Page</span> {</span></span><br><span class="line">    <span class="comment">// 引用计数</span></span><br><span class="line">    <span class="type">int</span> ref;                        <span class="comment">// page frame's reference counter</span></span><br><span class="line">    <span class="comment">// 用两个bit表示两种属性</span></span><br><span class="line">    <span class="comment">// 1. PG_reserved位 此位为1时表示该页是内核保留的，不可分配</span></span><br><span class="line">    <span class="comment">// 2. PG_property位 此位为1时表示可分配，为0表示已分配</span></span><br><span class="line">    <span class="type">uint32_t</span> flags;                 <span class="comment">// array of flags that describe the status of the page frame</span></span><br><span class="line">    <span class="comment">// 空闲块大小(以物理页位大小)，仅在当前页是空闲块的第一个物理页时有效</span></span><br><span class="line">    <span class="type">unsigned</span> <span class="type">int</span> property;          <span class="comment">// the num of free block, used in first fit pm manager</span></span><br><span class="line">    <span class="type">list_entry_t</span> page_link;         <span class="comment">// free list link</span></span><br><span class="line">};</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<h3 id="x01-实现-first-fit-连续物理内存分配算法">0X01 实现 first-fit 连续物理内存分配算法</h3>
+<p>这里的first-fit算法就是从物理内存的起始地址开始，找到第一个满足要求的空闲块，然后分配给进程。这里的要求就是空闲块的大小要大于等于需要分配的大小。空闲链表需要按照地址从低到高的次序排序。<strong>实验一要求实验的函数是分配物理内存的。</strong></p>
+<p>其实，lab2自带的default_init_memmap、default_alloc_pages、default_free_pages实现了一个类似first fit的算法，<strong>只不过直接<code>make qemu</code>会发现报错，我们可以直接在这基础上进行修改。</strong></p>
+<p>同时，在<code>libs/list.h</code>已经定义好了双向链表；在<code>kern/mm/memlayout.h</code>中也定义了一个free_area_t的数据结构，包括<strong>空闲块双向链表的头</strong>和<strong>空闲块总数(以页为单位)</strong>；<code>kern/mm/pmm.h</code>中定义了一个通用的分配算法的函数列表，用pmm_manager表示，<strong>一个pmm_manager就是一个分配算法</strong>。其中init函数就是用来初始化free_area变量的, first_fit分配算法可直接重用default_init函数的实现。init_memmap函数需要根据现有的内存情况构建空闲块列表的初始状态。</p>
+<p>而这些<strong>函数的调用栈</strong>如下</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">kern_init --&gt; pmm_init--&gt;page_init--&gt;init_memmap--&gt; pmm_manager-&gt;init_memmap</span><br></pre></td></tr></table></figure>
+<p>而kern_init(内核初始化)、pmm_init(内存初始化)、page_init(读取物理内存，并进行分页)都已经实现了，所以我们首先从init_memmap开始看。</p>
+<p>init_memmap(<strong>在此处其实就是default_init_memmap</strong>)需要根据page_init传递的参数，来建立连续内存的空闲块双向链表。<strong>链表头是free_area.free_list，链表项是Page数据结构的base-&gt;page_link。这样我们就依靠Page数据结构中的成员变量page_link形成了连续内存空闲块列表。</strong></p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="comment">// kern/mm/default_pmm.c</span></span><br><span class="line"></span><br><span class="line"><span class="type">static</span> <span class="type">void</span> <span class="title function_">default_init_memmap</span><span class="params">(<span class="keyword">struct</span> Page *base, <span class="type">size_t</span> n)</span></span><br><span class="line">{</span><br><span class="line">    assert(n &gt; <span class="number">0</span>);</span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">Page</span> *<span class="title">p</span> =</span> base;</span><br><span class="line">    <span class="keyword">for</span> (; p != base + n; p++)</span><br><span class="line">    { </span><br><span class="line">        <span class="comment">// 在查找可用内存并分配struct Page数组时</span></span><br><span class="line">        <span class="comment">// 就已经将将全部Page设置为reserved(page_init里)</span></span><br><span class="line">        <span class="comment">// 这里确保之前的初始化正确</span></span><br><span class="line">        assert(PageReserved(p));</span><br><span class="line">        <span class="comment">// 将Page标记为可用的:ref设为0,清除reserved,</span></span><br><span class="line">        <span class="comment">// 设置PG_property,并把property设置为0(不是空闲块的第一个物理页)</span></span><br><span class="line">        p-&gt;flags = p-&gt;property = <span class="number">0</span>; </span><br><span class="line">        set_page_ref(p, <span class="number">0</span>);</span><br><span class="line">    }</span><br><span class="line">    <span class="comment">// 空闲块第一个物理页,property设置为n</span></span><br><span class="line">    base-&gt;property = n; </span><br><span class="line">    <span class="comment">// 设置空闲块的标志位</span></span><br><span class="line">    SetPageProperty(base);</span><br><span class="line">    <span class="comment">// 更新空闲块的总和</span></span><br><span class="line">    nr_free += n;        </span><br><span class="line">    <span class="comment">//'p-&gt;page_link'将这个页面链接到'free_list'。 </span></span><br><span class="line">               </span><br><span class="line">    list_add_after(&amp;free_list, &amp;(base-&gt;page_link)); </span><br><span class="line">}</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>这是一个物理页初始化函数，其功能是将所有可用的Page的flags设置为PG_property，引用计数设置为0，property设置为0，初始化page_link空闲块的第一个物理块的property设置为该空闲块的大小，将其加入到空闲列表。<strong>每次调用会把一个实际的物理块加入到空闲区块中</strong>。由于需要保证升序，所以需要使用list_add_after函数(测试下来只有一个块，又因为是双向链表，其实不影响的)。</p>
+<p>然后我们来考虑一下页面分配函数，即default_alloc_pages函数，<strong>它的作用是在空闲列表中搜索第一个空闲块(块大小&gt;=n)，如果找到则把找到的page返回。</strong></p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="comment">// kern/mm/default_pmm.c</span></span><br><span class="line"></span><br><span class="line"><span class="type">static</span> <span class="keyword">struct</span> Page *<span class="title function_">default_alloc_pages</span><span class="params">(<span class="type">size_t</span> n)</span></span><br><span class="line">{</span><br><span class="line">    <span class="comment">// 确保能够分配</span></span><br><span class="line">    assert(n &gt; <span class="number">0</span>);</span><br><span class="line">    <span class="keyword">if</span> (n &gt; nr_free)</span><br><span class="line">    {</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">NULL</span>;</span><br><span class="line">    }</span><br><span class="line">    <span class="comment">// 从空闲链表中找到第一个能够分配的块</span></span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">Page</span> *<span class="title">page</span> =</span> <span class="literal">NULL</span>;</span><br><span class="line">    <span class="type">list_entry_t</span> *le = &amp;free_list;</span><br><span class="line">    <span class="comment">// 一直查找下去，直到回到头部</span></span><br><span class="line">    <span class="keyword">while</span> ((le = list_next(le)) != &amp;free_list)</span><br><span class="line">    {</span><br><span class="line">        <span class="comment">// 通过list_entry_t来获取page</span></span><br><span class="line">        <span class="class"><span class="keyword">struct</span> <span class="title">Page</span> *<span class="title">p</span> =</span> le2page(le, page_link);</span><br><span class="line">        <span class="comment">// 检查p-&gt;property(记录这个块中空闲物理页的数量)是否&gt;=n.</span></span><br><span class="line">        <span class="keyword">if</span> (p-&gt;property &gt;= n)</span><br><span class="line">        {</span><br><span class="line">            page = p;</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">        }</span><br><span class="line">    }</span><br><span class="line">    <span class="comment">// 如果找到符合要求的空闲块</span></span><br><span class="line">    <span class="keyword">if</span> (page != <span class="literal">NULL</span>)</span><br><span class="line">    {</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 如果空闲块非常大，就要切割</span></span><br><span class="line">        <span class="keyword">if</span> (page-&gt;property &gt; n)</span><br><span class="line">        {</span><br><span class="line">            <span class="class"><span class="keyword">struct</span> <span class="title">Page</span> *<span class="title">p</span> =</span> page + n;</span><br><span class="line">            p-&gt;property = page-&gt;property - n;</span><br><span class="line">            <span class="comment">// 然后把剩下的空闲块加入到空闲链表中</span></span><br><span class="line">            <span class="comment">/*</span></span><br><span class="line"><span class="comment">            但是此处要注意保证按照地址升序排列</span></span><br><span class="line"><span class="comment">            原始代码此处是不正确的，此处已修正</span></span><br><span class="line"><span class="comment">            */</span></span><br><span class="line">            SetPageProperty(p);</span><br><span class="line">            <span class="comment">// 把切割的后半部分插入到原来的块后面</span></span><br><span class="line">            list_add_after(&amp;(page-&gt;page_link), &amp;(p-&gt;page_link));</span><br><span class="line">        }</span><br><span class="line">        <span class="comment">// 然后从空闲链表中删除这个块</span></span><br><span class="line">        list_del(&amp;(page-&gt;page_link));</span><br><span class="line">        <span class="comment">// 更新参数，并保证分配出去的块标志位正确</span></span><br><span class="line">        nr_free -= n;</span><br><span class="line">        ClearPageProperty(page);</span><br><span class="line">    }</span><br><span class="line">    <span class="keyword">return</span> page;</span><br><span class="line">}</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>其实就是遍历一下双向链表，注意一下对空闲块分割后同样需要按照升序插入即可。</p>
+<p>还有一个函数是default_free_pages，其作用是将物理页释放，即将物理页加入到空闲链表中。这个函数会稍微麻烦一点，毕竟会涉及到空闲块的合并</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="type">static</span> <span class="type">void</span> <span class="title function_">default_free_pages</span><span class="params">(<span class="keyword">struct</span> Page *base, <span class="type">size_t</span> n)</span></span><br><span class="line">{</span><br><span class="line">    assert(n &gt; <span class="number">0</span>);</span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">Page</span> *<span class="title">p</span> =</span> base;</span><br><span class="line">    <span class="comment">// 清除每页的标志位和引用计数</span></span><br><span class="line">    <span class="keyword">for</span> (; p != base + n; p++)</span><br><span class="line">    {</span><br><span class="line">        assert(!PageReserved(p) &amp;&amp; !PageProperty(p));</span><br><span class="line">        p-&gt;flags = <span class="number">0</span>;</span><br><span class="line">        set_page_ref(p, <span class="number">0</span>);</span><br><span class="line">    }</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 随后将空闲页加入到空闲链表中</span></span><br><span class="line"></span><br><span class="line">    <span class="comment">// 设置头页</span></span><br><span class="line">    base-&gt;property = n;</span><br><span class="line">    SetPageProperty(base);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 遍历空闲链表，将空闲页合并</span></span><br><span class="line">    <span class="type">list_entry_t</span> *le = list_next(&amp;free_list);</span><br><span class="line">    <span class="keyword">while</span> (le != &amp;free_list)</span><br><span class="line">    {</span><br><span class="line">        p = le2page(le, page_link);</span><br><span class="line">        le = list_next(le);</span><br><span class="line">        <span class="comment">// 如果p页的地址刚好紧接在以base页开头的空闲块之后</span></span><br><span class="line">        <span class="comment">// 就把base页和p页合并</span></span><br><span class="line">        <span class="keyword">if</span> (base + base-&gt;property == p)</span><br><span class="line">        {</span><br><span class="line">            base-&gt;property += p-&gt;property;</span><br><span class="line">            ClearPageProperty(p);</span><br><span class="line">            list_del(&amp;(p-&gt;page_link));</span><br><span class="line">        }</span><br><span class="line">        <span class="comment">// 如果p页的地址刚好紧接在以base页开头的空闲块之前</span></span><br><span class="line">        <span class="comment">// 就把p页和base页合并</span></span><br><span class="line">        <span class="keyword">else</span> <span class="keyword">if</span> (p + p-&gt;property == base)</span><br><span class="line">        {</span><br><span class="line">            p-&gt;property += base-&gt;property;</span><br><span class="line">            ClearPageProperty(base);</span><br><span class="line">            base = p;</span><br><span class="line">            list_del(&amp;(p-&gt;page_link));</span><br><span class="line">        }</span><br><span class="line">    }</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 至此，就将所有与base开头的块合并完毕</span></span><br><span class="line"></span><br><span class="line">    <span class="comment">// 更新一下空闲页的数量</span></span><br><span class="line">    nr_free += n;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/*</span></span><br><span class="line"><span class="comment">    同样，这里原函数也是不正确的</span></span><br><span class="line"><span class="comment">    需要寻找到合适的位置插入base，而不能直接在前面插入</span></span><br><span class="line"><span class="comment">    */</span></span><br><span class="line">    le = list_next(&amp;free_list);</span><br><span class="line">    <span class="keyword">while</span> (le != &amp;free_list)</span><br><span class="line">    {</span><br><span class="line">        p = le2page(le, page_link); <span class="comment">// 将空闲列表条目转换为页面</span></span><br><span class="line">        <span class="keyword">if</span> (base + base-&gt;property &lt;= p)</span><br><span class="line">        { <span class="comment">// 地址大小由空闲块大小来表示</span></span><br><span class="line">            assert(base + base-&gt;property != p);</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">        }</span><br><span class="line">        le = list_next(le);</span><br><span class="line">    }</span><br><span class="line"></span><br><span class="line">    list_add_before(le, &amp;(base-&gt;page_link));</span><br><span class="line">}</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>这个函数首先要清除页面的各种标志位和引用计数，从而保证每一页都可以直接被分配。随后将空闲页加入到空闲链表中，合并分两种情况进行，一种是base页的地址刚好紧接在以base页开头的空闲块之后，另一种是p页的地址刚好紧接在以base页开头的空闲块之前。最后更新空闲页的数量，然后寻找到合适的位置插入base，而不能直接在前面插入。</p>
+<p>修改完成后，输入<code>make qemu</code>即可看到第一项测试通过。</p>
+<h3 id="x02-实现寻找虚拟地址对应的页表项">0X02 实现寻找虚拟地址对应的页表项</h3>
+<p>通过设置页表和对应的页表项，可建立虚拟内存地址和物理内存地址的对应关系。其中的get_pte函数是设置页表项环节中的一个重要步骤。此函数找到一个虚地址对应的二级页表项的内核虚地址，如果此二级页表项不存在，则分配一个包含此项的二级页表。本练习需要补全get_pte函数，位于 <code>kern/mm/pmm.c</code>，实现其功能。get_pte函数的调用关系图如下所示：</p>
+<img src="/2023/01/16/%E4%BB%8Eucore%E6%9D%A5%E6%80%BB%E7%BB%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-2/pic2.png" class="">
+<p>本实验要求实现一个get_pte函数，<strong>此函数找到一个虚拟地址对应的二级页表项的内核虚地址，如果此二级页表项不存在，则分配一个包含此项的二级页表(要认识到页表二级页表也在内存中)</strong>。</p>
+<p>就是给定一个虚拟地址，返回下图中红框(即PTE)在内存中地址(也是虚拟地址)。</p>
+<img src="/2023/01/16/%E4%BB%8Eucore%E6%9D%A5%E6%80%BB%E7%BB%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-2/pic3.0.jpg" class="">
+<p>Intel 80386采用了二级页表来建立线性地址与物理地址之间的映射关系。由于我们已经具有了一个物理内存页管理器default_pmm_manager，支持动态分配和释放内存页的功能，我们就可以用它来获得所需的空闲物理页。在二级页表结构中，<strong>页目录表占4KB空间，可通过alloc_page函数获得一个空闲物理页作为页目录表</strong>（Page Directory Table，PDT）。同理，ucore也通过这种类似方式获得一个页表（Page Table，PT）所需的4KB空间。</p>
+<div class="note primary">
+            <p>在保护模式中，x86 体系结构将内存地址分成三种：<strong>逻辑地址（也称虚拟地址）、线性地址和物理地址。</strong></p><ul><li>段式存储在内存保护方面有优势，页式存储在内存利用和优化转移到后备存储方面有优势。</li><li>在段式存储管理基础上，给每个段加一级页表。同时，通过指向相同的页表基址，实现进程间的段共享。</li><li>在段页式管理中，操作系统弱化了段式管理中的功能，实现以分页为主的内存管理。段式管理只起到了一个过滤的作用，它将地址不加转换直接映射成线性地址。<strong>将虚拟地址转换为物理地址的过程如下</strong>：<ul><li>根据段寄存器中的段选择子，获取GDT中的特定基址并加上目标偏移来确定<strong>线性地址</strong>。由于GDT中所有的基址全为0（因为弱化了段式管理的功能，对等映射），所以此时的逻辑地址和线性地址是相同的。</li><li>根据该线性地址，获取对应页表项，并根据该页表项来获取对应的<strong>物理地址</strong>。</li></ul></li></ul><p><strong>一级页表（页目录表PageDirectoryTable, PDT）的起始地址存储于%cr3寄存器中。</strong></p><p><img src="/2023/01/16/%E4%BB%8Eucore%E6%9D%A5%E6%80%BB%E7%BB%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-2/pic3.jpg" class=""></p>
+          </div>
+<p>在一个简单的两级页表中，页目录为每页页表包含了一项。它由多个<strong>页目录项</strong>（Page Directory Entries，PDE）组成。PDE（至少）拥有有效位（valid bit）和页帧号（page frame number，PFN），类似于 PTE。但是，正如上面所暗示的，这个有效位的含义稍有不同：<strong>如果 PDE 项是有效的，则意味着该项指向的页表（通过PFN）中至少有一页是有效的</strong>，即在该 PDE 所指向的页中，至少一个PTE，其有效位被设置为1。如果 PDE 项无效（即等于零），则 PDE的其余部分没有定义。</p>
+<p><strong>一个线性地址对应的各个页表项如下</strong></p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// A linear address 'la' has a three-part structure as follows:</span></span><br><span class="line"><span class="comment">//</span></span><br><span class="line"><span class="comment">// +--------10------+-------10-------+---------12----------+</span></span><br><span class="line"><span class="comment">// | Page Directory |   Page Table   | Offset within Page  |</span></span><br><span class="line"><span class="comment">// |      Index     |     Index      |                     |</span></span><br><span class="line"><span class="comment">// +----------------+----------------+---------------------+</span></span><br><span class="line"><span class="comment">//  \--- PDX(la) --/ \--- PTX(la) --/ \---- PGOFF(la) ----/</span></span><br><span class="line"><span class="comment">//  \----------- PPN(la) -----------/</span></span><br><span class="line"><span class="comment">//</span></span><br><span class="line"><span class="comment">// The PDX, PTX, PGOFF, and PPN macros decompose linear addresses as shown.</span></span><br><span class="line"><span class="comment">// To construct a linear address la from PDX(la), PTX(la), and PGOFF(la),</span></span><br><span class="line"><span class="comment">// use PGADDR(PDX(la), PTX(la), PGOFF(la)).</span></span><br></pre></td></tr></table></figure>
+<p>由于get_pte函数中给出了详细的步骤注释，我们直接给出代码</p>
+<p><strong>注意，PTE内容的设置是调用者的职责，get_pte只需要给调用者一个可访问的PTE(page table entry)即可。</strong></p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="comment">// get_pte - get pte and return the kernel virtual address of this pte for la</span></span><br><span class="line"><span class="comment">//         - if the PT contians this pte didn't exist, alloc a page for PT</span></span><br><span class="line"><span class="comment">//  parameter:</span></span><br><span class="line"><span class="comment">//   pgdir:  the kernel virtual base address of PDT</span></span><br><span class="line"><span class="comment">//   la:     the linear address need to map</span></span><br><span class="line"><span class="comment">//   create: a logical value to decide if alloc a page for PT</span></span><br><span class="line"><span class="comment">//  return vaule: the kernel virtual address of this pte</span></span><br><span class="line"><span class="comment">// pgdir是页目录 la是线性地址(虚拟地址) create是是否新建</span></span><br><span class="line"><span class="type">pte_t</span> *<span class="title function_">get_pte</span><span class="params">(<span class="type">pde_t</span> *pgdir, <span class="type">uintptr_t</span> la, <span class="type">bool</span> create)</span></span><br><span class="line">{</span><br><span class="line">    <span class="comment">// 这部分懒得翻译了，就是说了几个有用的宏</span></span><br><span class="line">    <span class="comment">/* LAB2 EXERCISE 2: YOUR CODE</span></span><br><span class="line"><span class="comment">     *</span></span><br><span class="line"><span class="comment">     * If you need to visit a physical address, please use KADDR()</span></span><br><span class="line"><span class="comment">     * please read pmm.h for useful macros</span></span><br><span class="line"><span class="comment">     *</span></span><br><span class="line"><span class="comment">     * Maybe you want help comment, BELOW comments can help you finish the code</span></span><br><span class="line"><span class="comment">     *</span></span><br><span class="line"><span class="comment">     * Some Useful MACROs and DEFINEs, you can use them in below implementation.</span></span><br><span class="line"><span class="comment">     * MACROs or Functions:</span></span><br><span class="line"><span class="comment">     *   PDX(la) = the index of page directory entry of VIRTUAL ADDRESS la.</span></span><br><span class="line"><span class="comment">     *   KADDR(pa) : takes a physical address and returns the corresponding kernel virtual address.</span></span><br><span class="line"><span class="comment">     *   set_page_ref(page,1) : means the page be referenced by one time</span></span><br><span class="line"><span class="comment">     *   page2pa(page): get the physical address of memory which this (struct Page *) page  manages</span></span><br><span class="line"><span class="comment">     *   struct Page * alloc_page() : allocation a page</span></span><br><span class="line"><span class="comment">     *   memset(void *s, char c, size_t n) : sets the first n bytes of the memory area pointed by s</span></span><br><span class="line"><span class="comment">     *                                       to the specified value c.</span></span><br><span class="line"><span class="comment">     * DEFINEs:</span></span><br><span class="line"><span class="comment">     *   PTE_P           0x001                   // page table/directory entry flags bit : Present</span></span><br><span class="line"><span class="comment">     *   PTE_W           0x002                   // page table/directory entry flags bit : Writeable</span></span><br><span class="line"><span class="comment">     *   PTE_U           0x004                   // page table/directory entry flags bit : User can access</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line"><span class="meta">#<span class="keyword">if</span> 1</span></span><br><span class="line">    <span class="comment">// 1. 先在一级页表中查找二级页表的地址</span></span><br><span class="line">    <span class="comment">// 一级页表中每一项都是PDE(page directory entry)</span></span><br><span class="line">    <span class="comment">// 指向一个二级页表</span></span><br><span class="line">    <span class="type">pde_t</span> *pdep = pgdir[PDX(la)]; <span class="comment">// (1) find page directory entry</span></span><br><span class="line">    <span class="comment">// 2. 如果获取到的二级页表无效，那么就要创建一个有效的出来</span></span><br><span class="line">    <span class="keyword">if</span> (!(*pdep &amp; PTE_P))</span><br><span class="line">    {</span><br><span class="line">        <span class="class"><span class="keyword">struct</span> <span class="title">Page</span> *<span class="title">p</span>;</span></span><br><span class="line">        <span class="keyword">if</span> (create) <span class="comment">// (2) check if entry is not present</span></span><br><span class="line">        {</span><br><span class="line">            <span class="comment">// 3. 调用物理分配器分配一个物理页</span></span><br><span class="line">            p = alloc_pages(<span class="number">1</span>); <span class="comment">// (3) check if creating is needed, then alloc page for page table</span></span><br><span class="line">            <span class="keyword">if</span> (p == <span class="literal">NULL</span>)</span><br><span class="line">                <span class="keyword">return</span> <span class="literal">NULL</span>;</span><br><span class="line">        }</span><br><span class="line">        <span class="keyword">else</span></span><br><span class="line">            <span class="keyword">return</span> <span class="literal">NULL</span>;</span><br><span class="line">        <span class="comment">// CAUTION: this page is used for page table, not for common data page</span></span><br><span class="line">        <span class="comment">// 4. 设置页面的引用计数为1</span></span><br><span class="line">        set_page_ref(p, <span class="number">1</span>); <span class="comment">// (4) set page reference</span></span><br><span class="line"></span><br><span class="line">        <span class="comment">// 5. 获取物理页的物理地址</span></span><br><span class="line">        <span class="type">uintptr_t</span> pa = page2pa(p); <span class="comment">// (5) get linear address of page</span></span><br><span class="line"></span><br><span class="line">        <span class="comment">// 6. 清空物理页的内容，需要注意的是使用虚拟地址</span></span><br><span class="line">        <span class="built_in">memset</span>(KADDR(pa), <span class="number">0</span>, PGSIZE); <span class="comment">// (6) clear page content using memset</span></span><br><span class="line"></span><br><span class="line">        <span class="comment">// 7. 将新分配的页面设置为当前缺失的页目录条目中,之后该页面就是其中的一个二级页面</span></span><br><span class="line">        *pdep = pa | PTE_U | PTE_W | PTE_P; <span class="comment">// (7) set page directory entry's permission</span></span><br><span class="line">    }</span><br><span class="line">    <span class="comment">// 8. 返回在pgdir中对应于la的二级页表项(pte)</span></span><br><span class="line">    <span class="keyword">return</span> &amp;((<span class="type">pte_t</span> *)KADDR(PDE_ADDR(*pdep)))[PTX(la)]; <span class="comment">// (8) return page table entry</span></span><br><span class="line"><span class="meta">#<span class="keyword">endif</span></span></span><br><span class="line">}</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<div class="note info">
+            <p>其实我一开始对这里的虚拟地址和物理地址交替出现感到挺奇怪的，后来查阅了一下《操作系统真象还原》，因此给出自己的理解。</p><p>首先，<strong>即使在保护模式下，CPU总线上放的地址也是32位的物理地址</strong>。</p><p>在打开保护模式后，CPU会将页表地址加载到cr3寄存器中，这个地址存储的是<strong>物理地址</strong>，目的是方便直接送入CPU的总线中。</p><p>虽然内存分页机制是将虚拟地址转换成物理地址，但是在转换过程中相当于在关闭分页机制下进行，<strong>所有的页表和页表项的寻址，他们的地址都会被CPU当成最终的物理地址，直接送上总线，不会再被分页机制转换</strong>(否则因此递归转换)</p><p>但是有的时候，<strong>需要修改页表，程序访问页表的时候需要使用页表的虚拟地址</strong>，这种是通过自映射的方式实现的。</p>
+          </div>
+<p>这里涉及到三个类型pte_t、pde_t和uintptr_t。通过参见<code>mm/mmlayout.h</code>和<code>libs/types.h</code>，可知它们其实都是unsigned int类型。在此做区分，是为了分清概念。</p>
+<p>pde_t全称为 page directory entry，也就是<strong>一级页表的表项</strong>（注意：pgdir实际不是表项，而是一级页表本身。实际上应该新定义一个类型pgd_t来表示一级页表本身）。pte_t全称为 page table entry，表示<strong>二级页表的表项</strong>。uintptr_t表示为线性地址，由于段式管理只做直接映射，所以它也是逻辑地址。</p>
+<p>pgdir给出页表起始地址。通过查找这个页表，我们需要给出二级页表中对应项的地址。虽然目前我们只有boot_pgdir一个页表，但是引入进程的概念之后每个进程都会有自己的页表。</p>
+<p>有可能根本就没有对应的二级页表的情况，所以二级页表不必要一开始就分配，而是等到需要的时候再添加对应的二级页表。如果在查找二级页表项时，发现对应的二级页表不存在，则需要根据create参数的值来处理是否创建新的二级页表。如果create参数为0，则get_pte返回NULL；如果create参数不为0，则get_pte需要申请一个新的物理页，再在一级页表中添加页目录项指向表示二级页表的新物理页。注意，新申请的页必须全部设定为零，因为这个页所代表的虚拟地址都没有被映射。</p>
+<p>当建立从一级页表到二级页表的映射时，需要注意设置控制位。这里应该设置同时设置上PTE_U、PTE_W和PTE_P。如果原来就有二级页表，或者新建立了页表，则只需返回对应项的地址即可。</p>
+<p>虚拟地址只有映射上了物理页才可以正常的读写。在完成映射物理页的过程中，除了要像上面那样在页表的对应表项上填上相应的物理地址外，还要设置正确的控制位。</p>
+<h3 id="x03-实现释放某虚地址所在的页并取消对应二级页表项的映射">0X03 实现释放某虚地址所在的页并取消对应二级页表项的映射</h3>
+<p>当释放一个包含某虚地址的物理内存页时，需要让对应此物理内存页的管理数据结构Page做相关的清除处理，使得此物理内存页成为空闲；另外还需把表示虚地址与物理地址对应关系的二级页表项清除。请仔细查看和理解page_remove_pte函数中的注释。为此，需要补全在 <code>kern/mm/pmm.c</code>中的page_remove_pte函数。</p>
+<p>刚才的实验是为了创建一个PTE项，现在的任务是删除一个PTE项。</p>
+<p>因为和之前的实验类似，而且注释非常全，难度很低，对着弄就可以了。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="comment">// page_remove_pte - free an Page sturct which is related linear address la</span></span><br><span class="line"><span class="comment">//                 - and clean(invalidate) pte which is related linear address la</span></span><br><span class="line"><span class="comment">// note: PT is changed, so the TLB need to be invalidate</span></span><br><span class="line"><span class="type">static</span> <span class="keyword">inline</span> <span class="type">void</span></span><br><span class="line"><span class="title function_">page_remove_pte</span><span class="params">(<span class="type">pde_t</span> *pgdir, <span class="type">uintptr_t</span> la, <span class="type">pte_t</span> *ptep)</span></span><br><span class="line">{</span><br><span class="line">    <span class="comment">/* LAB2 EXERCISE 3: YOUR CODE</span></span><br><span class="line"><span class="comment">     *</span></span><br><span class="line"><span class="comment">     * Please check if ptep is valid, and tlb must be manually updated if mapping is updated</span></span><br><span class="line"><span class="comment">     *</span></span><br><span class="line"><span class="comment">     * Maybe you want help comment, BELOW comments can help you finish the code</span></span><br><span class="line"><span class="comment">     *</span></span><br><span class="line"><span class="comment">     * Some Useful MACROs and DEFINEs, you can use them in below implementation.</span></span><br><span class="line"><span class="comment">     * MACROs or Functions:</span></span><br><span class="line"><span class="comment">     *   struct Page *page pte2page(*ptep): get the according page from the value of a ptep</span></span><br><span class="line"><span class="comment">     *   free_page : free a page</span></span><br><span class="line"><span class="comment">     *   page_ref_dec(page) : decrease page-&gt;ref. NOTICE: ff page-&gt;ref == 0 , then this page should be free.</span></span><br><span class="line"><span class="comment">     *   tlb_invalidate(pde_t *pgdir, uintptr_t la) : Invalidate a TLB entry, but only if the page tables being</span></span><br><span class="line"><span class="comment">     *                        edited are the ones currently in use by the processor.</span></span><br><span class="line"><span class="comment">     * DEFINEs:</span></span><br><span class="line"><span class="comment">     *   PTE_P           0x001                   // page table/directory entry flags bit : Present</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line"><span class="meta">#<span class="keyword">if</span> 1</span></span><br><span class="line"></span><br><span class="line">    <span class="comment">// 1. 先检查输入的pte是否有效</span></span><br><span class="line">    <span class="keyword">if</span> (!(*ptep &amp; PTE_P)) <span class="comment">//(1) check if this page table entry is present</span></span><br><span class="line">        <span class="keyword">return</span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 2. 通过对应pte找到对应的page</span></span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">Page</span> *<span class="title">page</span> =</span> pte2page(*ptep); <span class="comment">//(2) find corresponding page to pte</span></span><br><span class="line"></span><br><span class="line">    <span class="comment">// 3. 减少page的引用计数</span></span><br><span class="line">    page_ref_dec(page); <span class="comment">//(3) decrease page reference</span></span><br><span class="line"></span><br><span class="line">    <span class="comment">// 4. 如果引用计数为0 释放page</span></span><br><span class="line">    <span class="keyword">if</span> (page-&gt;ref == <span class="number">0</span>)</span><br><span class="line">        free_page(page); <span class="comment">//(4) and free this page when page reference reachs 0</span></span><br><span class="line"></span><br><span class="line">    <span class="comment">// 5. 清除pte</span></span><br><span class="line">    *ptep = <span class="number">0</span>; <span class="comment">//(5) clear second page table entry</span></span><br><span class="line"></span><br><span class="line">    <span class="comment">// 6. 刷新tlb</span></span><br><span class="line">    tlb_invalidate(pgdir, la); <span class="comment">//(6) flush tlb</span></span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="keyword">endif</span></span></span><br><span class="line">}</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<h4 id="页表自映射">页表自映射</h4>
+<p>由于页表本身也是一个物理内存块，所有页表可以有一个项指向自身，一级页表和二级页表都有。更具体的可以参考这篇文章<a target="_blank" rel="noopener" href="https://blog.csdn.net/qq_41453285/article/details/108170100">页表自映射</a>。</p>
+<img src="/2023/01/16/%E4%BB%8Eucore%E6%9D%A5%E6%80%BB%E7%BB%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-2/pic4.png" class="">
+<p><strong>页表自映射(这是一种设计手段)主要是为了保证能通过虚拟地址来访问页表。</strong></p>
+<p>正常页表里放的都是物理地址(一级页表里放的都是二级页表物理地址，二级页表放的是页面的物理地址)。但是程序有时候需要通过虚拟地址来访问页表，比如在页表中查找某个虚拟地址对应的页表项，这时候就需要页表自映射。</p>
+<p>通过虚拟地址访问一级页表：</p>
+<ul>
+<li>首先程序使用一级页表的虚拟地址访问</li>
+<li>由于CPU本身就有寄存器存放一级页表物理地址，但是为了保证访问页表和其他页面的过程一致性，所以还是会通过页部件进行转换</li>
+<li>页部件尝试从虚拟地址的第一段找出目标页面的二级页表地址，但由于一级页表自映射，所以得到的"二级页表"仍然是一级页表本身</li>
+<li>然后页部件把从虚拟地址第二段找出目标页面的在"二级页表"的位置，同样还是一级页表自映射，相当于重复了一下操作(保证过程一致性)</li>
+</ul>
+<p>通过虚拟地址访问二级页表：</p>
+<ul>
+<li>首先程序使用二级页表的虚拟地址访问</li>
+<li>页部件从虚拟地址的第一段找出目标页面的二级页表地址，此时正常页面一样，会得到二级页表的物理地址(此时就已经得到了目标二级页表物理地址)</li>
+<li>然后页部件把从虚拟地址第二段找出目标页面的在二级页表的位置，此时二级页表自映射，得到二级页表物理地址</li>
+</ul>
+<h3 id="x04-总结">0X04 总结</h3>
+<p>通过这个lab2，我们学习了以下内容:</p>
+<ul>
+<li>探测可用物理内存，并组织成块，实现函数来分配和释放物理内存块</li>
+<li>一二级页表、实现函数来寻找二级页表项</li>
+<li>理解页表中的项均为物理地址，但是同时页表还需要虚拟地址用于修改</li>
+<li>理解保护模式在硬件上的组织(32位地址线、页表寄存器、地址检查)和软件上的组织(虚拟地址、页表)，所有在总线上的地址都是物理地址</li>
+<li>页表自映射、页表虚拟地址和物理地址对应关系</li>
+</ul>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/ucore%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/" rel="tag"># ucore操作系统</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2023/01/14/%E4%BB%8Eucore%E6%9D%A5%E6%80%BB%E7%BB%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-1/" rel="prev" title="从ucore来总结操作系统(1)----操作系统的镜像、引导和内核调试">
+      <i class="fa fa-chevron-left"></i> 从ucore来总结操作系统(1)----操作系统的镜像、引导和内核调试
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2023/01/18/%E4%BB%8Eucore%E6%9D%A5%E6%80%BB%E7%BB%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-3/" rel="next" title="从ucore来总结操作系统(3)----页面置换与Page Fault">
+      从ucore来总结操作系统(3)----页面置换与Page Fault <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+    <div class="comments" id="valine-comments"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%89%A9%E7%90%86%E5%86%85%E5%AD%98%E8%99%9A%E6%8B%9F%E5%86%85%E5%AD%98%E8%BD%AC%E6%8D%A2"><span class="nav-number">1.</span> <span class="nav-text">物理内存、虚拟内存、转换</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#x00-%E7%8E%AF%E5%A2%83%E5%87%86%E5%A4%87"><span class="nav-number">1.1.</span> <span class="nav-text">0X00 环境准备</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#x01-%E5%AE%9E%E7%8E%B0-first-fit-%E8%BF%9E%E7%BB%AD%E7%89%A9%E7%90%86%E5%86%85%E5%AD%98%E5%88%86%E9%85%8D%E7%AE%97%E6%B3%95"><span class="nav-number">1.2.</span> <span class="nav-text">0X01 实现 first-fit 连续物理内存分配算法</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#x02-%E5%AE%9E%E7%8E%B0%E5%AF%BB%E6%89%BE%E8%99%9A%E6%8B%9F%E5%9C%B0%E5%9D%80%E5%AF%B9%E5%BA%94%E7%9A%84%E9%A1%B5%E8%A1%A8%E9%A1%B9"><span class="nav-number">1.3.</span> <span class="nav-text">0X02 实现寻找虚拟地址对应的页表项</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#x03-%E5%AE%9E%E7%8E%B0%E9%87%8A%E6%94%BE%E6%9F%90%E8%99%9A%E5%9C%B0%E5%9D%80%E6%89%80%E5%9C%A8%E7%9A%84%E9%A1%B5%E5%B9%B6%E5%8F%96%E6%B6%88%E5%AF%B9%E5%BA%94%E4%BA%8C%E7%BA%A7%E9%A1%B5%E8%A1%A8%E9%A1%B9%E7%9A%84%E6%98%A0%E5%B0%84"><span class="nav-number">1.4.</span> <span class="nav-text">0X03 实现释放某虚地址所在的页并取消对应二级页表项的映射</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E9%A1%B5%E8%A1%A8%E8%87%AA%E6%98%A0%E5%B0%84"><span class="nav-number">1.4.1.</span> <span class="nav-text">页表自映射</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#x04-%E6%80%BB%E7%BB%93"><span class="nav-number">1.5.</span> <span class="nav-text">0X04 总结</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Staskaer"
+      src="/imgs/theme_pic/head_img.png">
+  <p class="site-author-name" itemprop="name">Staskaer</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">97</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">10</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">24</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/Staskaer" title="Github → https:&#x2F;&#x2F;github.com&#x2F;Staskaer" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:liujiaxin011121@gmail.com" title="E-Mail → mailto:liujiaxin011121@gmail.com" rel="noopener" target="_blank"><i class="fa fa-envelope fa-fw"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://www.zhihu.com/people/staskaer" title="Zhihu → https:&#x2F;&#x2F;www.zhihu.com&#x2F;people&#x2F;staskaer" rel="noopener" target="_blank"><i class="fab fa-zhihu fa-fw"></i></a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2025</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Staskaer</span>
+</div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+
+<script>
+NexT.utils.loadComments(document.querySelector('#valine-comments'), () => {
+  NexT.utils.getScript('https://cdn.jsdelivr.net/npm/valine@1.5.1/dist/Valine.min.js', () => {
+    var GUEST = ['nick', 'mail', 'link'];
+    var guest = 'nick,mail,link';
+    guest = guest.split(',').filter(item => {
+      return GUEST.includes(item);
+    });
+    new Valine({
+      el         : '#valine-comments',
+      verify     : false,
+      notify     : false,
+      appId      : 'xH8NDrh9u4SQrUpQOd0lICnX-MdYXbMMI',
+      appKey     : 'jl3JjPS4jsosZG29Zv24Y7LE',
+      placeholder: "Just go go",
+      avatar     : 'mm',
+      meta       : guest,
+      pageSize   : '10' || 10,
+      visitor    : false,
+      lang       : 'zh-Hans' || 'zh-cn',
+      path       : location.pathname,
+      recordIP   : false,
+      serverURLs : 'https://xh8ndrh9.api.lncldglobal.com'
+    });
+  }, window.Valine);
+});
+</script>
+
+</body>
+</html>
+

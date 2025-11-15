@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 6.2.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/imgs/theme_pic/staskaer.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/imgs/theme_pic/staskaer.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/imgs/theme_pic/staskaer.png">
+  <link rel="mask-icon" href="/imgs/theme_pic/staskaer.png" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Gemini","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"mac"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"valine","storage":true,"lazyload":false,"nav":null,"activeClass":"valine"},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="MemTable结构">
+<meta property="og:type" content="article">
+<meta property="og:title" content="levelDB源码剖析(10)--MemTable结构">
+<meta property="og:url" content="http://example.com/2022/09/30/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-10/index.html">
+<meta property="og:site_name" content="Staskaer">
+<meta property="og:description" content="MemTable结构">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="http://example.com/2022/09/30/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-10/pic1.jpg">
+<meta property="og:image" content="http://example.com/2022/09/30/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-10/pic2.jpg">
+<meta property="og:image" content="http://example.com/2022/09/30/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-10/pic3.png">
+<meta property="article:published_time" content="2022-09-30T01:52:23.000Z">
+<meta property="article:modified_time" content="2025-06-17T15:50:22.321Z">
+<meta property="article:author" content="Staskaer">
+<meta property="article:tag" content="C++">
+<meta property="article:tag" content="levelDB">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://example.com/2022/09/30/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-10/pic1.jpg">
+
+<link rel="canonical" href="http://example.com/2022/09/30/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-10/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'en'
+  };
+</script>
+
+  <title>levelDB源码剖析(10)--MemTable结构 | Staskaer</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+<style>mjx-container[jax="SVG"] {
+  direction: ltr;
+}
+
+mjx-container[jax="SVG"] > svg {
+  overflow: visible;
+}
+
+mjx-container[jax="SVG"][display="true"] {
+  display: block;
+  text-align: center;
+  margin: 1em 0;
+}
+
+mjx-container[jax="SVG"][justify="left"] {
+  text-align: left;
+}
+
+mjx-container[jax="SVG"][justify="right"] {
+  text-align: right;
+}
+
+g[data-mml-node="merror"] > g {
+  fill: red;
+  stroke: red;
+}
+
+g[data-mml-node="merror"] > rect[data-background] {
+  fill: yellow;
+  stroke: none;
+}
+
+g[data-mml-node="mtable"] > line[data-line] {
+  stroke-width: 70px;
+  fill: none;
+}
+
+g[data-mml-node="mtable"] > rect[data-frame] {
+  stroke-width: 70px;
+  fill: none;
+}
+
+g[data-mml-node="mtable"] > .mjx-dashed {
+  stroke-dasharray: 140;
+}
+
+g[data-mml-node="mtable"] > .mjx-dotted {
+  stroke-linecap: round;
+  stroke-dasharray: 0,140;
+}
+
+g[data-mml-node="mtable"] > svg {
+  overflow: visible;
+}
+
+[jax="SVG"] mjx-tool {
+  display: inline-block;
+  position: relative;
+  width: 0;
+  height: 0;
+}
+
+[jax="SVG"] mjx-tool > mjx-tip {
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+mjx-tool > mjx-tip {
+  display: inline-block;
+  padding: .2em;
+  border: 1px solid #888;
+  font-size: 70%;
+  background-color: #F8F8F8;
+  color: black;
+  box-shadow: 2px 2px 5px #AAAAAA;
+}
+
+g[data-mml-node="maction"][data-toggle] {
+  cursor: pointer;
+}
+
+mjx-status {
+  display: block;
+  position: fixed;
+  left: 1em;
+  bottom: 1em;
+  min-width: 25%;
+  padding: .2em .4em;
+  border: 1px solid #888;
+  font-size: 90%;
+  background-color: #F8F8F8;
+  color: black;
+}
+
+foreignObject[data-mjx-xml] {
+  font-family: initial;
+  line-height: normal;
+  overflow: visible;
+}
+
+.MathJax path {
+  stroke-width: 3;
+}
+
+mjx-container[display="true"] {
+  overflow: auto hidden;
+}
+
+mjx-container[display="true"] + br {
+  display: none;
+}
+</style></head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Staskaer</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">Hi, this is Staskaer</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+        <li class="menu-item menu-item-links">
+
+    <a href="/links/" rel="section"><i class="fa fa-link fa-fw"></i>links</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2022/09/30/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-10/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/imgs/theme_pic/head_img.png">
+      <meta itemprop="name" content="Staskaer">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Staskaer">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          levelDB源码剖析(10)--MemTable结构
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2022-09-30 09:52:23" itemprop="dateCreated datePublished" datetime="2022-09-30T09:52:23+08:00">2022-09-30</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2025-06-17 23:50:22" itemprop="dateModified" datetime="2025-06-17T23:50:22+08:00">2025-06-17</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/" itemprop="url" rel="index"><span itemprop="name">levelDB源码剖析</span></a>
+                </span>
+            </span>
+
+          
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Valine: </span>
+    
+    <a title="valine" href="/2022/09/30/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-10/#valine-comments" itemprop="discussionUrl">
+      <span class="post-comments-count valine-comment-count" data-xid="/2022/09/30/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-10/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h2 id="memtable结构">MemTable结构</h2>
+<span id="more"></span>
+<div class="note primary">
+            <p>源码位置与说明<br>db/skiplist.h : 跳跃表实现<br>db/memtable.h db/memtable.cc : MemTable的实现</p>
+          </div>
+<p>MemTable是levelDB的存储结构，并且其是内存中的组织结构，其内部是有序的。只有当大小到达一定程度时才会被写入到磁盘上的SSTable中，这也就是为什么SSTable中写入kv时要求key是按顺序排布的，因为key再内存中就已经被组织好了。</p>
+<img src="/2022/09/30/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-10/pic1.jpg" class="">
+<p>由于MemTable需要是按照键值对存储，且必须是有序的，所以就不能使用哈希表。对于SortedMap的实现，一般会采用红黑树，不过LevelDB采用的是Skiplist。Skiplist是一种概率性的数据结构，支持SortedMap的所有功能，性能和红黑树相当。</p>
+<h3 id="skiplist">Skiplist</h3>
+<p>我们先来说一下跳跃表这种数据结构，跳跃表的本体其实就是一个链表，这个链表是有序的。但是链表的查找非常慢，需要从头开始一个一个遍历，考虑到链表本身也是有序的，我们可以为其增加一些索引。</p>
+<img src="/2022/09/30/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-10/pic2.jpg" class="">
+<p>每次查找时，先从最上层的索引开始查找，并且由于链表有序，其实这些索引相当于了二分查找，效率很高。不过这些索引其实是在插入key-value时有一定概率创建出来的，所以不是严格的二分查找。</p>
+<p>另外，由于键是不重复的，所以不能保存相同的键。</p>
+<p>跳跃表比红黑树的实现简单太多了，所以我们就看一下这部分的源码</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> Key, <span class="keyword">class</span> <span class="title class_">Comparator</span>&gt;</span><br><span class="line"><span class="keyword">class</span> <span class="title class_">SkipList</span></span><br><span class="line">{</span><br><span class="line"><span class="keyword">private</span>:</span><br><span class="line">    <span class="keyword">struct</span> <span class="title class_">Node</span>; <span class="comment">// 结点</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">private</span>:</span><br><span class="line">    <span class="keyword">enum</span></span><br><span class="line">    {</span><br><span class="line">        kMaxHeight = <span class="number">12</span> <span class="comment">// 跳跃表的最大索引高度</span></span><br><span class="line">    };</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 获取当前的最大高度，宽松内存序</span></span><br><span class="line">    <span class="function"><span class="keyword">inline</span> <span class="type">int</span> <span class="title">GetMaxHeight</span><span class="params">()</span> <span class="type">const</span></span></span><br><span class="line"><span class="function">    </span>{</span><br><span class="line">        <span class="keyword">return</span> max_height_.<span class="built_in">load</span>(std::memory_order_relaxed);</span><br><span class="line">    }</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 在高度height处创建新的key</span></span><br><span class="line">    <span class="function">Node *<span class="title">NewNode</span><span class="params">(<span class="type">const</span> Key &amp;key, <span class="type">int</span> height)</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="type">int</span> <span class="title">RandomHeight</span><span class="params">()</span></span>;</span><br><span class="line">    <span class="function"><span class="type">bool</span> <span class="title">Equal</span><span class="params">(<span class="type">const</span> Key &amp;a, <span class="type">const</span> Key &amp;b)</span> <span class="type">const</span> </span>{ <span class="keyword">return</span> (<span class="built_in">compare_</span>(a, b) == <span class="number">0</span>); }</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 如果档key在结点后面就返回true</span></span><br><span class="line">    <span class="function"><span class="type">bool</span> <span class="title">KeyIsAfterNode</span><span class="params">(<span class="type">const</span> Key &amp;key, Node *n)</span> <span class="type">const</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 返回在key后面最小的结点</span></span><br><span class="line">    <span class="function">Node *<span class="title">FindGreaterOrEqual</span><span class="params">(<span class="type">const</span> Key &amp;key, Node **prev)</span> <span class="type">const</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 返回比key小的最大结点</span></span><br><span class="line">    <span class="function">Node *<span class="title">FindLessThan</span><span class="params">(<span class="type">const</span> Key &amp;key)</span> <span class="type">const</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 返回最后一个结点</span></span><br><span class="line">    <span class="function">Node *<span class="title">FindLast</span><span class="params">()</span> <span class="type">const</span></span>;</span><br><span class="line"></span><br><span class="line">    Comparator <span class="type">const</span> compare_; <span class="comment">// 比较用比较器</span></span><br><span class="line">    Arena *<span class="type">const</span> arena_;       <span class="comment">// 使用Arena类来为结点分配内存</span></span><br><span class="line"></span><br><span class="line">    Node *<span class="type">const</span> head_; <span class="comment">// 头结点</span></span><br><span class="line"></span><br><span class="line">    <span class="comment">// 最大索引高度</span></span><br><span class="line">    std::atomic&lt;<span class="type">int</span>&gt; max_height_;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Read/written only by Insert(). ？</span></span><br><span class="line">    Random rnd_;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="comment">// 跳表使用cmp来进行比较key，使用arena来进行内存管理</span></span><br><span class="line">    <span class="function"><span class="keyword">explicit</span> <span class="title">SkipList</span><span class="params">(Comparator cmp, Arena *arena)</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="built_in">SkipList</span>(<span class="type">const</span> SkipList &amp;) = <span class="keyword">delete</span>;</span><br><span class="line">    SkipList &amp;<span class="keyword">operator</span>=(<span class="type">const</span> SkipList &amp;) = <span class="keyword">delete</span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 插入key，需要保证没有重复的key</span></span><br><span class="line">    <span class="function"><span class="type">void</span> <span class="title">Insert</span><span class="params">(<span class="type">const</span> Key &amp;key)</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 如果包含就返回true</span></span><br><span class="line">    <span class="function"><span class="type">bool</span> <span class="title">Contains</span><span class="params">(<span class="type">const</span> Key &amp;key)</span> <span class="type">const</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 迭代器类，迭代key-value</span></span><br><span class="line">    <span class="keyword">class</span> <span class="title class_">Iterator</span></span><br><span class="line">    {</span><br><span class="line">    <span class="keyword">public</span>:</span><br><span class="line">        <span class="comment">// Initialize an iterator over the specified list.</span></span><br><span class="line">        <span class="comment">// The returned iterator is not valid.</span></span><br><span class="line">        <span class="function"><span class="keyword">explicit</span> <span class="title">Iterator</span><span class="params">(<span class="type">const</span> SkipList *list)</span></span>;</span><br><span class="line"></span><br><span class="line">        <span class="comment">// Returns true iff the iterator is positioned at a valid node.</span></span><br><span class="line">        <span class="function"><span class="type">bool</span> <span class="title">Valid</span><span class="params">()</span> <span class="type">const</span></span>;</span><br><span class="line"></span><br><span class="line">        <span class="comment">// Returns the key at the current position.</span></span><br><span class="line">        <span class="comment">// REQUIRES: Valid()</span></span><br><span class="line">        <span class="function"><span class="type">const</span> Key &amp;<span class="title">key</span><span class="params">()</span> <span class="type">const</span></span>;</span><br><span class="line"></span><br><span class="line">        <span class="comment">// Advances to the next position.</span></span><br><span class="line">        <span class="comment">// REQUIRES: Valid()</span></span><br><span class="line">        <span class="function"><span class="type">void</span> <span class="title">Next</span><span class="params">()</span></span>;</span><br><span class="line"></span><br><span class="line">        <span class="comment">// Advances to the previous position.</span></span><br><span class="line">        <span class="comment">// REQUIRES: Valid()</span></span><br><span class="line">        <span class="function"><span class="type">void</span> <span class="title">Prev</span><span class="params">()</span></span>;</span><br><span class="line"></span><br><span class="line">        <span class="comment">// Advance to the first entry with a key &gt;= target</span></span><br><span class="line">        <span class="function"><span class="type">void</span> <span class="title">Seek</span><span class="params">(<span class="type">const</span> Key &amp;target)</span></span>;</span><br><span class="line"></span><br><span class="line">        <span class="comment">// Position at the first entry in list.</span></span><br><span class="line">        <span class="comment">// Final state of iterator is Valid() iff list is not empty.</span></span><br><span class="line">        <span class="function"><span class="type">void</span> <span class="title">SeekToFirst</span><span class="params">()</span></span>;</span><br><span class="line"></span><br><span class="line">        <span class="comment">// Position at the last entry in list.</span></span><br><span class="line">        <span class="comment">// Final state of iterator is Valid() iff list is not empty.</span></span><br><span class="line">        <span class="function"><span class="type">void</span> <span class="title">SeekToLast</span><span class="params">()</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span>:</span><br><span class="line">        <span class="type">const</span> SkipList *list_;</span><br><span class="line">        Node *node_;</span><br><span class="line">        <span class="comment">// Intentionally copyable</span></span><br><span class="line">    };</span><br><span class="line">};</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>跳表是一个类模板，可以传递用于比较keys的比较器和结点的内存管理器，另外，其中还存在可以迭代跳表的迭代器，由于迭代器的实现比较简单，此处就不再赘诉了。由于MemTable位于内存中，所以需要考虑到多个线程对其进行读写的情况。</p>
+<p>跳表的内部实现全部是内联函数，且涉及到迭代器和Node结点的成员，数目比较多但是相对比较简单。</p>
+<p>需要注意的是，在levelDB中，跳表没有删除key-value的接口。</p>
+<p>SkipList插入一个键时，需要分配内存给一个节点，malloc是一个比较耗时的系统调用，尤其对于小内存分配来说，而且会产生很多内存碎片。</p>
+<p>LevelDB里面的SkipList和一般的Skiplist使用有很大的不同，只会分配内存，而不需要回收小部分内存。SkipList的内存是等待MemTable写满后，转换为Immutable MemTable，写入SSTable，写入完成后，一起被销毁。也就是内存的回收是针对整个Skiplist的。</p>
+<p>可能会觉得传递一个管理内存的类很奇怪，我们来具体看一下调用arena类的部分。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> Key, <span class="keyword">class</span> <span class="title class_">Comparator</span>&gt;</span><br><span class="line"><span class="keyword">typename</span> SkipList&lt;Key, Comparator&gt;::Node* SkipList&lt;Key, Comparator&gt;::<span class="built_in">NewNode</span>(</span><br><span class="line">    <span class="type">const</span> Key&amp; key, <span class="type">int</span> height) {</span><br><span class="line">  <span class="type">char</span>* <span class="type">const</span> node_memory = arena_-&gt;<span class="built_in">AllocateAligned</span>(</span><br><span class="line">      <span class="built_in">sizeof</span>(Node) + <span class="built_in">sizeof</span>(std::atomic&lt;Node*&gt;) * (height - <span class="number">1</span>));</span><br><span class="line">  <span class="keyword">return</span> <span class="built_in">new</span> (node_memory) <span class="built_in">Node</span>(key);</span><br><span class="line">}</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>我们可以看到，arena类内部是通过new来分配出一整块内存(4kb)，然后NewNode在进行内存申请时，调用arena类的分配对齐内存的接口，这其实是arena类在内部移动已经申请的内存块的指针，并不涉及到系统调用，所以会节省时间。SkipList类没有定义析构函数，所以在结束时会调用默认的析构函数，默认析构函数又会调用arena类的析构函数，而arena类的析构函数会释放arena类在生存期间申请的所有内存，这样就避免了内存泄漏的问题。</p>
+<h3 id="memtable">MemTable</h3>
+<p>MemTable其实就是对跳跃表的一层封装，并且其是一个智能指针的形式，采用了引用计数，将对键的查找和插入的请求，代理到相应的SkipList，调用相应的接口。</p>
+<p>在实现中有一点值得注意，LevelDB存储的是Kv，而SkipList存储的是键，所以在MemTable里需要做一个转换。</p>
+<p>对于插入操作，MemTable会把键和值编码在一个字符串里面，如下图所示，先是键，再是值，使用了字符串的长度前缀编码，然后将这个字符串插入到SkipList里。这里面涉及到了很多的key类型，我们先搁置在一边，大致了解一下就可以了，后面会具体阐述的。</p>
+<img src="/2022/09/30/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-10/pic3.png" class="">
+<p>而对于查找操作，只会按照前缀编码键，构造上面图的前半部分，而SkipList::Iterator::Seek的实现，会将迭代器定位到大于等于查找键的第一个键的位置，读出这个键，然后比对里面的键和查找的键是否相同，相同的话，才会读取对应的值，否则就是键不存在。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">MemTable</span></span><br><span class="line">{</span><br><span class="line"></span><br><span class="line"><span class="keyword">private</span>:</span><br><span class="line">    <span class="keyword">friend</span> <span class="keyword">class</span> <span class="title class_">MemTableIterator</span>; <span class="comment">// 友元类，正反迭代器</span></span><br><span class="line">    <span class="keyword">friend</span> <span class="keyword">class</span> <span class="title class_">MemTableBackwardIterator</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">struct</span> <span class="title class_">KeyComparator</span> <span class="comment">// key比较器，有好多的key，这部分后面具体说</span></span><br><span class="line">    {</span><br><span class="line">        <span class="type">const</span> InternalKeyComparator comparator;</span><br><span class="line">        <span class="function"><span class="keyword">explicit</span> <span class="title">KeyComparator</span><span class="params">(<span class="type">const</span> InternalKeyComparator &amp;c)</span> : comparator(c) {</span>}</span><br><span class="line">        <span class="function"><span class="type">int</span> <span class="title">operator</span><span class="params">()</span><span class="params">(<span class="type">const</span> <span class="type">char</span> *a, <span class="type">const</span> <span class="type">char</span> *b)</span> <span class="type">const</span></span>;</span><br><span class="line">    };</span><br><span class="line"></span><br><span class="line">    <span class="keyword">typedef</span> SkipList&lt;<span class="type">const</span> <span class="type">char</span> *, KeyComparator&gt; Table; <span class="comment">// Table是跳表的typedef</span></span><br><span class="line"></span><br><span class="line">    <span class="comment">// 私有析构函数，因为只有Unref能调用它</span></span><br><span class="line">    ~<span class="built_in">MemTable</span>();</span><br><span class="line"></span><br><span class="line">    KeyComparator comparator_; <span class="comment">// key比较器</span></span><br><span class="line">    <span class="type">int</span> refs_;                 <span class="comment">// 引用次数</span></span><br><span class="line">    Arena arena_;              <span class="comment">// 内存管理类</span></span><br><span class="line">    Table table_;              <span class="comment">// memtable</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="comment">// MemTables会执行引用计数，初始计数为0，调用者必须主席那个Ref()函数至少一次</span></span><br><span class="line">    <span class="function"><span class="keyword">explicit</span> <span class="title">MemTable</span><span class="params">(<span class="type">const</span> InternalKeyComparator &amp;comparator)</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="built_in">MemTable</span>(<span class="type">const</span> MemTable &amp;) = <span class="keyword">delete</span>;</span><br><span class="line">    MemTable &amp;<span class="keyword">operator</span>=(<span class="type">const</span> MemTable &amp;) = <span class="keyword">delete</span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 增加引用计数</span></span><br><span class="line">    <span class="function"><span class="type">void</span> <span class="title">Ref</span><span class="params">()</span> </span>{ ++refs_; }</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 当没有引用计数时释放内存，就是一个智能指针</span></span><br><span class="line">    <span class="function"><span class="type">void</span> <span class="title">Unref</span><span class="params">()</span></span></span><br><span class="line"><span class="function">    </span>{</span><br><span class="line">        --refs_;</span><br><span class="line">        <span class="built_in">assert</span>(refs_ &gt;= <span class="number">0</span>);</span><br><span class="line">        <span class="keyword">if</span> (refs_ &lt;= <span class="number">0</span>)</span><br><span class="line">        {</span><br><span class="line">            <span class="keyword">delete</span> <span class="keyword">this</span>;</span><br><span class="line">        }</span><br><span class="line">    }</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 返回大约占用了多少内存，因为是多线程的，所以只能估计</span></span><br><span class="line">    <span class="function"><span class="type">size_t</span> <span class="title">ApproximateMemoryUsage</span><span class="params">()</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 返回一个迭代器</span></span><br><span class="line">    <span class="function">Iterator *<span class="title">NewIterator</span><span class="params">()</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Add an entry into memtable that maps key to value at the</span></span><br><span class="line">    <span class="comment">// specified sequence number and with the specified type.</span></span><br><span class="line">    <span class="comment">// Typically value will be empty if type==kTypeDeletion.</span></span><br><span class="line">    <span class="comment">// 添加一个key，type可以用来指示删除key，即把对应的value设置为空</span></span><br><span class="line">    <span class="function"><span class="type">void</span> <span class="title">Add</span><span class="params">(SequenceNumber seq, ValueType type, <span class="type">const</span> Slice &amp;key,</span></span></span><br><span class="line"><span class="params"><span class="function">             <span class="type">const</span> Slice &amp;value)</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// If memtable contains a value for key, store it in *value and return true.</span></span><br><span class="line">    <span class="comment">// If memtable contains a deletion for key, store a NotFound() error</span></span><br><span class="line">    <span class="comment">// in *status and return true.</span></span><br><span class="line">    <span class="comment">// Else, return false.</span></span><br><span class="line">    <span class="comment">// 查找一个key，如果是被删除的key不会返回success</span></span><br><span class="line">    <span class="function"><span class="type">bool</span> <span class="title">Get</span><span class="params">(<span class="type">const</span> LookupKey &amp;key, std::string *value, Status *s)</span></span>;</span><br><span class="line">};</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>在头文件中，我们可以观察到，如果需要删除一个key，其实就是插入一条k-v，并且标注是删除即可。另外，由于levelDB中不存在相同的key，所以需要保证key-value是唯一的。下面我们来看一下具体的实现。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br><span class="line">144</span><br><span class="line">145</span><br><span class="line">146</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="comment">// 解析levelDB 中Varint32 类型的数据，在levelDB中数据一般先存储数据大小，然后存储真实的数据。</span></span><br><span class="line"><span class="comment">// p ：Varint32数据的起始地址；</span></span><br><span class="line"><span class="comment">// limit : Varint32数据最多用5位，所以limit 为p+5;</span></span><br><span class="line"><span class="comment">// v ：数据的长度；</span></span><br><span class="line"><span class="comment">// return 返回真实数据的起始地址</span></span><br><span class="line"><span class="function"><span class="type">static</span> Slice <span class="title">GetLengthPrefixedSlice</span><span class="params">(<span class="type">const</span> <span class="type">char</span> *data)</span></span></span><br><span class="line"><span class="function"></span>{</span><br><span class="line">    <span class="type">uint32_t</span> len;</span><br><span class="line">    <span class="type">const</span> <span class="type">char</span> *p = data;</span><br><span class="line">    p = <span class="built_in">GetVarint32Ptr</span>(p, p + <span class="number">5</span>, &amp;len); <span class="comment">// +5: we assume "p" is not corrupted</span></span><br><span class="line">    <span class="keyword">return</span> <span class="built_in">Slice</span>(p, len);</span><br><span class="line">}</span><br><span class="line"></span><br><span class="line"><span class="comment">// 构造函数</span></span><br><span class="line">MemTable::<span class="built_in">MemTable</span>(<span class="type">const</span> InternalKeyComparator &amp;comparator)</span><br><span class="line">    : <span class="built_in">comparator_</span>(comparator), <span class="built_in">refs_</span>(<span class="number">0</span>), <span class="built_in">table_</span>(comparator_, &amp;arena_) {}</span><br><span class="line"></span><br><span class="line"><span class="comment">// 析构函数</span></span><br><span class="line">MemTable::~<span class="built_in">MemTable</span>() { <span class="built_in">assert</span>(refs_ == <span class="number">0</span>); }</span><br><span class="line"></span><br><span class="line"><span class="comment">// 返回大约占用了多少字节</span></span><br><span class="line"><span class="function"><span class="type">size_t</span> <span class="title">MemTable::ApproximateMemoryUsage</span><span class="params">()</span> </span>{ <span class="keyword">return</span> arena_.<span class="built_in">MemoryUsage</span>(); }</span><br><span class="line"></span><br><span class="line"><span class="comment">// 比较keys</span></span><br><span class="line"><span class="type">int</span> MemTable::KeyComparator::<span class="built_in">operator</span>()(<span class="type">const</span> <span class="type">char</span> *aptr,</span><br><span class="line">                                        <span class="type">const</span> <span class="type">char</span> *bptr) <span class="type">const</span></span><br><span class="line">{</span><br><span class="line">    <span class="comment">// Internal keys are encoded as length-prefixed strings.</span></span><br><span class="line">    Slice a = <span class="built_in">GetLengthPrefixedSlice</span>(aptr);</span><br><span class="line">    Slice b = <span class="built_in">GetLengthPrefixedSlice</span>(bptr);</span><br><span class="line">    <span class="keyword">return</span> comparator.<span class="built_in">Compare</span>(a, b);</span><br><span class="line">}</span><br><span class="line"></span><br><span class="line"><span class="comment">// 完成数据的编码，前缀码，长度在前，数据在后</span></span><br><span class="line"><span class="function"><span class="type">static</span> <span class="type">const</span> <span class="type">char</span> *<span class="title">EncodeKey</span><span class="params">(std::string *scratch, <span class="type">const</span> Slice &amp;target)</span></span></span><br><span class="line"><span class="function"></span>{</span><br><span class="line">    scratch-&gt;<span class="built_in">clear</span>();</span><br><span class="line">    <span class="built_in">PutVarint32</span>(scratch, target.<span class="built_in">size</span>());</span><br><span class="line">    scratch-&gt;<span class="built_in">append</span>(target.<span class="built_in">data</span>(), target.<span class="built_in">size</span>());</span><br><span class="line">    <span class="keyword">return</span> scratch-&gt;<span class="built_in">data</span>();</span><br><span class="line">}</span><br><span class="line"></span><br><span class="line"><span class="comment">// 迭代器</span></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">MemTableIterator</span> : <span class="keyword">public</span> Iterator</span><br><span class="line">{</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="function"><span class="keyword">explicit</span> <span class="title">MemTableIterator</span><span class="params">(MemTable::Table *table)</span> : iter_(table) {</span>}</span><br><span class="line"></span><br><span class="line">    <span class="built_in">MemTableIterator</span>(<span class="type">const</span> MemTableIterator &amp;) = <span class="keyword">delete</span>;</span><br><span class="line">    MemTableIterator &amp;<span class="keyword">operator</span>=(<span class="type">const</span> MemTableIterator &amp;) = <span class="keyword">delete</span>;</span><br><span class="line"></span><br><span class="line">    ~<span class="built_in">MemTableIterator</span>() <span class="keyword">override</span> = <span class="keyword">default</span>;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="type">bool</span> <span class="title">Valid</span><span class="params">()</span> <span class="type">const</span> <span class="keyword">override</span> </span>{ <span class="keyword">return</span> iter_.<span class="built_in">Valid</span>(); }</span><br><span class="line">    <span class="function"><span class="type">void</span> <span class="title">Seek</span><span class="params">(<span class="type">const</span> Slice &amp;k)</span> <span class="keyword">override</span> </span>{ iter_.<span class="built_in">Seek</span>(<span class="built_in">EncodeKey</span>(&amp;tmp_, k)); }</span><br><span class="line">    <span class="function"><span class="type">void</span> <span class="title">SeekToFirst</span><span class="params">()</span> <span class="keyword">override</span> </span>{ iter_.<span class="built_in">SeekToFirst</span>(); }</span><br><span class="line">    <span class="function"><span class="type">void</span> <span class="title">SeekToLast</span><span class="params">()</span> <span class="keyword">override</span> </span>{ iter_.<span class="built_in">SeekToLast</span>(); }</span><br><span class="line">    <span class="function"><span class="type">void</span> <span class="title">Next</span><span class="params">()</span> <span class="keyword">override</span> </span>{ iter_.<span class="built_in">Next</span>(); }</span><br><span class="line">    <span class="function"><span class="type">void</span> <span class="title">Prev</span><span class="params">()</span> <span class="keyword">override</span> </span>{ iter_.<span class="built_in">Prev</span>(); }</span><br><span class="line">    <span class="function">Slice <span class="title">key</span><span class="params">()</span> <span class="type">const</span> <span class="keyword">override</span> </span>{ <span class="keyword">return</span> <span class="built_in">GetLengthPrefixedSlice</span>(iter_.<span class="built_in">key</span>()); }</span><br><span class="line">    <span class="function">Slice <span class="title">value</span><span class="params">()</span> <span class="type">const</span> <span class="keyword">override</span></span></span><br><span class="line"><span class="function">    </span>{</span><br><span class="line">        Slice key_slice = <span class="built_in">GetLengthPrefixedSlice</span>(iter_.<span class="built_in">key</span>());</span><br><span class="line">        <span class="keyword">return</span> <span class="built_in">GetLengthPrefixedSlice</span>(key_slice.<span class="built_in">data</span>() + key_slice.<span class="built_in">size</span>());</span><br><span class="line">    }</span><br><span class="line"></span><br><span class="line">    <span class="function">Status <span class="title">status</span><span class="params">()</span> <span class="type">const</span> <span class="keyword">override</span> </span>{ <span class="keyword">return</span> Status::<span class="built_in">OK</span>(); }</span><br><span class="line"></span><br><span class="line"><span class="keyword">private</span>:</span><br><span class="line">    MemTable::Table::Iterator iter_;</span><br><span class="line">    std::string tmp_; <span class="comment">// For passing to EncodeKey</span></span><br><span class="line">};</span><br><span class="line"></span><br><span class="line"><span class="function">Iterator *<span class="title">MemTable::NewIterator</span><span class="params">()</span> </span>{ <span class="keyword">return</span> <span class="keyword">new</span> <span class="built_in">MemTableIterator</span>(&amp;table_); }</span><br><span class="line"></span><br><span class="line"><span class="comment">// 添加一个key-value</span></span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">MemTable::Add</span><span class="params">(SequenceNumber s, ValueType type, <span class="type">const</span> Slice &amp;key,</span></span></span><br><span class="line"><span class="params"><span class="function">                   <span class="type">const</span> Slice &amp;value)</span></span></span><br><span class="line"><span class="function"></span>{</span><br><span class="line">    <span class="comment">// Format of an entry is concatenation of:</span></span><br><span class="line">    <span class="comment">//  key_size     : varint32 of internal_key.size()</span></span><br><span class="line">    <span class="comment">//  key bytes    : char[internal_key.size()]</span></span><br><span class="line">    <span class="comment">//  tag          : uint64((sequence &lt;&lt; 8) | type)</span></span><br><span class="line">    <span class="comment">//  value_size   : varint32 of value.size()</span></span><br><span class="line">    <span class="comment">//  value bytes  : char[value.size()]</span></span><br><span class="line">    <span class="type">size_t</span> key_size = key.<span class="built_in">size</span>();</span><br><span class="line">    <span class="type">size_t</span> val_size = value.<span class="built_in">size</span>();</span><br><span class="line">    <span class="type">size_t</span> internal_key_size = key_size + <span class="number">8</span>;</span><br><span class="line">    <span class="type">const</span> <span class="type">size_t</span> encoded_len = <span class="built_in">VarintLength</span>(internal_key_size) +</span><br><span class="line">                               internal_key_size + <span class="built_in">VarintLength</span>(val_size) +</span><br><span class="line">                               val_size;</span><br><span class="line">    <span class="type">char</span> *buf = arena_.<span class="built_in">Allocate</span>(encoded_len);</span><br><span class="line">    <span class="type">char</span> *p = <span class="built_in">EncodeVarint32</span>(buf, internal_key_size);</span><br><span class="line">    std::<span class="built_in">memcpy</span>(p, key.<span class="built_in">data</span>(), key_size);</span><br><span class="line">    p += key_size;</span><br><span class="line">    <span class="built_in">EncodeFixed64</span>(p, (s &lt;&lt; <span class="number">8</span>) | type);</span><br><span class="line">    p += <span class="number">8</span>;</span><br><span class="line">    p = <span class="built_in">EncodeVarint32</span>(p, val_size);</span><br><span class="line">    std::<span class="built_in">memcpy</span>(p, value.<span class="built_in">data</span>(), val_size);</span><br><span class="line">    <span class="built_in">assert</span>(p + val_size == buf + encoded_len);</span><br><span class="line">    table_.<span class="built_in">Insert</span>(buf);</span><br><span class="line">}</span><br><span class="line"></span><br><span class="line"><span class="comment">// 获取一个key</span></span><br><span class="line"><span class="function"><span class="type">bool</span> <span class="title">MemTable::Get</span><span class="params">(<span class="type">const</span> LookupKey &amp;key, std::string *value, Status *s)</span></span></span><br><span class="line"><span class="function"></span>{</span><br><span class="line">    Slice memkey = key.<span class="built_in">memtable_key</span>();</span><br><span class="line">    <span class="function">Table::Iterator <span class="title">iter</span><span class="params">(&amp;table_)</span></span>;</span><br><span class="line">    iter.<span class="built_in">Seek</span>(memkey.<span class="built_in">data</span>());</span><br><span class="line">    <span class="keyword">if</span> (iter.<span class="built_in">Valid</span>())</span><br><span class="line">    {</span><br><span class="line">        <span class="comment">// entry format is:</span></span><br><span class="line">        <span class="comment">//    klength  varint32</span></span><br><span class="line">        <span class="comment">//    userkey  char[klength]</span></span><br><span class="line">        <span class="comment">//    tag      uint64</span></span><br><span class="line">        <span class="comment">//    vlength  varint32</span></span><br><span class="line">        <span class="comment">//    value    char[vlength]</span></span><br><span class="line">        <span class="comment">// Check that it belongs to same user key.  We do not check the</span></span><br><span class="line">        <span class="comment">// sequence number since the Seek() call above should have skipped</span></span><br><span class="line">        <span class="comment">// all entries with overly large sequence numbers.</span></span><br><span class="line">        <span class="type">const</span> <span class="type">char</span> *entry = iter.<span class="built_in">key</span>();</span><br><span class="line">        <span class="type">uint32_t</span> key_length;</span><br><span class="line">        <span class="type">const</span> <span class="type">char</span> *key_ptr = <span class="built_in">GetVarint32Ptr</span>(entry, entry + <span class="number">5</span>, &amp;key_length);</span><br><span class="line">        <span class="keyword">if</span> (comparator_.comparator.<span class="built_in">user_comparator</span>()-&gt;<span class="built_in">Compare</span>(</span><br><span class="line">                <span class="built_in">Slice</span>(key_ptr, key_length - <span class="number">8</span>), key.<span class="built_in">user_key</span>()) == <span class="number">0</span>)</span><br><span class="line">        {</span><br><span class="line">            <span class="comment">// Correct user key</span></span><br><span class="line">            <span class="type">const</span> <span class="type">uint64_t</span> tag = <span class="built_in">DecodeFixed64</span>(key_ptr + key_length - <span class="number">8</span>);</span><br><span class="line">            <span class="keyword">switch</span> (<span class="built_in">static_cast</span>&lt;ValueType&gt;(tag &amp; <span class="number">0xff</span>))</span><br><span class="line">            {</span><br><span class="line">            <span class="keyword">case</span> kTypeValue:</span><br><span class="line">            {</span><br><span class="line">                Slice v = <span class="built_in">GetLengthPrefixedSlice</span>(key_ptr + key_length);</span><br><span class="line">                value-&gt;<span class="built_in">assign</span>(v.<span class="built_in">data</span>(), v.<span class="built_in">size</span>());</span><br><span class="line">                <span class="keyword">return</span> <span class="literal">true</span>;</span><br><span class="line">            }</span><br><span class="line">            <span class="keyword">case</span> kTypeDeletion:</span><br><span class="line">                *s = Status::<span class="built_in">NotFound</span>(<span class="built_in">Slice</span>());</span><br><span class="line">                <span class="keyword">return</span> <span class="literal">true</span>;</span><br><span class="line">            }</span><br><span class="line">        }</span><br><span class="line">    }</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">}</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>而对于查找操作，只会按照前缀编码键，构造上面图的前半部分，而SkipList::Iterator::Seek的实现，会将迭代器定位到大于等于查找键的第一个键的位置，读出这个键，然后比对里面的键和查找的键是否相同，相同的话，才会读取对应的值，否则就是键不存在。</p>
+<p>总体而言，MemTable结构还是比较简单的。</p>
+<h2 id="总结">总结</h2>
+<div class="note primary">
+            <p><strong>编程技巧</strong></p><ul><li>使用引用计数的类的析构函数可以作为私有成员来使用。</li></ul>
+          </div>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/C/" rel="tag"># C++</a>
+              <a href="/tags/levelDB/" rel="tag"># levelDB</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2022/09/29/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-9/" rel="prev" title="levelDB源码剖析(9)--WAL日志">
+      <i class="fa fa-chevron-left"></i> levelDB源码剖析(9)--WAL日志
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2022/10/01/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-11/" rel="next" title="levelDB源码剖析(11)--内部的key结构">
+      levelDB源码剖析(11)--内部的key结构 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+    <div class="comments" id="valine-comments"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#memtable%E7%BB%93%E6%9E%84"><span class="nav-number">1.</span> <span class="nav-text">MemTable结构</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#skiplist"><span class="nav-number">1.1.</span> <span class="nav-text">Skiplist</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#memtable"><span class="nav-number">1.2.</span> <span class="nav-text">MemTable</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%80%BB%E7%BB%93"><span class="nav-number">2.</span> <span class="nav-text">总结</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Staskaer"
+      src="/imgs/theme_pic/head_img.png">
+  <p class="site-author-name" itemprop="name">Staskaer</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">97</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">10</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">24</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/Staskaer" title="Github → https:&#x2F;&#x2F;github.com&#x2F;Staskaer" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:liujiaxin011121@gmail.com" title="E-Mail → mailto:liujiaxin011121@gmail.com" rel="noopener" target="_blank"><i class="fa fa-envelope fa-fw"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://www.zhihu.com/people/staskaer" title="Zhihu → https:&#x2F;&#x2F;www.zhihu.com&#x2F;people&#x2F;staskaer" rel="noopener" target="_blank"><i class="fab fa-zhihu fa-fw"></i></a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2025</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Staskaer</span>
+</div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+
+<script>
+NexT.utils.loadComments(document.querySelector('#valine-comments'), () => {
+  NexT.utils.getScript('https://cdn.jsdelivr.net/npm/valine@1.5.1/dist/Valine.min.js', () => {
+    var GUEST = ['nick', 'mail', 'link'];
+    var guest = 'nick,mail,link';
+    guest = guest.split(',').filter(item => {
+      return GUEST.includes(item);
+    });
+    new Valine({
+      el         : '#valine-comments',
+      verify     : false,
+      notify     : false,
+      appId      : 'xH8NDrh9u4SQrUpQOd0lICnX-MdYXbMMI',
+      appKey     : 'jl3JjPS4jsosZG29Zv24Y7LE',
+      placeholder: "Just go go",
+      avatar     : 'mm',
+      meta       : guest,
+      pageSize   : '10' || 10,
+      visitor    : false,
+      lang       : 'zh-Hans' || 'zh-cn',
+      path       : location.pathname,
+      recordIP   : false,
+      serverURLs : 'https://xh8ndrh9.api.lncldglobal.com'
+    });
+  }, window.Valine);
+});
+</script>
+
+</body>
+</html>
+

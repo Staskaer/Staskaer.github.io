@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 6.2.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/imgs/theme_pic/staskaer.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/imgs/theme_pic/staskaer.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/imgs/theme_pic/staskaer.png">
+  <link rel="mask-icon" href="/imgs/theme_pic/staskaer.png" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Gemini","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"mac"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"valine","storage":true,"lazyload":false,"nav":null,"activeClass":"valine"},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="Compaction">
+<meta property="og:type" content="article">
+<meta property="og:title" content="levelDB源码剖析(16)--Compaction">
+<meta property="og:url" content="http://example.com/2022/12/21/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-16/index.html">
+<meta property="og:site_name" content="Staskaer">
+<meta property="og:description" content="Compaction">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="http://example.com/2022/12/21/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-16/pic1.jpg">
+<meta property="og:image" content="http://example.com/2022/12/21/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-16/pic2.jpg">
+<meta property="article:published_time" content="2022-12-21T13:39:10.000Z">
+<meta property="article:modified_time" content="2025-06-17T15:50:22.331Z">
+<meta property="article:author" content="Staskaer">
+<meta property="article:tag" content="C++">
+<meta property="article:tag" content="levelDB">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://example.com/2022/12/21/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-16/pic1.jpg">
+
+<link rel="canonical" href="http://example.com/2022/12/21/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-16/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'en'
+  };
+</script>
+
+  <title>levelDB源码剖析(16)--Compaction | Staskaer</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+<style>mjx-container[jax="SVG"] {
+  direction: ltr;
+}
+
+mjx-container[jax="SVG"] > svg {
+  overflow: visible;
+}
+
+mjx-container[jax="SVG"][display="true"] {
+  display: block;
+  text-align: center;
+  margin: 1em 0;
+}
+
+mjx-container[jax="SVG"][justify="left"] {
+  text-align: left;
+}
+
+mjx-container[jax="SVG"][justify="right"] {
+  text-align: right;
+}
+
+g[data-mml-node="merror"] > g {
+  fill: red;
+  stroke: red;
+}
+
+g[data-mml-node="merror"] > rect[data-background] {
+  fill: yellow;
+  stroke: none;
+}
+
+g[data-mml-node="mtable"] > line[data-line] {
+  stroke-width: 70px;
+  fill: none;
+}
+
+g[data-mml-node="mtable"] > rect[data-frame] {
+  stroke-width: 70px;
+  fill: none;
+}
+
+g[data-mml-node="mtable"] > .mjx-dashed {
+  stroke-dasharray: 140;
+}
+
+g[data-mml-node="mtable"] > .mjx-dotted {
+  stroke-linecap: round;
+  stroke-dasharray: 0,140;
+}
+
+g[data-mml-node="mtable"] > svg {
+  overflow: visible;
+}
+
+[jax="SVG"] mjx-tool {
+  display: inline-block;
+  position: relative;
+  width: 0;
+  height: 0;
+}
+
+[jax="SVG"] mjx-tool > mjx-tip {
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+mjx-tool > mjx-tip {
+  display: inline-block;
+  padding: .2em;
+  border: 1px solid #888;
+  font-size: 70%;
+  background-color: #F8F8F8;
+  color: black;
+  box-shadow: 2px 2px 5px #AAAAAA;
+}
+
+g[data-mml-node="maction"][data-toggle] {
+  cursor: pointer;
+}
+
+mjx-status {
+  display: block;
+  position: fixed;
+  left: 1em;
+  bottom: 1em;
+  min-width: 25%;
+  padding: .2em .4em;
+  border: 1px solid #888;
+  font-size: 90%;
+  background-color: #F8F8F8;
+  color: black;
+}
+
+foreignObject[data-mjx-xml] {
+  font-family: initial;
+  line-height: normal;
+  overflow: visible;
+}
+
+.MathJax path {
+  stroke-width: 3;
+}
+
+mjx-container[display="true"] {
+  overflow: auto hidden;
+}
+
+mjx-container[display="true"] + br {
+  display: none;
+}
+</style></head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Staskaer</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">Hi, this is Staskaer</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+        <li class="menu-item menu-item-links">
+
+    <a href="/links/" rel="section"><i class="fa fa-link fa-fw"></i>links</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2022/12/21/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-16/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/imgs/theme_pic/head_img.png">
+      <meta itemprop="name" content="Staskaer">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Staskaer">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          levelDB源码剖析(16)--Compaction
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2022-12-21 21:39:10" itemprop="dateCreated datePublished" datetime="2022-12-21T21:39:10+08:00">2022-12-21</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2025-06-17 23:50:22" itemprop="dateModified" datetime="2025-06-17T23:50:22+08:00">2025-06-17</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/" itemprop="url" rel="index"><span itemprop="name">levelDB源码剖析</span></a>
+                </span>
+            </span>
+
+          
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Valine: </span>
+    
+    <a title="valine" href="/2022/12/21/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-16/#valine-comments" itemprop="discussionUrl">
+      <span class="post-comments-count valine-comment-count" data-xid="/2022/12/21/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-16/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h2 id="compaction">Compaction</h2>
+<span id="more"></span>
+<p>Compaction的功能无非是删除冗余的数据，精简SSTable文件的数量，再就是给Key排序，新生成的SSTable文件中的key是有序排列的。<strong>又因为等待Compaction的数据量和文件必然是庞大的，不可能通过一次Compaction就能搞定</strong>，这不现实，而且还会有不断地写操作进来，因此Compaction的时机也很有讲究。这些都是需要考虑的点。<br>
+Compaction其实就是一个归并排序的过程，对多个输入的SSTable，多路归并，输出多个连续的SSTable，代替原来的文件。根据Level 0的特殊性，可以分为两种类型。</p>
+<ul>
+<li>level0 -&gt; level1</li>
+<li>level(n) -&gt; level(n+1)</li>
+</ul>
+<p>其中level0 -&gt; level1相对比较复杂，因为第0层存在不少key范围重叠的sstable，因此如果需要压缩时，先从第0层选择出几个重叠的sstable，然后从第1层选择一些同样重叠的sstable，然后多路归并即可。</p>
+<img src="/2022/12/21/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-16/pic1.jpg" class="">
+<p>而level(n) -&gt; level(n+1)就比较简单，只需要在level(n)层选择一个块，然后再在level(n+1)层选择与上述块重叠的块一起参与多路归并即可。</p>
+<img src="/2022/12/21/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-16/pic2.jpg" class="">
+<p>LevelDB里有三种方式选择Compaction，分别是：</p>
+<ul>
+<li>Manual Compaction</li>
+<li>Size Compaction</li>
+<li>Seek Compaction</li>
+</ul>
+<p>其中Manual Compaction就是手动触发一次Compaction，通过DBImpl::TEST_CompactRange触发，为了测试而存在。</p>
+<p>Size Compaction的思想是比较简单直观的，对于Level 0的SSTable，因为键范围可能有重叠，所以需要控制文对件不超过4个，而于Level n（n &gt; 0）的SSTable，总大小不能超过10^nMB，一旦这些条件不满足了，需要Compaction，将文件推向更高的Level，使得条件继续满足。</p>
+<p>Size Compaction就是根据这个思想触发的，计算每一Level实际大小相对于最大大小的比率，优先Compaction比率最大的Level。</p>
+<p>SSTable文件的增减，只会在版本变更的时候出现，所以只需要在版本变更完成时，计算比率最大的Level，这个计算过程由VersionSet::LogAndApply里面的void VersionSet::Finalize(Version* v)来完成（打开数据库的时候也会计算一次）。</p>
+<p>Size Compaction是对一整个Level进行的，一个Level的SSTable可能会很多，无法在一次Compaction中完成，需要分多次完成。第一次完成最小键到某个键的范围内的Compaction，下一次再从某个键继续完成，以此类推。那么，需要记录下一次这个Level的Compaction从哪个键开始，这个信息会记录在compact_pointer_中。</p>
+<p>对于Seek Compaction而言，在搜索SSTable时，会找到键范围包含待搜索键的SSTable，从Level 0开始搜索，如果一个SSTable没有找到，会搜索下一个SSTable，直到找到或者确定无法找到为止。假设一次搜索，搜索了超过一个SSTable，那么标记第一个SSTable搜索了一次，假设这种情况出现了多次，说明这个文件和多个其它的文件键范围有重叠，影响了搜索的效率，需要Compaction这个文件，使得这种重叠减少，进而提高读取的效率。</p>
+<p>Seek Compaction就是基于这个原理实现的Compaction，是精确到每个SSTable的，一个FileMetaData里面包含一个字段allowed_seeks，会被设定为一个初始值，每当搜索SSTable时，如果第一个文件没有搜到，就会对第一个SSTable的allowed_seeks减1，当某个SSTable的allowed_seeks变为0时，那么这个SSTable就需要被Compaction。</p>
+<p>allowed_seeks的减小发生在两个地方：</p>
+<ul>
+<li>DB::GET接口</li>
+<li>DBIter数据库迭代过程中</li>
+</ul>
+<p>每次调用DB::GET时，如果需要搜索超过1个SSTable，就会对第一个SSTable的allowed_seeks减一。</p>
+<p>而DBIter更特别一点，因为是迭代SSTable的，所以不会存在搜索一个键读取多个SSTable的情况，这边为了将Seek Compaction考虑进去，采用了抽样的方式，每读取2MB的数据，会抽样一个键，模拟读取的情况，更新相应的allowed_seeks。</p>
+<p>当某个文件的allowed_seeks减小到0了，就会将当前Version的file_to_compact_和file_to_compact_level设置为这个文件以及它的Level，后台线程就会来处理。</p>
+<p>allowed_seeks的初始值设置就非常关键，它决定了一个文件多少次Seek后，才会被Compaction，LevelDB将这个值设为：static_cast<int>((f-&gt;file_size / 16384U))</int></p>
+<p>这是有依据的，首先假设：</p>
+<ul>
+<li>一次Seek花费10ms</li>
+<li>读写1MB的花费10ms （100MB/s）</li>
+</ul>
+<p>而Compaction 1MB的数据花费25MB左右的IO：当前Level读取1MB，上一个Level读取10-12MB，上一个Level写入10-12MB。<br>
+所以25次Seek的开销和Compaction 1MB数据的开销一样，也就是1次Seek和40KB数据Compaction的开销一样，我们比较保守，假设1次Seek和16KB的数据的开销一样。那么设置为上面的值后，Seek的操作和Compaction操作的开销相同，那么Compaction不会过于频繁，影响性能。</p>
+<h3 id="compaction实现">Compaction实现</h3>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="comment">// A Compaction encapsulates information about a compaction.</span></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">Compaction</span></span><br><span class="line">{</span><br><span class="line"><span class="keyword">private</span>:</span><br><span class="line">    <span class="keyword">friend</span> <span class="keyword">class</span> <span class="title class_">Version</span>; <span class="comment">// 友元类和私有的构造函数</span></span><br><span class="line">    <span class="keyword">friend</span> <span class="keyword">class</span> <span class="title class_">VersionSet</span>;</span><br><span class="line">    <span class="built_in">Compaction</span>(<span class="type">const</span> Options *options, <span class="type">int</span> level);</span><br><span class="line"></span><br><span class="line">    <span class="type">int</span> level_;                     <span class="comment">// Compaction文件所在的Level</span></span><br><span class="line">    <span class="type">uint64_t</span> max_output_file_size_; <span class="comment">// 生成文件最大值</span></span><br><span class="line">    Version *input_version_;        <span class="comment">// 输入的版本号</span></span><br><span class="line">    VersionEdit edit_;              <span class="comment">// Compaction结果保存的VersionEdit</span></span><br><span class="line"></span><br><span class="line">    <span class="comment">// Each compaction reads inputs from "level_" and "level_+1"</span></span><br><span class="line">    <span class="comment">// 两个元素分别对应两层的sstable</span></span><br><span class="line">    std::vector&lt;FileMetaData *&gt; inputs_[<span class="number">2</span>]; <span class="comment">// The two sets of inputs</span></span><br><span class="line"></span><br><span class="line">    <span class="comment">// State used to check for number of overlapping grandparent files</span></span><br><span class="line">    <span class="comment">// (parent == level_ + 1, grandparent == level_ + 2)</span></span><br><span class="line">    <span class="comment">// 一些状态，用来检查是否存在重叠现象</span></span><br><span class="line">    std::vector&lt;FileMetaData *&gt; grandparents_;</span><br><span class="line">    <span class="type">size_t</span> grandparent_index_; <span class="comment">// Index in grandparent_starts_</span></span><br><span class="line">    <span class="type">bool</span> seen_key_;            <span class="comment">// Some output key has been seen</span></span><br><span class="line">    <span class="type">int64_t</span> overlapped_bytes_; <span class="comment">// Bytes of overlap between current output</span></span><br><span class="line">                               <span class="comment">// and grandparent files</span></span><br><span class="line"></span><br><span class="line">    <span class="comment">// State for implementing IsBaseLevelForKey</span></span><br><span class="line"></span><br><span class="line">    <span class="comment">// level_ptrs_ holds indices into input_version_-&gt;levels_: our state</span></span><br><span class="line">    <span class="comment">// is that we are positioned at one of the file ranges for each</span></span><br><span class="line">    <span class="comment">// higher level than the ones involved in this compaction (i.e. for</span></span><br><span class="line">    <span class="comment">// all L &gt;= level_ + 2).</span></span><br><span class="line">    <span class="type">size_t</span> level_ptrs_[config::kNumLevels];</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    ~<span class="built_in">Compaction</span>();</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Return the level that is being compacted.  Inputs from "level"</span></span><br><span class="line">    <span class="comment">// and "level+1" will be merged to produce a set of "level+1" files.</span></span><br><span class="line">    <span class="comment">// 返回正在压缩的level</span></span><br><span class="line">    <span class="function"><span class="type">int</span> <span class="title">level</span><span class="params">()</span> <span class="type">const</span> </span>{ <span class="keyword">return</span> level_; }</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Return the object that holds the edits to the descriptor done</span></span><br><span class="line">    <span class="comment">// by this compaction.</span></span><br><span class="line">    <span class="comment">// 返回压缩完成后的VersionEdit</span></span><br><span class="line">    <span class="function">VersionEdit *<span class="title">edit</span><span class="params">()</span> </span>{ <span class="keyword">return</span> &amp;edit_; }</span><br><span class="line"></span><br><span class="line">    <span class="comment">// "which" must be either 0 or 1</span></span><br><span class="line">    <span class="comment">// 输入的文件个数</span></span><br><span class="line">    <span class="function"><span class="type">int</span> <span class="title">num_input_files</span><span class="params">(<span class="type">int</span> which)</span> <span class="type">const</span> </span>{ <span class="keyword">return</span> inputs_[which].<span class="built_in">size</span>(); }</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Return the ith input file at "level()+which" ("which" must be 0 or 1).</span></span><br><span class="line">    <span class="comment">// 返回输入的文件</span></span><br><span class="line">    <span class="function">FileMetaData *<span class="title">input</span><span class="params">(<span class="type">int</span> which, <span class="type">int</span> i)</span> <span class="type">const</span> </span>{ <span class="keyword">return</span> inputs_[which][i]; }</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Maximum size of files to build during this compaction.</span></span><br><span class="line">    <span class="comment">// 压缩中最大的文件数目</span></span><br><span class="line">    <span class="function"><span class="type">uint64_t</span> <span class="title">MaxOutputFileSize</span><span class="params">()</span> <span class="type">const</span> </span>{ <span class="keyword">return</span> max_output_file_size_; }</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Is this a trivial compaction that can be implemented by just</span></span><br><span class="line">    <span class="comment">// moving a single input file to the next level (no merging or splitting)</span></span><br><span class="line">    <span class="comment">// 是否是平凡移动，即不经过任何归并直接移动到下一层</span></span><br><span class="line">    <span class="function"><span class="type">bool</span> <span class="title">IsTrivialMove</span><span class="params">()</span> <span class="type">const</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Add all inputs to this compaction as delete operations to *edit.</span></span><br><span class="line">    <span class="comment">// 把所有的输入文件在一个VersionEdit中删掉</span></span><br><span class="line">    <span class="function"><span class="type">void</span> <span class="title">AddInputDeletions</span><span class="params">(VersionEdit *edit)</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Returns true if the information we have available guarantees that</span></span><br><span class="line">    <span class="comment">// the compaction is producing data in "level+1" for which no data exists</span></span><br><span class="line">    <span class="comment">// in levels greater than "level+1".</span></span><br><span class="line">    <span class="comment">// 函数返回true表示user_key不存在于高层中</span></span><br><span class="line">    <span class="function"><span class="type">bool</span> <span class="title">IsBaseLevelForKey</span><span class="params">(<span class="type">const</span> Slice &amp;user_key)</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Returns true iff we should stop building the current output</span></span><br><span class="line">    <span class="comment">// before processing "internal_key".</span></span><br><span class="line">    <span class="comment">// 在处理内部key之前需要停止构建当前输出的时候返回true</span></span><br><span class="line">    <span class="function"><span class="type">bool</span> <span class="title">ShouldStopBefore</span><span class="params">(<span class="type">const</span> Slice &amp;internal_key)</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Release the input version for the compaction, once the compaction</span></span><br><span class="line">    <span class="comment">// is successful.</span></span><br><span class="line">    <span class="comment">// 压缩完成，释放输入版本</span></span><br><span class="line">    <span class="function"><span class="type">void</span> <span class="title">ReleaseInputs</span><span class="params">()</span></span>;</span><br><span class="line">};</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>Compaction的文件在两个Level，假设为level_ 和level_ + 1，选定一个或几个SSTable Compaction时，就是选定了level_ 的文件，然后调用void VersionSet::SetupOtherInputs(Compaction* c)可以获取到level_ + 1中与level_中选定的文件有重叠的文件，这样输入的SSTable就选好了，一次Compactdoin要做的工作也就确定了。</p>
+<p>void DBImpl::BackgroundCompaction()首先会选定构造一个Compaction类的实例，也就是选定Compaction的任务。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br><span class="line">144</span><br><span class="line">145</span><br><span class="line">146</span><br><span class="line">147</span><br><span class="line">148</span><br><span class="line">149</span><br><span class="line">150</span><br><span class="line">151</span><br><span class="line">152</span><br><span class="line">153</span><br><span class="line">154</span><br><span class="line">155</span><br><span class="line">156</span><br><span class="line">157</span><br><span class="line">158</span><br><span class="line">159</span><br><span class="line">160</span><br><span class="line">161</span><br><span class="line">162</span><br><span class="line">163</span><br><span class="line">164</span><br><span class="line">165</span><br><span class="line">166</span><br><span class="line">167</span><br><span class="line">168</span><br><span class="line">169</span><br><span class="line">170</span><br><span class="line">171</span><br><span class="line">172</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">DBImpl::BackgroundCompaction</span><span class="params">()</span></span></span><br><span class="line"><span class="function"></span>{</span><br><span class="line">    mutex_.<span class="built_in">AssertHeld</span>();</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (imm_ != <span class="literal">nullptr</span>)</span><br><span class="line">    {</span><br><span class="line">        <span class="built_in">CompactMemTable</span>();</span><br><span class="line">        <span class="keyword">return</span>;</span><br><span class="line">    }</span><br><span class="line"></span><br><span class="line">    Compaction *c;</span><br><span class="line">    <span class="type">bool</span> is_manual = (manual_compaction_ != <span class="literal">nullptr</span>);</span><br><span class="line">    InternalKey manual_end;</span><br><span class="line">    <span class="comment">// 先处理手动触发的压缩</span></span><br><span class="line">    <span class="keyword">if</span> (is_manual)</span><br><span class="line">    {</span><br><span class="line">        ManualCompaction *m = manual_compaction_;</span><br><span class="line">        c = versions_-&gt;<span class="built_in">CompactRange</span>(m-&gt;level, m-&gt;begin, m-&gt;end);</span><br><span class="line">        m-&gt;done = (c == <span class="literal">nullptr</span>);</span><br><span class="line">        <span class="keyword">if</span> (c != <span class="literal">nullptr</span>)</span><br><span class="line">        {</span><br><span class="line">            manual_end = c-&gt;<span class="built_in">input</span>(<span class="number">0</span>, c-&gt;<span class="built_in">num_input_files</span>(<span class="number">0</span>) - <span class="number">1</span>)-&gt;largest;</span><br><span class="line">        }</span><br><span class="line">        <span class="built_in">Log</span>(options_.info_log,</span><br><span class="line">            <span class="string">"Manual compaction at level-%d from %s .. %s; will stop at %s\n"</span>,</span><br><span class="line">            m-&gt;level, (m-&gt;begin ? m-&gt;begin-&gt;<span class="built_in">DebugString</span>().<span class="built_in">c_str</span>() : <span class="string">"(begin)"</span>),</span><br><span class="line">            (m-&gt;end ? m-&gt;end-&gt;<span class="built_in">DebugString</span>().<span class="built_in">c_str</span>() : <span class="string">"(end)"</span>),</span><br><span class="line">            (m-&gt;done ? <span class="string">"(end)"</span> : manual_end.<span class="built_in">DebugString</span>().<span class="built_in">c_str</span>()));</span><br><span class="line">    }</span><br><span class="line">    <span class="keyword">else</span></span><br><span class="line">    {</span><br><span class="line">        <span class="comment">// 选择一部分文件做压缩</span></span><br><span class="line">        c = versions_-&gt;<span class="built_in">PickCompaction</span>();</span><br><span class="line">    }</span><br><span class="line"></span><br><span class="line">    Status status;</span><br><span class="line">    <span class="keyword">if</span> (c == <span class="literal">nullptr</span>)</span><br><span class="line">    <span class="comment">// 没有合并的文件</span></span><br><span class="line">    {</span><br><span class="line">        <span class="comment">// Nothing to do</span></span><br><span class="line">    }</span><br><span class="line">    <span class="keyword">else</span> <span class="keyword">if</span> (!is_manual &amp;&amp; c-&gt;<span class="built_in">IsTrivialMove</span>())</span><br><span class="line">    {</span><br><span class="line">        <span class="comment">// 处理一种特殊情况，也就是参与Compaction的文件，level_有一个文件，而level_ + 1 没有</span></span><br><span class="line">        <span class="comment">// 这时候只需要直接更改元数据，然后文件移动到level_ + 1即可，不需要多路归并</span></span><br><span class="line">        <span class="built_in">assert</span>(c-&gt;<span class="built_in">num_input_files</span>(<span class="number">0</span>) == <span class="number">1</span>);</span><br><span class="line">        FileMetaData *f = c-&gt;<span class="built_in">input</span>(<span class="number">0</span>, <span class="number">0</span>);</span><br><span class="line">        c-&gt;<span class="built_in">edit</span>()-&gt;<span class="built_in">RemoveFile</span>(c-&gt;<span class="built_in">level</span>(), f-&gt;number);</span><br><span class="line">        c-&gt;<span class="built_in">edit</span>()-&gt;<span class="built_in">AddFile</span>(c-&gt;<span class="built_in">level</span>() + <span class="number">1</span>, f-&gt;number, f-&gt;file_size, f-&gt;smallest,</span><br><span class="line">                           f-&gt;largest);</span><br><span class="line">        status = versions_-&gt;<span class="built_in">LogAndApply</span>(c-&gt;<span class="built_in">edit</span>(), &amp;mutex_);</span><br><span class="line">        <span class="keyword">if</span> (!status.<span class="built_in">ok</span>())</span><br><span class="line">        {</span><br><span class="line">            <span class="built_in">RecordBackgroundError</span>(status);</span><br><span class="line">        }</span><br><span class="line">        VersionSet::LevelSummaryStorage tmp;</span><br><span class="line">        <span class="built_in">Log</span>(options_.info_log, <span class="string">"Moved #%lld to level-%d %lld bytes %s: %s\n"</span>,</span><br><span class="line">            <span class="built_in">static_cast</span>&lt;<span class="type">unsigned</span> <span class="type">long</span> <span class="type">long</span>&gt;(f-&gt;number), c-&gt;<span class="built_in">level</span>() + <span class="number">1</span>,</span><br><span class="line">            <span class="built_in">static_cast</span>&lt;<span class="type">unsigned</span> <span class="type">long</span> <span class="type">long</span>&gt;(f-&gt;file_size),</span><br><span class="line">            status.<span class="built_in">ToString</span>().<span class="built_in">c_str</span>(), versions_-&gt;<span class="built_in">LevelSummary</span>(&amp;tmp));</span><br><span class="line">    }</span><br><span class="line">    <span class="keyword">else</span></span><br><span class="line">    {</span><br><span class="line">        CompactionState *compact = <span class="keyword">new</span> <span class="built_in">CompactionState</span>(c);</span><br><span class="line">        <span class="comment">// 调用DBImpl::DoCompactionWork做实际的Compaction</span></span><br><span class="line">        status = <span class="built_in">DoCompactionWork</span>(compact);</span><br><span class="line">        <span class="keyword">if</span> (!status.<span class="built_in">ok</span>())</span><br><span class="line">        {</span><br><span class="line">            <span class="built_in">RecordBackgroundError</span>(status);</span><br><span class="line">        }</span><br><span class="line">        <span class="built_in">CleanupCompaction</span>(compact);</span><br><span class="line">        c-&gt;<span class="built_in">ReleaseInputs</span>();</span><br><span class="line">        <span class="built_in">RemoveObsoleteFiles</span>();</span><br><span class="line">    }</span><br><span class="line">    <span class="keyword">delete</span> c;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (status.<span class="built_in">ok</span>())</span><br><span class="line">    {</span><br><span class="line">        <span class="comment">// Done</span></span><br><span class="line">    }</span><br><span class="line">    <span class="keyword">else</span> <span class="keyword">if</span> (shutting_down_.<span class="built_in">load</span>(std::memory_order_acquire))</span><br><span class="line">    {</span><br><span class="line">        <span class="comment">// Ignore compaction errors found during shutting down</span></span><br><span class="line">    }</span><br><span class="line">    <span class="keyword">else</span></span><br><span class="line">    {</span><br><span class="line">        <span class="built_in">Log</span>(options_.info_log, <span class="string">"Compaction error: %s"</span>, status.<span class="built_in">ToString</span>().<span class="built_in">c_str</span>());</span><br><span class="line">    }</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (is_manual)</span><br><span class="line">    {</span><br><span class="line">        ManualCompaction *m = manual_compaction_;</span><br><span class="line">        <span class="keyword">if</span> (!status.<span class="built_in">ok</span>())</span><br><span class="line">        {</span><br><span class="line">            m-&gt;done = <span class="literal">true</span>;</span><br><span class="line">        }</span><br><span class="line">        <span class="keyword">if</span> (!m-&gt;done)</span><br><span class="line">        {</span><br><span class="line">            <span class="comment">// We only compacted part of the requested range.  Update *m</span></span><br><span class="line">            <span class="comment">// to the range that is left to be compacted.</span></span><br><span class="line">            m-&gt;tmp_storage = manual_end;</span><br><span class="line">            m-&gt;begin = &amp;m-&gt;tmp_storage;</span><br><span class="line">        }</span><br><span class="line">        manual_compaction_ = <span class="literal">nullptr</span>;</span><br><span class="line">    }</span><br><span class="line">}</span><br><span class="line"></span><br><span class="line"><span class="function">Compaction *<span class="title">VersionSet::PickCompaction</span><span class="params">()</span></span></span><br><span class="line"><span class="function"></span>{</span><br><span class="line">    Compaction *c;</span><br><span class="line">    <span class="type">int</span> level;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// We prefer compactions triggered by too much data in a level over</span></span><br><span class="line">    <span class="comment">// the compactions triggered by seeks.</span></span><br><span class="line">    <span class="type">const</span> <span class="type">bool</span> size_compaction = (current_-&gt;compaction_score_ &gt;= <span class="number">1</span>);</span><br><span class="line">    <span class="type">const</span> <span class="type">bool</span> seek_compaction = (current_-&gt;file_to_compact_ != <span class="literal">nullptr</span>);</span><br><span class="line">    <span class="keyword">if</span> (size_compaction)</span><br><span class="line">    {</span><br><span class="line">        level = current_-&gt;compaction_level_;</span><br><span class="line">        <span class="built_in">assert</span>(level &gt;= <span class="number">0</span>);</span><br><span class="line">        <span class="built_in">assert</span>(level + <span class="number">1</span> &lt; config::kNumLevels);</span><br><span class="line">        c = <span class="keyword">new</span> <span class="built_in">Compaction</span>(options_, level);</span><br><span class="line"></span><br><span class="line">        <span class="comment">// Pick the first file that comes after compact_pointer_[level]</span></span><br><span class="line">        <span class="keyword">for</span> (<span class="type">size_t</span> i = <span class="number">0</span>; i &lt; current_-&gt;files_[level].<span class="built_in">size</span>(); i++)</span><br><span class="line">        {</span><br><span class="line">            FileMetaData *f = current_-&gt;files_[level][i];</span><br><span class="line">            <span class="keyword">if</span> (compact_pointer_[level].<span class="built_in">empty</span>() ||</span><br><span class="line">                icmp_.<span class="built_in">Compare</span>(f-&gt;largest.<span class="built_in">Encode</span>(), compact_pointer_[level]) &gt; <span class="number">0</span>)</span><br><span class="line">            {</span><br><span class="line">                c-&gt;inputs_[<span class="number">0</span>].<span class="built_in">push_back</span>(f);</span><br><span class="line">                <span class="keyword">break</span>;</span><br><span class="line">            }</span><br><span class="line">        }</span><br><span class="line">        <span class="keyword">if</span> (c-&gt;inputs_[<span class="number">0</span>].<span class="built_in">empty</span>())</span><br><span class="line">        {</span><br><span class="line">            <span class="comment">// Wrap-around to the beginning of the key space</span></span><br><span class="line">            c-&gt;inputs_[<span class="number">0</span>].<span class="built_in">push_back</span>(current_-&gt;files_[level][<span class="number">0</span>]);</span><br><span class="line">        }</span><br><span class="line">    }</span><br><span class="line">    <span class="keyword">else</span> <span class="keyword">if</span> (seek_compaction)</span><br><span class="line">    {</span><br><span class="line">        level = current_-&gt;file_to_compact_level_;</span><br><span class="line">        c = <span class="keyword">new</span> <span class="built_in">Compaction</span>(options_, level);</span><br><span class="line">        c-&gt;inputs_[<span class="number">0</span>].<span class="built_in">push_back</span>(current_-&gt;file_to_compact_);</span><br><span class="line">    }</span><br><span class="line">    <span class="keyword">else</span></span><br><span class="line">    {</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">nullptr</span>;</span><br><span class="line">    }</span><br><span class="line"></span><br><span class="line">    c-&gt;input_version_ = current_;</span><br><span class="line">    c-&gt;input_version_-&gt;<span class="built_in">Ref</span>();</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Files in level 0 may overlap each other, so pick up all overlapping ones</span></span><br><span class="line">    <span class="keyword">if</span> (level == <span class="number">0</span>)</span><br><span class="line">    {</span><br><span class="line">        InternalKey smallest, largest;</span><br><span class="line">        <span class="built_in">GetRange</span>(c-&gt;inputs_[<span class="number">0</span>], &amp;smallest, &amp;largest);</span><br><span class="line">        <span class="comment">// Note that the next call will discard the file we placed in</span></span><br><span class="line">        <span class="comment">// c-&gt;inputs_[0] earlier and replace it with an overlapping set</span></span><br><span class="line">        <span class="comment">// which will include the picked file.</span></span><br><span class="line">        current_-&gt;<span class="built_in">GetOverlappingInputs</span>(<span class="number">0</span>, &amp;smallest, &amp;largest, &amp;c-&gt;inputs_[<span class="number">0</span>]);</span><br><span class="line">        <span class="built_in">assert</span>(!c-&gt;inputs_[<span class="number">0</span>].<span class="built_in">empty</span>());</span><br><span class="line">    }</span><br><span class="line"></span><br><span class="line">    <span class="built_in">SetupOtherInputs</span>(c);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> c;</span><br><span class="line">}</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>其中DBImpl::DoCompactionWork是真正处理多路归并的函数，会考虑以下几点：</p>
+<ul>
+<li>迭代按照Internal Key的顺序进行，多个连续的Internal Key里面可能包含相同的User Key，按照SequenceNumber降序排列</li>
+<li>相同的User Key里只有第一个User Key是有效的，因为它的SequenceNumber是最大的，覆盖了旧的User Key，但是无法只保留第一个User Key，因为LevelDB支持多版本，旧的User Key可能依然有线程可以引用，但是不再引用的User Key可以安全的删除</li>
+<li>碰到一个删除时，并且它的SequenceNumber &lt;= 最新的Snapshot，会判断更高Level是否有这个User Key存在。如果存在，那么无法丢弃这个删除操作，因为一旦丢弃了，更高Level原被删除的User Key又可见了。如果不存在，那么可以安全的丢弃这个删除操作，这个键就找不到了</li>
+<li>对于生成的SSTable文件，设置两个上限，哪个先达到，都会开始新的SSTable。一个就是2MB，另外一个就是判断上一Level和这个文件的重叠的文件数量，不超过10个，这是为了控制这个生成的文件Compaction的时候，不会和太多的上层文件重叠</li>
+</ul>
+<p>最后通过DBImpl::InstallCompactionResults安装Compaction的结果，将改删除的文件和改添加的文件更新到VersionEdit里，然后应用版本更新。</p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/C/" rel="tag"># C++</a>
+              <a href="/tags/levelDB/" rel="tag"># levelDB</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2022/12/19/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-15/" rel="prev" title="levelDB源码剖析(15)--数据库的版本管理">
+      <i class="fa fa-chevron-left"></i> levelDB源码剖析(15)--数据库的版本管理
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2022/12/23/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-17/" rel="next" title="levelDB源码剖析(17)--Recover">
+      levelDB源码剖析(17)--Recover <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+    <div class="comments" id="valine-comments"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#compaction"><span class="nav-number">1.</span> <span class="nav-text">Compaction</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#compaction%E5%AE%9E%E7%8E%B0"><span class="nav-number">1.1.</span> <span class="nav-text">Compaction实现</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Staskaer"
+      src="/imgs/theme_pic/head_img.png">
+  <p class="site-author-name" itemprop="name">Staskaer</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">97</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">10</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">24</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/Staskaer" title="Github → https:&#x2F;&#x2F;github.com&#x2F;Staskaer" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:liujiaxin011121@gmail.com" title="E-Mail → mailto:liujiaxin011121@gmail.com" rel="noopener" target="_blank"><i class="fa fa-envelope fa-fw"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://www.zhihu.com/people/staskaer" title="Zhihu → https:&#x2F;&#x2F;www.zhihu.com&#x2F;people&#x2F;staskaer" rel="noopener" target="_blank"><i class="fab fa-zhihu fa-fw"></i></a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2025</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Staskaer</span>
+</div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+
+<script>
+NexT.utils.loadComments(document.querySelector('#valine-comments'), () => {
+  NexT.utils.getScript('https://cdn.jsdelivr.net/npm/valine@1.5.1/dist/Valine.min.js', () => {
+    var GUEST = ['nick', 'mail', 'link'];
+    var guest = 'nick,mail,link';
+    guest = guest.split(',').filter(item => {
+      return GUEST.includes(item);
+    });
+    new Valine({
+      el         : '#valine-comments',
+      verify     : false,
+      notify     : false,
+      appId      : 'xH8NDrh9u4SQrUpQOd0lICnX-MdYXbMMI',
+      appKey     : 'jl3JjPS4jsosZG29Zv24Y7LE',
+      placeholder: "Just go go",
+      avatar     : 'mm',
+      meta       : guest,
+      pageSize   : '10' || 10,
+      visitor    : false,
+      lang       : 'zh-Hans' || 'zh-cn',
+      path       : location.pathname,
+      recordIP   : false,
+      serverURLs : 'https://xh8ndrh9.api.lncldglobal.com'
+    });
+  }, window.Valine);
+});
+</script>
+
+</body>
+</html>
+

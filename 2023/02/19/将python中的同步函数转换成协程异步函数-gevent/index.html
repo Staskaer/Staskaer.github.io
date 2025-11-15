@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 6.2.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/imgs/theme_pic/staskaer.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/imgs/theme_pic/staskaer.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/imgs/theme_pic/staskaer.png">
+  <link rel="mask-icon" href="/imgs/theme_pic/staskaer.png" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Gemini","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"mac"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"valine","storage":true,"lazyload":false,"nav":null,"activeClass":"valine"},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="使用gevent库来将python中的同步函数转化成多线程函数">
+<meta property="og:type" content="article">
+<meta property="og:title" content="将python中的同步函数转换成协程异步函数(gevent)">
+<meta property="og:url" content="http://example.com/2023/02/19/%E5%B0%86python%E4%B8%AD%E7%9A%84%E5%90%8C%E6%AD%A5%E5%87%BD%E6%95%B0%E8%BD%AC%E6%8D%A2%E6%88%90%E5%8D%8F%E7%A8%8B%E5%BC%82%E6%AD%A5%E5%87%BD%E6%95%B0-gevent/index.html">
+<meta property="og:site_name" content="Staskaer">
+<meta property="og:description" content="使用gevent库来将python中的同步函数转化成多线程函数">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2023-02-19T14:36:35.000Z">
+<meta property="article:modified_time" content="2025-06-17T15:50:22.394Z">
+<meta property="article:author" content="Staskaer">
+<meta property="article:tag" content="Python">
+<meta property="article:tag" content="Python异步">
+<meta property="article:tag" content="爬虫">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="http://example.com/2023/02/19/%E5%B0%86python%E4%B8%AD%E7%9A%84%E5%90%8C%E6%AD%A5%E5%87%BD%E6%95%B0%E8%BD%AC%E6%8D%A2%E6%88%90%E5%8D%8F%E7%A8%8B%E5%BC%82%E6%AD%A5%E5%87%BD%E6%95%B0-gevent/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'en'
+  };
+</script>
+
+  <title>将python中的同步函数转换成协程异步函数(gevent) | Staskaer</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+<style>mjx-container[jax="SVG"] {
+  direction: ltr;
+}
+
+mjx-container[jax="SVG"] > svg {
+  overflow: visible;
+}
+
+mjx-container[jax="SVG"][display="true"] {
+  display: block;
+  text-align: center;
+  margin: 1em 0;
+}
+
+mjx-container[jax="SVG"][justify="left"] {
+  text-align: left;
+}
+
+mjx-container[jax="SVG"][justify="right"] {
+  text-align: right;
+}
+
+g[data-mml-node="merror"] > g {
+  fill: red;
+  stroke: red;
+}
+
+g[data-mml-node="merror"] > rect[data-background] {
+  fill: yellow;
+  stroke: none;
+}
+
+g[data-mml-node="mtable"] > line[data-line] {
+  stroke-width: 70px;
+  fill: none;
+}
+
+g[data-mml-node="mtable"] > rect[data-frame] {
+  stroke-width: 70px;
+  fill: none;
+}
+
+g[data-mml-node="mtable"] > .mjx-dashed {
+  stroke-dasharray: 140;
+}
+
+g[data-mml-node="mtable"] > .mjx-dotted {
+  stroke-linecap: round;
+  stroke-dasharray: 0,140;
+}
+
+g[data-mml-node="mtable"] > svg {
+  overflow: visible;
+}
+
+[jax="SVG"] mjx-tool {
+  display: inline-block;
+  position: relative;
+  width: 0;
+  height: 0;
+}
+
+[jax="SVG"] mjx-tool > mjx-tip {
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+mjx-tool > mjx-tip {
+  display: inline-block;
+  padding: .2em;
+  border: 1px solid #888;
+  font-size: 70%;
+  background-color: #F8F8F8;
+  color: black;
+  box-shadow: 2px 2px 5px #AAAAAA;
+}
+
+g[data-mml-node="maction"][data-toggle] {
+  cursor: pointer;
+}
+
+mjx-status {
+  display: block;
+  position: fixed;
+  left: 1em;
+  bottom: 1em;
+  min-width: 25%;
+  padding: .2em .4em;
+  border: 1px solid #888;
+  font-size: 90%;
+  background-color: #F8F8F8;
+  color: black;
+}
+
+foreignObject[data-mjx-xml] {
+  font-family: initial;
+  line-height: normal;
+  overflow: visible;
+}
+
+.MathJax path {
+  stroke-width: 3;
+}
+
+mjx-container[display="true"] {
+  overflow: auto hidden;
+}
+
+mjx-container[display="true"] + br {
+  display: none;
+}
+</style></head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Staskaer</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">Hi, this is Staskaer</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+        <li class="menu-item menu-item-links">
+
+    <a href="/links/" rel="section"><i class="fa fa-link fa-fw"></i>links</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2023/02/19/%E5%B0%86python%E4%B8%AD%E7%9A%84%E5%90%8C%E6%AD%A5%E5%87%BD%E6%95%B0%E8%BD%AC%E6%8D%A2%E6%88%90%E5%8D%8F%E7%A8%8B%E5%BC%82%E6%AD%A5%E5%87%BD%E6%95%B0-gevent/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/imgs/theme_pic/head_img.png">
+      <meta itemprop="name" content="Staskaer">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Staskaer">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          将python中的同步函数转换成协程异步函数(gevent)
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2023-02-19 22:36:35" itemprop="dateCreated datePublished" datetime="2023-02-19T22:36:35+08:00">2023-02-19</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2025-06-17 23:50:22" itemprop="dateModified" datetime="2025-06-17T23:50:22+08:00">2025-06-17</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/python%E6%8A%80%E5%B7%A7/" itemprop="url" rel="index"><span itemprop="name">python技巧</span></a>
+                </span>
+            </span>
+
+          
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Valine: </span>
+    
+    <a title="valine" href="/2023/02/19/%E5%B0%86python%E4%B8%AD%E7%9A%84%E5%90%8C%E6%AD%A5%E5%87%BD%E6%95%B0%E8%BD%AC%E6%8D%A2%E6%88%90%E5%8D%8F%E7%A8%8B%E5%BC%82%E6%AD%A5%E5%87%BD%E6%95%B0-gevent/#valine-comments" itemprop="discussionUrl">
+      <span class="post-comments-count valine-comment-count" data-xid="/2023/02/19/%E5%B0%86python%E4%B8%AD%E7%9A%84%E5%90%8C%E6%AD%A5%E5%87%BD%E6%95%B0%E8%BD%AC%E6%8D%A2%E6%88%90%E5%8D%8F%E7%A8%8B%E5%BC%82%E6%AD%A5%E5%87%BD%E6%95%B0-gevent/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p><strong>使用gevent库来将python中的同步函数转化成多线程函数</strong></p>
+<span id="more"></span>
+<h2 id="将requests库转换成异步">将requests库转换成异步</h2>
+<p>之前使用了多线程的方式将requests库转换成异步等待，但是由于线程开销较高，且本质上还是在空等，所以使用协程来实现异步等待会更好。</p>
+<h3 id="gevent库">gevent库</h3>
+<p>gevent库是一个网络库，它比asyncio标准库还要快一点。而且可以将同步函数直接转换成协程函数(其内置了loop)。</p>
+<h4 id="猴子补丁">猴子补丁</h4>
+<p>它主要使用的方式就是<strong>猴子补丁</strong>，原理大致如下：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="keyword">import</span> liba</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> libb <span class="keyword">as</span> liba</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>这样liba就被替换成了libb了，只要libb在接口上保证和liba的接口一致，那么就可以直接替换。</p>
+<p>猴子补丁就是实现上述过程的东西。下面是猴子补丁使用</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="keyword">import</span> socket</span><br><span class="line"><span class="built_in">print</span>(socket.socket)   <span class="comment"># &lt;class 'socket.socket'&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">from</span> gevent <span class="keyword">import</span> monkey</span><br><span class="line">monkey.patch_socket() <span class="comment"># monkey.patch_all()是把所有库打上补丁</span></span><br><span class="line"><span class="built_in">print</span>(socket.socket)   <span class="comment"># &lt;class 'gevent._socket3.socket'&gt;</span></span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>就是<code>gevent</code>底层是<code>libev</code>，它从其之上再造了一个<code>socket</code>模块，具有跟标准库<code>socket</code>兼容的接口，而<code>gevent</code>中的<code>socket</code>是运行在<code>event loop</code>中的(标准库的socket不带)。</p>
+<p>这样打完补丁后，socket库就是协程实现的了。</p>
+<p>而requests基于urllib3, urllib3基于socket，补丁是对socket的封装，所以requests库此时也成为协程异步的了。</p>
+<h4 id="api">API</h4>
+<p>下面有一些gevent常用的API</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="comment"># 创建一个普通的Greenlet对象并启动</span></span><br><span class="line">gevent.spawn()</span><br><span class="line"><span class="comment"># 延时创建一个普通的Greenlet对象并启动</span></span><br><span class="line">gevent.spawn_later(seconds=<span class="number">3</span>)</span><br><span class="line"><span class="comment"># 创建的协程对象属于一个组</span></span><br><span class="line">gevent.spawn_raw()</span><br><span class="line"><span class="comment"># 返回当前正在执行的greenlet</span></span><br><span class="line">gevent.getcurrent()</span><br><span class="line"><span class="comment"># 将协程任务添加到事件循环，接收一个任务列表</span></span><br><span class="line">gevent.joinall(jobs)</span><br><span class="line"><span class="comment"># 可以替代join函数等待循环结束，也可以传入协程对象列表</span></span><br><span class="line">gevent.wait()</span><br><span class="line"><span class="comment"># 杀死一个协程</span></span><br><span class="line">gevent.kill()</span><br><span class="line"><span class="comment"># 杀死一个协程列表里的所有协程</span></span><br><span class="line">gevent.killall()</span><br><span class="line"><span class="comment"># 会自动将python的一些标准模块替换成gevent框架</span></span><br><span class="line">monkey.patch_all()</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p><strong>使用<code>gevent.spawn()</code>创建了一个协程会自动执行，如果想要获取该协程的结果最好先<code>gevent.join()</code></strong></p>
+<p>另外，<code>gevent</code>本身也是基于<code>greenlet</code>的，所以也可以使用<code>greenlet</code>对象</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="comment"># Greenlet对象</span></span><br><span class="line"><span class="keyword">from</span> gevent <span class="keyword">import</span> Greenlet</span><br><span class="line"> </span><br><span class="line"><span class="comment"># Greenlet对象创建</span></span><br><span class="line">job = Greenlet(target0, <span class="number">3</span>)</span><br><span class="line">Greenlet.spawn() <span class="comment"># 创建一个协程并启动</span></span><br><span class="line">Greenlet.spawn_later(seconds=<span class="number">3</span>) <span class="comment"># 延时启动</span></span><br><span class="line"> </span><br><span class="line"><span class="comment"># 协程启动</span></span><br><span class="line">job.start() <span class="comment"># 将协程加入循环并启动协程</span></span><br><span class="line">job.start_later(<span class="number">3</span>) <span class="comment"># 延时启动</span></span><br><span class="line"> </span><br><span class="line"><span class="comment"># 等待任务完成</span></span><br><span class="line">job.join() <span class="comment"># 等待任务完成</span></span><br><span class="line">job.get() <span class="comment"># 获取协程返回的值</span></span><br><span class="line"> </span><br><span class="line"><span class="comment"># 任务中断和判断任务状态</span></span><br><span class="line">job.dead() <span class="comment"># 判断协程是否死亡</span></span><br><span class="line">job.kill() <span class="comment"># 杀死正在运行的协程并唤醒其他的协程，这个协程将不会再执行，可以</span></span><br><span class="line">job.ready() <span class="comment"># 任务完成返回一个真值</span></span><br><span class="line">job.successful() <span class="comment"># 任务成功完成返回真值，否则抛出错误</span></span><br><span class="line"> </span><br><span class="line"><span class="comment"># 获取属性</span></span><br><span class="line">job.loop <span class="comment"># 时间循环对象</span></span><br><span class="line">job.value <span class="comment"># 获取返回的值</span></span><br><span class="line"> </span><br><span class="line"><span class="comment"># 捕捉异常</span></span><br><span class="line">job.exception <span class="comment"># 如果运行有错误，获取它</span></span><br><span class="line">job.exc_info <span class="comment"># 错误的详细信息</span></span><br><span class="line"> </span><br><span class="line"><span class="comment"># 设置回调函数</span></span><br><span class="line">job.rawlink(back) <span class="comment"># 普通回调，将job对象作为回调函数的参数</span></span><br><span class="line">job.unlink() <span class="comment"># 删除回调函数</span></span><br><span class="line"><span class="comment"># 执行成功的回调函数</span></span><br><span class="line">job.link_value(back)</span><br><span class="line"><span class="comment"># 执行失败的回调函数</span></span><br><span class="line">job.link_exception(back)</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>当然，与线程类似，协程也存在协程池。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="comment"># 等待直到有一个协程有结果</span></span><br><span class="line">pool.wait_available()</span><br><span class="line"><span class="comment"># 向进程池添加一个方法并跟踪，非阻塞</span></span><br><span class="line">pool.dd(greenlet)</span><br><span class="line"><span class="comment"># 停止跟踪某个协程</span></span><br><span class="line">pool.discard(greenlet)</span><br><span class="line"><span class="comment"># 加入并启动协程</span></span><br><span class="line">pool.start(greenlet)</span><br><span class="line"><span class="comment"># 阻塞等待结束</span></span><br><span class="line">pool.join()</span><br><span class="line"><span class="comment"># 杀死所有跟踪的协程</span></span><br><span class="line">pool.kill()</span><br><span class="line"><span class="comment"># 杀死一个协程</span></span><br><span class="line">pool.killone(greenlet)</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>协程池启动一个协程时，也是非阻塞的。</p>
+<h3 id="异步requests">异步requests</h3>
+<p>使用requests库时，先创建协程对象，然后使用<code>gevent.joinall()</code>来等待所有协程对象完成。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="keyword">from</span> gevent <span class="keyword">import</span> monkey</span><br><span class="line">monkey.patch_all()</span><br><span class="line"><span class="keyword">import</span> requests</span><br><span class="line"><span class="keyword">import</span> gevent</span><br><span class="line"><span class="keyword">import</span> time</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">f</span>(<span class="params">url,i</span>):</span><br><span class="line">    data = requests.get(url)</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">f"<span class="subst">{i}</span> done"</span>)</span><br><span class="line"></span><br><span class="line">start = time.time()</span><br><span class="line">url_list = []</span><br><span class="line"><span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">5</span>):</span><br><span class="line">    <span class="comment"># 创建协程对象</span></span><br><span class="line">    url_list.append(gevent.spawn(f, <span class="string">'https://www.baidu.com/'</span>,i))</span><br><span class="line"></span><br><span class="line"><span class="comment"># 直到所有协程对象完成为止</span></span><br><span class="line">gevent.joinall(url_list)</span><br><span class="line"><span class="built_in">print</span>(time.time() - start)</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<h4 id="使用装饰器来创建协程函数">使用装饰器来创建协程函数</h4>
+<p>当然使用一个装饰器来隐式的完成创建协程对象会更方便</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="keyword">from</span> gevent <span class="keyword">import</span> monkey, pool, Greenlet</span><br><span class="line">monkey.patch_all()</span><br><span class="line"><span class="keyword">import</span> time</span><br><span class="line"><span class="keyword">import</span> requests</span><br><span class="line"></span><br><span class="line">p = pool.Pool(<span class="number">5</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment"># 使用协程池来运行协程的装饰器</span></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">async_d</span>(<span class="params">func</span>):</span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">warp_</span>(<span class="params">*args,**kargs</span>):</span><br><span class="line">        p.start(Greenlet(func, *args, **kargs))</span><br><span class="line">    <span class="keyword">return</span> warp_</span><br><span class="line"></span><br><span class="line"><span class="meta">@async_d</span></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">f</span>(<span class="params">url,i</span>):</span><br><span class="line">    data = requests.get(url)</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">f"<span class="subst">{i}</span> done"</span>)</span><br><span class="line"></span><br><span class="line">start = time.time()</span><br><span class="line"><span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">5</span>):</span><br><span class="line">    f(<span class="string">'https://www.baidu.com/'</span>,i)</span><br><span class="line">p.join()</span><br><span class="line"><span class="built_in">print</span>(time.time() - start)</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Python/" rel="tag"># Python</a>
+              <a href="/tags/Python%E5%BC%82%E6%AD%A5/" rel="tag"># Python异步</a>
+              <a href="/tags/%E7%88%AC%E8%99%AB/" rel="tag"># 爬虫</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2023/02/17/python%E5%8D%8F%E7%A8%8B%E4%B8%8Easyncio/" rel="prev" title="python协程与asyncio">
+      <i class="fa fa-chevron-left"></i> python协程与asyncio
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2023/02/22/%E5%AE%9E%E7%8E%B0python%E7%9A%84%E5%BC%BA%E7%B1%BB%E5%9E%8B%E6%A3%80%E6%9F%A5/" rel="next" title="实现python的强类型检查">
+      实现python的强类型检查 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+    <div class="comments" id="valine-comments"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%B0%86requests%E5%BA%93%E8%BD%AC%E6%8D%A2%E6%88%90%E5%BC%82%E6%AD%A5"><span class="nav-number">1.</span> <span class="nav-text">将requests库转换成异步</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#gevent%E5%BA%93"><span class="nav-number">1.1.</span> <span class="nav-text">gevent库</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E7%8C%B4%E5%AD%90%E8%A1%A5%E4%B8%81"><span class="nav-number">1.1.1.</span> <span class="nav-text">猴子补丁</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#api"><span class="nav-number">1.1.2.</span> <span class="nav-text">API</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%BC%82%E6%AD%A5requests"><span class="nav-number">1.2.</span> <span class="nav-text">异步requests</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E4%BD%BF%E7%94%A8%E8%A3%85%E9%A5%B0%E5%99%A8%E6%9D%A5%E5%88%9B%E5%BB%BA%E5%8D%8F%E7%A8%8B%E5%87%BD%E6%95%B0"><span class="nav-number">1.2.1.</span> <span class="nav-text">使用装饰器来创建协程函数</span></a></li></ol></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Staskaer"
+      src="/imgs/theme_pic/head_img.png">
+  <p class="site-author-name" itemprop="name">Staskaer</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">97</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">10</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">24</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/Staskaer" title="Github → https:&#x2F;&#x2F;github.com&#x2F;Staskaer" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:liujiaxin011121@gmail.com" title="E-Mail → mailto:liujiaxin011121@gmail.com" rel="noopener" target="_blank"><i class="fa fa-envelope fa-fw"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://www.zhihu.com/people/staskaer" title="Zhihu → https:&#x2F;&#x2F;www.zhihu.com&#x2F;people&#x2F;staskaer" rel="noopener" target="_blank"><i class="fab fa-zhihu fa-fw"></i></a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2025</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Staskaer</span>
+</div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+
+<script>
+NexT.utils.loadComments(document.querySelector('#valine-comments'), () => {
+  NexT.utils.getScript('https://cdn.jsdelivr.net/npm/valine@1.5.1/dist/Valine.min.js', () => {
+    var GUEST = ['nick', 'mail', 'link'];
+    var guest = 'nick,mail,link';
+    guest = guest.split(',').filter(item => {
+      return GUEST.includes(item);
+    });
+    new Valine({
+      el         : '#valine-comments',
+      verify     : false,
+      notify     : false,
+      appId      : 'xH8NDrh9u4SQrUpQOd0lICnX-MdYXbMMI',
+      appKey     : 'jl3JjPS4jsosZG29Zv24Y7LE',
+      placeholder: "Just go go",
+      avatar     : 'mm',
+      meta       : guest,
+      pageSize   : '10' || 10,
+      visitor    : false,
+      lang       : 'zh-Hans' || 'zh-cn',
+      path       : location.pathname,
+      recordIP   : false,
+      serverURLs : 'https://xh8ndrh9.api.lncldglobal.com'
+    });
+  }, window.Valine);
+});
+</script>
+
+</body>
+</html>
+

@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 6.2.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/imgs/theme_pic/staskaer.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/imgs/theme_pic/staskaer.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/imgs/theme_pic/staskaer.png">
+  <link rel="mask-icon" href="/imgs/theme_pic/staskaer.png" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Gemini","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"mac"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"valine","storage":true,"lazyload":false,"nav":null,"activeClass":"valine"},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="bertini、Julia-HomotopyContinuation、GPU-HC、PHCpack">
+<meta property="og:type" content="article">
+<meta property="og:title" content="一些HomotopyContinuation求解器">
+<meta property="og:url" content="http://example.com/2024/03/05/%E4%B8%80%E4%BA%9BHomotopyContinuation%E6%B1%82%E8%A7%A3%E5%99%A8/index.html">
+<meta property="og:site_name" content="Staskaer">
+<meta property="og:description" content="bertini、Julia-HomotopyContinuation、GPU-HC、PHCpack">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2024-03-05T05:30:55.000Z">
+<meta property="article:modified_time" content="2025-06-17T15:50:22.373Z">
+<meta property="article:author" content="Staskaer">
+<meta property="article:tag" content="SLAM">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="http://example.com/2024/03/05/%E4%B8%80%E4%BA%9BHomotopyContinuation%E6%B1%82%E8%A7%A3%E5%99%A8/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'en'
+  };
+</script>
+
+  <title>一些HomotopyContinuation求解器 | Staskaer</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+<style>mjx-container[jax="SVG"] {
+  direction: ltr;
+}
+
+mjx-container[jax="SVG"] > svg {
+  overflow: visible;
+}
+
+mjx-container[jax="SVG"][display="true"] {
+  display: block;
+  text-align: center;
+  margin: 1em 0;
+}
+
+mjx-container[jax="SVG"][justify="left"] {
+  text-align: left;
+}
+
+mjx-container[jax="SVG"][justify="right"] {
+  text-align: right;
+}
+
+g[data-mml-node="merror"] > g {
+  fill: red;
+  stroke: red;
+}
+
+g[data-mml-node="merror"] > rect[data-background] {
+  fill: yellow;
+  stroke: none;
+}
+
+g[data-mml-node="mtable"] > line[data-line] {
+  stroke-width: 70px;
+  fill: none;
+}
+
+g[data-mml-node="mtable"] > rect[data-frame] {
+  stroke-width: 70px;
+  fill: none;
+}
+
+g[data-mml-node="mtable"] > .mjx-dashed {
+  stroke-dasharray: 140;
+}
+
+g[data-mml-node="mtable"] > .mjx-dotted {
+  stroke-linecap: round;
+  stroke-dasharray: 0,140;
+}
+
+g[data-mml-node="mtable"] > svg {
+  overflow: visible;
+}
+
+[jax="SVG"] mjx-tool {
+  display: inline-block;
+  position: relative;
+  width: 0;
+  height: 0;
+}
+
+[jax="SVG"] mjx-tool > mjx-tip {
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+mjx-tool > mjx-tip {
+  display: inline-block;
+  padding: .2em;
+  border: 1px solid #888;
+  font-size: 70%;
+  background-color: #F8F8F8;
+  color: black;
+  box-shadow: 2px 2px 5px #AAAAAA;
+}
+
+g[data-mml-node="maction"][data-toggle] {
+  cursor: pointer;
+}
+
+mjx-status {
+  display: block;
+  position: fixed;
+  left: 1em;
+  bottom: 1em;
+  min-width: 25%;
+  padding: .2em .4em;
+  border: 1px solid #888;
+  font-size: 90%;
+  background-color: #F8F8F8;
+  color: black;
+}
+
+foreignObject[data-mjx-xml] {
+  font-family: initial;
+  line-height: normal;
+  overflow: visible;
+}
+
+.MathJax path {
+  stroke-width: 3;
+}
+
+mjx-container[display="true"] {
+  overflow: auto hidden;
+}
+
+mjx-container[display="true"] + br {
+  display: none;
+}
+</style></head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Staskaer</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">Hi, this is Staskaer</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+        <li class="menu-item menu-item-links">
+
+    <a href="/links/" rel="section"><i class="fa fa-link fa-fw"></i>links</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2024/03/05/%E4%B8%80%E4%BA%9BHomotopyContinuation%E6%B1%82%E8%A7%A3%E5%99%A8/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/imgs/theme_pic/head_img.png">
+      <meta itemprop="name" content="Staskaer">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Staskaer">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          一些HomotopyContinuation求解器
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2024-03-05 13:30:55" itemprop="dateCreated datePublished" datetime="2024-03-05T13:30:55+08:00">2024-03-05</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2025-06-17 23:50:22" itemprop="dateModified" datetime="2025-06-17T23:50:22+08:00">2025-06-17</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/SLAM%E5%AD%A6%E4%B9%A0/" itemprop="url" rel="index"><span itemprop="name">SLAM学习</span></a>
+                </span>
+            </span>
+
+          
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Valine: </span>
+    
+    <a title="valine" href="/2024/03/05/%E4%B8%80%E4%BA%9BHomotopyContinuation%E6%B1%82%E8%A7%A3%E5%99%A8/#valine-comments" itemprop="discussionUrl">
+      <span class="post-comments-count valine-comment-count" data-xid="/2024/03/05/%E4%B8%80%E4%BA%9BHomotopyContinuation%E6%B1%82%E8%A7%A3%E5%99%A8/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>bertini、Julia-HomotopyContinuation、GPU-HC、PHCpack</p>
+<span id="more"></span>
+<hr>
+<p>HomotopyContinuation求解器是一种用于求解多项式方程组的工具，它们可以用于求解SLAM中的非线性方程组，这里介绍一些常用的HomotopyContinuation求解器以方便作对比试验。<strong>这里主要是求解器的介绍和使用，不作原理阐述和详细的对比</strong></p>
+<h2 id="bertinibertini2">bertini/bertini2</h2>
+<p><a target="_blank" rel="noopener" href="https://bertini.nd.edu/">bertini下载地址</a></p>
+<p>bertini是一个开源的linux程序（win下使用会比较麻烦），只能用一个文本文件输入多项式，不能在程序里用API进行使用；而bertini2则可以在python里直接调用。</p>
+<h3 id="使用bertini">使用bertini</h3>
+<p>bertini一般只在linux下使用，首先从<a target="_blank" rel="noopener" href="https://bertini.nd.edu/download.html">下载地址</a>下载下bertini程序。</p>
+<p>想要具体使用bertini可以看它的<a target="_blank" rel="noopener" href="https://bertini.nd.edu/BertiniUsersManual.pdf">手册</a>。</p>
+<p>这里直接给出一个Zero-dimensional的例子（Zero-dimensional指的是一个多项式方程系统的解的数量是有限的）:</p>
+<ol type="1">
+<li>首先创建一个文本文件<code>input</code></li>
+<li>在这个<code>input</code>文件中输入多项式方程组，如下：</li>
+</ol>
+<figure class="highlight txt"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">CONFIG</span><br><span class="line">END;</span><br><span class="line">INPUT</span><br><span class="line">variable_group z1, z2;</span><br><span class="line">function f1, f2;</span><br><span class="line">f1 = (29/16)*z1^3 - 2*z1*z2;</span><br><span class="line">f2 = z2 - z1^2;</span><br><span class="line">END;</span><br></pre></td></tr></table></figure>
+<ol start="3" type="1">
+<li>把<code>input</code>文件放到bertini的目录下，然后在命令行输入<code>./bertini input</code></li>
+<li>因为一般SLAM系统中需要求解的东西都是实根，所以直接解析<code>real_finite_solutions</code>这个文件即可</li>
+</ol>
+<p>显然，这种方式要求我们创建一个<code>input</code>文件，然后在命令行输入<code>./bertini</code>，然后再解析一个文本，中间需要经过多次IO操作，不够方便。而且bertini同一时间只能存在一个input和real_finite_solutions文件，所以很难做并行化，不过胜在使用简单。不过一般只能求解方阵系统(square system，即未知数和方程数目一致)。</p>
+<h3 id="使用bertini2">使用bertini2</h3>
+<p>bertini2基本就是暴露了API接口的bertini，安装按照<a target="_blank" rel="noopener" href="https://github.com/bertiniteam/b2/wiki/Compilation-Guide">github上的说明</a>即可。</p>
+<p>不过bertini2需要安装boost库，而且需要boost&gt;=1.83，目前好像没法直接通过apt安装这个版本的boost，只能从源码安装，这就挺麻烦的。</p>
+<p>关于文档可以参考<a target="_blank" rel="noopener" href="https://doc.bertini2.org/pybertini/">这里</a></p>
+<h2 id="julia-homotopycontinuation">Julia HomotopyContinuation</h2>
+<p><a target="_blank" rel="noopener" href="https://www.juliahomotopycontinuation.org/">Julia HomotopyContinuation 官网</a></p>
+<p>Julia HomotopyContinuation是一个用julia语言开发的HomotopyContinuation库，julia是一个编程语言，可以直接在jupyter中使用。安装julia和HomotopyContinuation可以直接参考官网即可。</p>
+<p>由于这个库的<a target="_blank" rel="noopener" href="https://www.juliahomotopycontinuation.org/guides/">文档</a>实在是做的太好了(对比之下其他的文档界面都如此复古)，就直接给一个简单的例子。</p>
+<figure class="highlight julia"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">using</span> HomotopyContinuation </span><br><span class="line"><span class="meta">@var</span> x y; </span><br><span class="line">f = System([x^<span class="number">2</span> + <span class="number">2</span>y, y^<span class="number">2</span> - <span class="number">2</span>]) </span><br><span class="line">result = solve(f)</span><br></pre></td></tr></table></figure>
+<p>另外，这个库还可以求monodromy、Polyhedral方法构成的start system，当然一般也仅限于方阵系统(square system)。</p>
+<h2 id="gpu-hc">GPU-HC</h2>
+<p><a target="_blank" rel="noopener" href="https://github.com/C-H-Chien/Homotopy-Continuation-Tracker-on-GPU">GPU-HC repo</a></p>
+<p>GPU-HC是一个基于GPU的HomotopyContinuation求解器，它首先使用monodromy方法计算出多项式系统的start-system，然后用GPU并行计算出所有解。</p>
+<p>GPU-HC的使用方法比较复杂，另外值得一提的是，这个repo的release和master分支有很大的不同：release中的代码是比较早的版本，并且具有CPU版本(额，名字叫GPU-HC，但是提供了纯CPU的版本)。而且release中的代码例子更多，当然使用时要改的东西也更多就是了。</p>
+<p>由于GPU-HC的使用比较复杂，这里以master分支进行简单阐述。</p>
+<h3 id="安装环境和编译">安装环境和编译</h3>
+<div class="note info">
+            <p>之前为了跑这个代码，还写了一个好几百字的文档用来记录里面的坑，但是后来找不到了，所以后面的叙述可能有一些遗漏。</p><p>另外，当时给配好的GPU-HC环境做了个autodl的镜像，有需要的人可以联系我共享给你。</p>
+          </div>
+<p>GPU-HC的环境配置非常非常麻烦，首先要安装GPU环境，包括CUDA、cuBlas之类的。</p>
+<p>然后安装MAGMA这个线性代数库，虽然readme中说MAGMA&gt;=2.6.1，但是实测只有2.6.1版本的能用，更高版本的MAGMA会报错。</p>
+<p>然后安装openBlas库，这个直接用<code>sudo apt-get install libopenblas-dev</code>安装即可。</p>
+<p>接下来就需要编译GPU-HC的代码了，不过这个repo里很多地方也是要改的。</p>
+<p>首先需要给<code>magmaHC/gpu-kernels/</code>下的多个文件里添加上<code>#define ADD_</code>，然后需要把<code>magmaHC/CMakeLists.txt</code>中的<code>include_directories</code>改成本机上已经安装好的MAGMA、CUDA的路径，还要把对应的<code>target_link_libraries</code>改成本机上已经安装好的MAGMA、CUDA、openblas库的路径，并链接上pthread库。</p>
+<p>同样需要修改的还有根目录下的<code>CMakeLists.txt</code>，也是需要把<code>include_directories</code>改成本机安装的MAGMA、CUDA的路径。</p>
+<p>至此应该就可以正常编译本项目了。</p>
+<h3 id="使用gpu-hc解多项式">使用GPU-HC解多项式</h3>
+<p>这里按照readme中步骤来，先在matlab中生成一个多项式方程组，求解出雅可比矩阵的txt，这里的matlab中的路径也需要注意自己去修改。然后用julia的homotopycontinuation库来解monodromy，Julia语言写的脚本可以用jupyter来运行。</p>
+<p>新写好的多项式问题后还需要把他们加入到<code>CMakeLists.txt</code>里才能正常编译。</p>
+<p>最后，HC的配置比如hc_step、newton_iter之类的配置都在<code>magmaHC/definitions.hpp</code>中，需要根据实际情况修改。</p>
+<h2 id="phcpack">PHCpack</h2>
+<p><a target="_blank" rel="noopener" href="https://homepages.math.uic.edu/~jan/download.html">PHCpack</a></p>
+<p>我们用PHCpack的python接口，也就是phcpy，安装这个库，需要首先把安装alr，可以从<a target="_blank" rel="noopener" href="https://github.com/alire-project/alire/releases">alr的release</a>中下载对应的压缩包，解压后把alr程序移动到<code>/bin</code>目录下即可。</p>
+<p>然后把PHCpack的源码下载下来，并用alr编译即可</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">sudo apt install gnat gprbuild</span><br><span class="line">git <span class="built_in">clone</span> https://github.com/janverschelde/PHCpack.git</span><br><span class="line"><span class="built_in">cd</span> PHCpack</span><br><span class="line">alr install</span><br></pre></td></tr></table></figure>
+<p>然后把编译好的<code>libPHCpack.so</code>复制到需要安装的目录下</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">cp</span> lib/libPHCpack.so src/lib</span><br><span class="line"><span class="built_in">cp</span> lib/libPHCpack.so src/Python/PHCpy/lib/</span><br><span class="line"><span class="built_in">cp</span> lib/libPHCpack.so src/Python/PHCpy/phcpy/</span><br><span class="line"></span><br><span class="line"><span class="built_in">cd</span> src/Python/PHCpy/</span><br><span class="line">python3 setup.py install</span><br></pre></td></tr></table></figure>
+<p>这样就安装好了，下面给一个简单的例子，更多例子可以参考<a target="_blank" rel="noopener" href="https://homepages.math.uic.edu/~jan/phcpy_doc_html/index.html">文档</a></p>
+<figure class="highlight py"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> phcpy.solver <span class="keyword">import</span> solve</span><br><span class="line">p = [<span class="string">'x + y - 1;'</span>, <span class="string">'x - y - 1;'</span>]</span><br><span class="line">s = solve(p)</span><br><span class="line"><span class="built_in">print</span>(s[<span class="number">0</span>])</span><br></pre></td></tr></table></figure>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/SLAM/" rel="tag"># SLAM</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2023/12/01/%E4%BD%BF%E7%94%A8C-%E5%8A%A0%E9%80%9FPython%E4%BB%A3%E7%A0%81%E7%9A%84%E5%87%A0%E7%A7%8D%E6%96%B9%E5%BC%8F/" rel="prev" title="使用C++加速Python代码的几种方式">
+      <i class="fa fa-chevron-left"></i> 使用C++加速Python代码的几种方式
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2024/09/16/Colmap%E4%BD%BF%E7%94%A8%E7%AC%94%E8%AE%B0/" rel="next" title="Colmap使用笔记">
+      Colmap使用笔记 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+    <div class="comments" id="valine-comments"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#bertinibertini2"><span class="nav-number">1.</span> <span class="nav-text">bertini&#x2F;bertini2</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BD%BF%E7%94%A8bertini"><span class="nav-number">1.1.</span> <span class="nav-text">使用bertini</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BD%BF%E7%94%A8bertini2"><span class="nav-number">1.2.</span> <span class="nav-text">使用bertini2</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#julia-homotopycontinuation"><span class="nav-number">2.</span> <span class="nav-text">Julia HomotopyContinuation</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#gpu-hc"><span class="nav-number">3.</span> <span class="nav-text">GPU-HC</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%AE%89%E8%A3%85%E7%8E%AF%E5%A2%83%E5%92%8C%E7%BC%96%E8%AF%91"><span class="nav-number">3.1.</span> <span class="nav-text">安装环境和编译</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BD%BF%E7%94%A8gpu-hc%E8%A7%A3%E5%A4%9A%E9%A1%B9%E5%BC%8F"><span class="nav-number">3.2.</span> <span class="nav-text">使用GPU-HC解多项式</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#phcpack"><span class="nav-number">4.</span> <span class="nav-text">PHCpack</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Staskaer"
+      src="/imgs/theme_pic/head_img.png">
+  <p class="site-author-name" itemprop="name">Staskaer</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">97</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">10</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">24</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/Staskaer" title="Github → https:&#x2F;&#x2F;github.com&#x2F;Staskaer" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:liujiaxin011121@gmail.com" title="E-Mail → mailto:liujiaxin011121@gmail.com" rel="noopener" target="_blank"><i class="fa fa-envelope fa-fw"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://www.zhihu.com/people/staskaer" title="Zhihu → https:&#x2F;&#x2F;www.zhihu.com&#x2F;people&#x2F;staskaer" rel="noopener" target="_blank"><i class="fab fa-zhihu fa-fw"></i></a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2025</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Staskaer</span>
+</div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+
+<script>
+NexT.utils.loadComments(document.querySelector('#valine-comments'), () => {
+  NexT.utils.getScript('https://cdn.jsdelivr.net/npm/valine@1.5.1/dist/Valine.min.js', () => {
+    var GUEST = ['nick', 'mail', 'link'];
+    var guest = 'nick,mail,link';
+    guest = guest.split(',').filter(item => {
+      return GUEST.includes(item);
+    });
+    new Valine({
+      el         : '#valine-comments',
+      verify     : false,
+      notify     : false,
+      appId      : 'xH8NDrh9u4SQrUpQOd0lICnX-MdYXbMMI',
+      appKey     : 'jl3JjPS4jsosZG29Zv24Y7LE',
+      placeholder: "Just go go",
+      avatar     : 'mm',
+      meta       : guest,
+      pageSize   : '10' || 10,
+      visitor    : false,
+      lang       : 'zh-Hans' || 'zh-cn',
+      path       : location.pathname,
+      recordIP   : false,
+      serverURLs : 'https://xh8ndrh9.api.lncldglobal.com'
+    });
+  }, window.Valine);
+});
+</script>
+
+</body>
+</html>
+

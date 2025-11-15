@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 6.2.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/imgs/theme_pic/staskaer.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/imgs/theme_pic/staskaer.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/imgs/theme_pic/staskaer.png">
+  <link rel="mask-icon" href="/imgs/theme_pic/staskaer.png" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Gemini","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"mac"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"valine","storage":true,"lazyload":false,"nav":null,"activeClass":"valine"},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="ORBSLAM2的普通帧Frame与关键帧KeyFrame">
+<meta property="og:type" content="article">
+<meta property="og:title" content="ORBSLAM2源码小记(2)--普通帧Frame与关键帧KeyFrame">
+<meta property="og:url" content="http://example.com/2025/02/21/ORBSLAM2%E6%BA%90%E7%A0%81%E5%B0%8F%E8%AE%B0-2/index.html">
+<meta property="og:site_name" content="Staskaer">
+<meta property="og:description" content="ORBSLAM2的普通帧Frame与关键帧KeyFrame">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="http://example.com/2025/02/21/ORBSLAM2%E6%BA%90%E7%A0%81%E5%B0%8F%E8%AE%B0-2/pic1.png">
+<meta property="article:published_time" content="2025-02-21T10:06:20.000Z">
+<meta property="article:modified_time" content="2025-06-17T15:50:22.346Z">
+<meta property="article:author" content="Staskaer">
+<meta property="article:tag" content="SLAM">
+<meta property="article:tag" content="ORBSLAM2">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://example.com/2025/02/21/ORBSLAM2%E6%BA%90%E7%A0%81%E5%B0%8F%E8%AE%B0-2/pic1.png">
+
+<link rel="canonical" href="http://example.com/2025/02/21/ORBSLAM2%E6%BA%90%E7%A0%81%E5%B0%8F%E8%AE%B0-2/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'en'
+  };
+</script>
+
+  <title>ORBSLAM2源码小记(2)--普通帧Frame与关键帧KeyFrame | Staskaer</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+<style>mjx-container[jax="SVG"] {
+  direction: ltr;
+}
+
+mjx-container[jax="SVG"] > svg {
+  overflow: visible;
+}
+
+mjx-container[jax="SVG"][display="true"] {
+  display: block;
+  text-align: center;
+  margin: 1em 0;
+}
+
+mjx-container[jax="SVG"][justify="left"] {
+  text-align: left;
+}
+
+mjx-container[jax="SVG"][justify="right"] {
+  text-align: right;
+}
+
+g[data-mml-node="merror"] > g {
+  fill: red;
+  stroke: red;
+}
+
+g[data-mml-node="merror"] > rect[data-background] {
+  fill: yellow;
+  stroke: none;
+}
+
+g[data-mml-node="mtable"] > line[data-line] {
+  stroke-width: 70px;
+  fill: none;
+}
+
+g[data-mml-node="mtable"] > rect[data-frame] {
+  stroke-width: 70px;
+  fill: none;
+}
+
+g[data-mml-node="mtable"] > .mjx-dashed {
+  stroke-dasharray: 140;
+}
+
+g[data-mml-node="mtable"] > .mjx-dotted {
+  stroke-linecap: round;
+  stroke-dasharray: 0,140;
+}
+
+g[data-mml-node="mtable"] > svg {
+  overflow: visible;
+}
+
+[jax="SVG"] mjx-tool {
+  display: inline-block;
+  position: relative;
+  width: 0;
+  height: 0;
+}
+
+[jax="SVG"] mjx-tool > mjx-tip {
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+mjx-tool > mjx-tip {
+  display: inline-block;
+  padding: .2em;
+  border: 1px solid #888;
+  font-size: 70%;
+  background-color: #F8F8F8;
+  color: black;
+  box-shadow: 2px 2px 5px #AAAAAA;
+}
+
+g[data-mml-node="maction"][data-toggle] {
+  cursor: pointer;
+}
+
+mjx-status {
+  display: block;
+  position: fixed;
+  left: 1em;
+  bottom: 1em;
+  min-width: 25%;
+  padding: .2em .4em;
+  border: 1px solid #888;
+  font-size: 90%;
+  background-color: #F8F8F8;
+  color: black;
+}
+
+foreignObject[data-mjx-xml] {
+  font-family: initial;
+  line-height: normal;
+  overflow: visible;
+}
+
+.MathJax path {
+  stroke-width: 3;
+}
+
+mjx-container[display="true"] {
+  overflow: auto hidden;
+}
+
+mjx-container[display="true"] + br {
+  display: none;
+}
+</style></head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Staskaer</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">Hi, this is Staskaer</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+        <li class="menu-item menu-item-links">
+
+    <a href="/links/" rel="section"><i class="fa fa-link fa-fw"></i>links</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2025/02/21/ORBSLAM2%E6%BA%90%E7%A0%81%E5%B0%8F%E8%AE%B0-2/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/imgs/theme_pic/head_img.png">
+      <meta itemprop="name" content="Staskaer">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Staskaer">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          ORBSLAM2源码小记(2)--普通帧Frame与关键帧KeyFrame
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2025-02-21 18:06:20" itemprop="dateCreated datePublished" datetime="2025-02-21T18:06:20+08:00">2025-02-21</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2025-06-17 23:50:22" itemprop="dateModified" datetime="2025-06-17T23:50:22+08:00">2025-06-17</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/SLAM%E5%AD%A6%E4%B9%A0/" itemprop="url" rel="index"><span itemprop="name">SLAM学习</span></a>
+                </span>
+            </span>
+
+          
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Valine: </span>
+    
+    <a title="valine" href="/2025/02/21/ORBSLAM2%E6%BA%90%E7%A0%81%E5%B0%8F%E8%AE%B0-2/#valine-comments" itemprop="discussionUrl">
+      <span class="post-comments-count valine-comment-count" data-xid="/2025/02/21/ORBSLAM2%E6%BA%90%E7%A0%81%E5%B0%8F%E8%AE%B0-2/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>ORBSLAM2的普通帧Frame与关键帧KeyFrame</p>
+<span id="more"></span>
+<div class="note info">
+            <p>主要是记录下相对容易忘的内容，不会写的很细</p>
+          </div>
+<h2 id="普通帧frame">普通帧Frame</h2>
+<p>普通帧主要是记录特征点，同时根据相机内参进行去畸变，并计算出校正后的边界。每个普通帧会有一个参考关键帧，为共视程度最好的关键帧，但用于初始化的两个普通帧的参考关键帧为自身，因为初始化时还不存在其他关键帧。</p>
+<p>在Tracking过程中，会存储currentFrame和lastFrame两个普通帧，当前普通帧会根据恒速模型、关键帧跟踪或重定位来确定自身的位姿，因此普通帧中也存在存储自身位姿的数据结构。</p>
+<h3 id="特征提取与网格划分">特征提取与网格划分</h3>
+<h4 id="特征点数目">特征点数目</h4>
+<p>会使用ORB特征提取器来提取特征，由于需要保证尺度不变性，所以需要构建图像金字塔，但是图像金字塔层数越高，对应的图像分辨率越低，因此层级越高的图像的特征点数目也会越少。在ORBSLAM2中，每帧图像提取的特征点数目是存在人为规定的上界的，记为N，同时金字塔层数固定为8层，每层分配的特征点数目是按每层面积的开方来等比例分配的，即第i层分配的特征点数目为</p>
+<p><span class="math display"><mjx-container class="MathJax" jax="SVG" display="true"><svg style="vertical-align: -1.814ex;" xmlns="http://www.w3.org/2000/svg" width="19.863ex" height="5.117ex" role="img" focusable="false" viewBox="0 -1460 8779.3 2261.9"><g stroke="currentColor" fill="currentColor" stroke-width="0" transform="scale(1,-1)"><g data-mml-node="math"><g data-mml-node="msub"><g data-mml-node="mi"><path data-c="1D441" d="M234 637Q231 637 226 637Q201 637 196 638T191 649Q191 676 202 682Q204 683 299 683Q376 683 387 683T401 677Q612 181 616 168L670 381Q723 592 723 606Q723 633 659 637Q635 637 635 648Q635 650 637 660Q641 676 643 679T653 683Q656 683 684 682T767 680Q817 680 843 681T873 682Q888 682 888 672Q888 650 880 642Q878 637 858 637Q787 633 769 597L620 7Q618 0 599 0Q585 0 582 2Q579 5 453 305L326 604L261 344Q196 88 196 79Q201 46 268 46H278Q284 41 284 38T282 19Q278 6 272 0H259Q228 2 151 2Q123 2 100 2T63 2T46 1Q31 1 31 10Q31 14 34 26T39 40Q41 46 62 46Q130 49 150 85Q154 91 221 362L289 634Q287 635 234 637Z"></path></g><g data-mml-node="mi" transform="translate(836,-150) scale(0.707)"><path data-c="1D456" d="M184 600Q184 624 203 642T247 661Q265 661 277 649T290 619Q290 596 270 577T226 557Q211 557 198 567T184 600ZM21 287Q21 295 30 318T54 369T98 420T158 442Q197 442 223 419T250 357Q250 340 236 301T196 196T154 83Q149 61 149 51Q149 26 166 26Q175 26 185 29T208 43T235 78T260 137Q263 149 265 151T282 153Q302 153 302 143Q302 135 293 112T268 61T223 11T161 -11Q129 -11 102 10T74 74Q74 91 79 106T122 220Q160 321 166 341T173 380Q173 404 156 404H154Q124 404 99 371T61 287Q60 286 59 284T58 281T56 279T53 278T49 278T41 278H27Q21 284 21 287Z"></path></g></g><g data-mml-node="mo" transform="translate(1407.7,0)"><path data-c="3D" d="M56 347Q56 360 70 367H707Q722 359 722 347Q722 336 708 328L390 327H72Q56 332 56 347ZM56 153Q56 168 72 173H708Q722 163 722 153Q722 140 707 133H70Q56 140 56 153Z"></path></g><g data-mml-node="mfrac" transform="translate(2463.5,0)"><g data-mml-node="mrow" transform="translate(220,710)"><g data-mml-node="mi"><path data-c="1D441" d="M234 637Q231 637 226 637Q201 637 196 638T191 649Q191 676 202 682Q204 683 299 683Q376 683 387 683T401 677Q612 181 616 168L670 381Q723 592 723 606Q723 633 659 637Q635 637 635 648Q635 650 637 660Q641 676 643 679T653 683Q656 683 684 682T767 680Q817 680 843 681T873 682Q888 682 888 672Q888 650 880 642Q878 637 858 637Q787 633 769 597L620 7Q618 0 599 0Q585 0 582 2Q579 5 453 305L326 604L261 344Q196 88 196 79Q201 46 268 46H278Q284 41 284 38T282 19Q278 6 272 0H259Q228 2 151 2Q123 2 100 2T63 2T46 1Q31 1 31 10Q31 14 34 26T39 40Q41 46 62 46Q130 49 150 85Q154 91 221 362L289 634Q287 635 234 637Z"></path></g><g data-mml-node="mo" transform="translate(888,0)"><path data-c="28" d="M94 250Q94 319 104 381T127 488T164 576T202 643T244 695T277 729T302 750H315H319Q333 750 333 741Q333 738 316 720T275 667T226 581T184 443T167 250T184 58T225 -81T274 -167T316 -220T333 -241Q333 -250 318 -250H315H302L274 -226Q180 -141 137 -14T94 250Z"></path></g><g data-mml-node="mi" transform="translate(1277,0)"><path data-c="1D460" d="M131 289Q131 321 147 354T203 415T300 442Q362 442 390 415T419 355Q419 323 402 308T364 292Q351 292 340 300T328 326Q328 342 337 354T354 372T367 378Q368 378 368 379Q368 382 361 388T336 399T297 405Q249 405 227 379T204 326Q204 301 223 291T278 274T330 259Q396 230 396 163Q396 135 385 107T352 51T289 7T195 -10Q118 -10 86 19T53 87Q53 126 74 143T118 160Q133 160 146 151T160 120Q160 94 142 76T111 58Q109 57 108 57T107 55Q108 52 115 47T146 34T201 27Q237 27 263 38T301 66T318 97T323 122Q323 150 302 164T254 181T195 196T148 231Q131 256 131 289Z"></path></g><g data-mml-node="mo" transform="translate(1968.2,0)"><path data-c="2212" d="M84 237T84 250T98 270H679Q694 262 694 250T679 230H98Q84 237 84 250Z"></path></g><g data-mml-node="mn" transform="translate(2968.4,0)"><path data-c="31" d="M213 578L200 573Q186 568 160 563T102 556H83V602H102Q149 604 189 617T245 641T273 663Q275 666 285 666Q294 666 302 660V361L303 61Q310 54 315 52T339 48T401 46H427V0H416Q395 3 257 3Q121 3 100 0H88V46H114Q136 46 152 46T177 47T193 50T201 52T207 57T213 61V578Z"></path></g><g data-mml-node="mo" transform="translate(3468.4,0)"><path data-c="29" d="M60 749L64 750Q69 750 74 750H86L114 726Q208 641 251 514T294 250Q294 182 284 119T261 12T224 -76T186 -143T145 -194T113 -227T90 -246Q87 -249 86 -250H74Q66 -250 63 -250T58 -247T55 -238Q56 -237 66 -225Q221 -64 221 250T66 725Q56 737 55 738Q55 746 60 749Z"></path></g></g><g data-mml-node="mrow" transform="translate(834.7,-719.9)"><g data-mml-node="msup"><g data-mml-node="mi"><path data-c="1D460" d="M131 289Q131 321 147 354T203 415T300 442Q362 442 390 415T419 355Q419 323 402 308T364 292Q351 292 340 300T328 326Q328 342 337 354T354 372T367 378Q368 378 368 379Q368 382 361 388T336 399T297 405Q249 405 227 379T204 326Q204 301 223 291T278 274T330 259Q396 230 396 163Q396 135 385 107T352 51T289 7T195 -10Q118 -10 86 19T53 87Q53 126 74 143T118 160Q133 160 146 151T160 120Q160 94 142 76T111 58Q109 57 108 57T107 55Q108 52 115 47T146 34T201 27Q237 27 263 38T301 66T318 97T323 122Q323 150 302 164T254 181T195 196T148 231Q131 256 131 289Z"></path></g><g data-mml-node="mn" transform="translate(502,289) scale(0.707)"><path data-c="38" d="M70 417T70 494T124 618T248 666Q319 666 374 624T429 515Q429 485 418 459T392 417T361 389T335 371T324 363L338 354Q352 344 366 334T382 323Q457 264 457 174Q457 95 399 37T249 -22Q159 -22 101 29T43 155Q43 263 172 335L154 348Q133 361 127 368Q70 417 70 494ZM286 386L292 390Q298 394 301 396T311 403T323 413T334 425T345 438T355 454T364 471T369 491T371 513Q371 556 342 586T275 624Q268 625 242 625Q201 625 165 599T128 534Q128 511 141 492T167 463T217 431Q224 426 228 424L286 386ZM250 21Q308 21 350 55T392 137Q392 154 387 169T375 194T353 216T330 234T301 253T274 270Q260 279 244 289T218 306L210 311Q204 311 181 294T133 239T107 157Q107 98 150 60T250 21Z"></path></g></g><g data-mml-node="mo" transform="translate(1127.8,0)"><path data-c="2212" d="M84 237T84 250T98 270H679Q694 262 694 250T679 230H98Q84 237 84 250Z"></path></g><g data-mml-node="mn" transform="translate(2128,0)"><path data-c="31" d="M213 578L200 573Q186 568 160 563T102 556H83V602H102Q149 604 189 617T245 641T273 663Q275 666 285 666Q294 666 302 660V361L303 61Q310 54 315 52T339 48T401 46H427V0H416Q395 3 257 3Q121 3 100 0H88V46H114Q136 46 152 46T177 47T193 50T201 52T207 57T213 61V578Z"></path></g></g><rect width="4057.4" height="60" x="120" y="220"></rect></g><g data-mml-node="mo" transform="translate(6983.2,0)"><path data-c="D7" d="M630 29Q630 9 609 9Q604 9 587 25T493 118L389 222L284 117Q178 13 175 11Q171 9 168 9Q160 9 154 15T147 29Q147 36 161 51T255 146L359 250L255 354Q174 435 161 449T147 471Q147 480 153 485T168 490Q173 490 175 489Q178 487 284 383L389 278L493 382Q570 459 587 475T609 491Q630 491 630 471Q630 464 620 453T522 355L418 250L522 145Q606 61 618 48T630 29Z"></path></g><g data-mml-node="msup" transform="translate(7983.4,0)"><g data-mml-node="mi"><path data-c="1D460" d="M131 289Q131 321 147 354T203 415T300 442Q362 442 390 415T419 355Q419 323 402 308T364 292Q351 292 340 300T328 326Q328 342 337 354T354 372T367 378Q368 378 368 379Q368 382 361 388T336 399T297 405Q249 405 227 379T204 326Q204 301 223 291T278 274T330 259Q396 230 396 163Q396 135 385 107T352 51T289 7T195 -10Q118 -10 86 19T53 87Q53 126 74 143T118 160Q133 160 146 151T160 120Q160 94 142 76T111 58Q109 57 108 57T107 55Q108 52 115 47T146 34T201 27Q237 27 263 38T301 66T318 97T323 122Q323 150 302 164T254 181T195 196T148 231Q131 256 131 289Z"></path></g><g data-mml-node="mi" transform="translate(502,413) scale(0.707)"><path data-c="1D456" d="M184 600Q184 624 203 642T247 661Q265 661 277 649T290 619Q290 596 270 577T226 557Q211 557 198 567T184 600ZM21 287Q21 295 30 318T54 369T98 420T158 442Q197 442 223 419T250 357Q250 340 236 301T196 196T154 83Q149 61 149 51Q149 26 166 26Q175 26 185 29T208 43T235 78T260 137Q263 149 265 151T282 153Q302 153 302 143Q302 135 293 112T268 61T223 11T161 -11Q129 -11 102 10T74 74Q74 91 79 106T122 220Q160 321 166 341T173 380Q173 404 156 404H154Q124 404 99 371T61 287Q60 286 59 284T58 281T56 279T53 278T49 278T41 278H27Q21 284 21 287Z"></path></g></g></g></g></svg></mjx-container></span></p>
+<p>这里的s是金字塔放缩因子，默认为<span class="math inline"><mjx-container class="MathJax" jax="SVG"><svg style="vertical-align: -0.781ex;" xmlns="http://www.w3.org/2000/svg" width="3.04ex" height="2.737ex" role="img" focusable="false" viewBox="0 -864.9 1343.7 1209.9"><g stroke="currentColor" fill="currentColor" stroke-width="0" transform="scale(1,-1)"><g data-mml-node="math"><g data-mml-node="mfrac"><g data-mml-node="mn" transform="translate(495.1,394) scale(0.707)"><path data-c="31" d="M213 578L200 573Q186 568 160 563T102 556H83V602H102Q149 604 189 617T245 641T273 663Q275 666 285 666Q294 666 302 660V361L303 61Q310 54 315 52T339 48T401 46H427V0H416Q395 3 257 3Q121 3 100 0H88V46H114Q136 46 152 46T177 47T193 50T201 52T207 57T213 61V578Z"></path></g><g data-mml-node="mn" transform="translate(220,-345) scale(0.707)"><path data-c="31" d="M213 578L200 573Q186 568 160 563T102 556H83V602H102Q149 604 189 617T245 641T273 663Q275 666 285 666Q294 666 302 660V361L303 61Q310 54 315 52T339 48T401 46H427V0H416Q395 3 257 3Q121 3 100 0H88V46H114Q136 46 152 46T177 47T193 50T201 52T207 57T213 61V578Z"></path><path data-c="2E" d="M78 60Q78 84 95 102T138 120Q162 120 180 104T199 61Q199 36 182 18T139 0T96 17T78 60Z" transform="translate(500,0)"></path><path data-c="32" d="M109 429Q82 429 66 447T50 491Q50 562 103 614T235 666Q326 666 387 610T449 465Q449 422 429 383T381 315T301 241Q265 210 201 149L142 93L218 92Q375 92 385 97Q392 99 409 186V189H449V186Q448 183 436 95T421 3V0H50V19V31Q50 38 56 46T86 81Q115 113 136 137Q145 147 170 174T204 211T233 244T261 278T284 308T305 340T320 369T333 401T340 431T343 464Q343 527 309 573T212 619Q179 619 154 602T119 569T109 550Q109 549 114 549Q132 549 151 535T170 489Q170 464 154 447T109 429Z" transform="translate(778,0)"></path></g><rect width="1103.7" height="60" x="120" y="220"></rect></g></g></g></svg></mjx-container></span>。</p>
+<h4 id="网格分配">网格分配</h4>
+<div class="note info">
+            <p>这里的网格分配与ORB特征提取的四叉树不是同一个东西。四叉树的目的时非极大抑制，是在特征提取阶段进行的；网格分配的目的是加速匹配，是在特征提取完构造帧的时候进行的。</p>
+          </div>
+<p>在构造每一帧时，会把像素坐标系分成若干个网格，然后计算每个特征点的坐标并将其分配到网格里，这样做目的是在匹配特征点时加速，也就是先按照网格来粗略查找，然后按照像素点来精细查找，例如在搜索匹配的过程中，都会使用下面这个函数来搜索一定范围内的特征点。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment">* @brief 找到在 以x,y为中心,半径为r的圆形内且金字塔层级在[minLevel, maxLevel]的特征点</span></span><br><span class="line"><span class="comment">*</span></span><br><span class="line"><span class="comment">* @param[in] x                     特征点坐标x</span></span><br><span class="line"><span class="comment">* @param[in] y                     特征点坐标y</span></span><br><span class="line"><span class="comment">* @param[in] r                     搜索半径</span></span><br><span class="line"><span class="comment">* @param[in] minLevel              最小金字塔层级</span></span><br><span class="line"><span class="comment">* @param[in] maxLevel              最大金字塔层级</span></span><br><span class="line"><span class="comment">* @return vector&lt;size_t&gt;           返回搜索到的候选匹配点id</span></span><br><span class="line"><span class="comment">*/</span></span><br><span class="line"><span class="function">vector&lt;<span class="type">size_t</span>&gt; <span class="title">Frame::GetFeaturesInArea</span><span class="params">(<span class="type">const</span> <span class="type">float</span> &amp;x, <span class="type">const</span> <span class="type">float</span> &amp;y, <span class="type">const</span> <span class="type">float</span> &amp;r, <span class="type">const</span> <span class="type">int</span> minLevel, <span class="type">const</span> <span class="type">int</span> maxLevel)</span> <span class="type">const</span></span></span><br><span class="line"><span class="function"></span>{</span><br><span class="line">    ...</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 查找半径为r的圆左侧边界所在网格列坐标</span></span><br><span class="line">    <span class="comment">// (mnMaxX-mnMinX)/FRAME_GRID_COLS：表示列方向每个网格可以平均分得几个像素（肯定大于1）</span></span><br><span class="line">    <span class="comment">// mfGridElementWidthInv=FRAME_GRID_COLS/(mnMaxX-mnMinX) 是上面倒数，表示每个像素可以均分几个网格列（肯定小于1）</span></span><br><span class="line">    <span class="comment">// (x-mnMinX-r)，可以看做是从图像的左边界mnMinX到半径r的圆的左边界区域占的像素列数</span></span><br><span class="line">    <span class="comment">// 两者相乘，就是求出那个半径为r的圆的左侧边界在哪个网格列中</span></span><br><span class="line">    <span class="comment">// 保证nMinCellX 结果大于等于0</span></span><br><span class="line">    <span class="type">const</span> <span class="type">int</span> nMinCellX = <span class="built_in">max</span>(<span class="number">0</span>, (<span class="type">int</span>)<span class="built_in">floor</span>((x - mnMinX - r) * mfGridElementWidthInv));</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 如果最终求得的圆的左边界所在的网格列超过了设定了上限，那么就说明计算出错，找不到符合要求的特征点，返回空vector</span></span><br><span class="line">    <span class="keyword">if</span> (nMinCellX &gt;= FRAME_GRID_COLS)</span><br><span class="line">        <span class="keyword">return</span> vIndices;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 计算圆所在的右边界网格列索引</span></span><br><span class="line">    <span class="type">const</span> <span class="type">int</span> nMaxCellX = <span class="built_in">min</span>((<span class="type">int</span>)FRAME_GRID_COLS - <span class="number">1</span>, (<span class="type">int</span>)<span class="built_in">ceil</span>((x - mnMinX + r) * mfGridElementWidthInv));</span><br><span class="line">    <span class="comment">// 如果计算出的圆右边界所在的网格不合法，说明该特征点不好，直接返回空vector</span></span><br><span class="line">    <span class="keyword">if</span> (nMaxCellX &lt; <span class="number">0</span>)</span><br><span class="line">        <span class="keyword">return</span> vIndices;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 计算圆所在的下边界网格列索引</span></span><br><span class="line">    <span class="type">const</span> <span class="type">int</span> nMinCellY = <span class="built_in">max</span>(<span class="number">0</span>, (<span class="type">int</span>)<span class="built_in">floor</span>((y - mnMinY - r) * mfGridElementHeightInv));</span><br><span class="line">    <span class="keyword">if</span> (nMinCellY &gt;= FRAME_GRID_ROWS)</span><br><span class="line">        <span class="keyword">return</span> vIndices;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 计算圆所在的上边界网格列索引</span></span><br><span class="line">    <span class="type">const</span> <span class="type">int</span> nMaxCellY = <span class="built_in">min</span>((<span class="type">int</span>)FRAME_GRID_ROWS - <span class="number">1</span>, (<span class="type">int</span>)<span class="built_in">ceil</span>((y - mnMinY + r) * mfGridElementHeightInv));</span><br><span class="line">    <span class="keyword">if</span> (nMaxCellY &lt; <span class="number">0</span>)</span><br><span class="line">        <span class="keyword">return</span> vIndices;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 检查需要搜索的图像金字塔层数范围是否符合要求</span></span><br><span class="line">    <span class="type">const</span> <span class="type">bool</span> bCheckLevels = (minLevel &gt; <span class="number">0</span>) || (maxLevel &gt;= <span class="number">0</span>);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 遍历圆形区域内的所有网格，寻找满足条件的候选特征点，并将其index放到输出里</span></span><br><span class="line">    <span class="keyword">for</span> (<span class="type">int</span> ix = nMinCellX; ix &lt;= nMaxCellX; ix++)</span><br><span class="line">    {</span><br><span class="line">        <span class="keyword">for</span> (<span class="type">int</span> iy = nMinCellY; iy &lt;= nMaxCellY; iy++)</span><br><span class="line">        {</span><br><span class="line">            <span class="comment">// 获取这个网格内的所有特征点在 Frame::mvKeysUn 中的索引</span></span><br><span class="line">            <span class="type">const</span> vector&lt;<span class="type">size_t</span>&gt; vCell = mGrid[ix][iy];</span><br><span class="line">            <span class="comment">// 如果这个网格中没有特征点，那么跳过这个网格继续下一个</span></span><br><span class="line">            <span class="keyword">if</span> (vCell.<span class="built_in">empty</span>())</span><br><span class="line">                <span class="keyword">continue</span>;</span><br><span class="line"></span><br><span class="line">            <span class="comment">// 如果这个网格中有特征点，那么遍历这个图像网格中所有的特征点</span></span><br><span class="line">            <span class="keyword">for</span> (<span class="type">size_t</span> j = <span class="number">0</span>, jend = vCell.<span class="built_in">size</span>(); j &lt; jend; j++)</span><br><span class="line">            {</span><br><span class="line">                <span class="comment">// 根据索引先读取这个特征点</span></span><br><span class="line">                <span class="type">const</span> cv::KeyPoint &amp;kpUn = mvKeysUn[vCell[j]];</span><br><span class="line">                <span class="comment">// 保证给定的搜索金字塔层级范围合法</span></span><br><span class="line">                <span class="keyword">if</span> (bCheckLevels)</span><br><span class="line">                {</span><br><span class="line">                    <span class="comment">// cv::KeyPoint::octave中表示的是从金字塔的哪一层提取的数据</span></span><br><span class="line">                    <span class="comment">// 保证特征点是在金字塔层级minLevel和maxLevel之间，不是的话跳过</span></span><br><span class="line">                    <span class="keyword">if</span> (kpUn.octave &lt; minLevel)</span><br><span class="line">                        <span class="keyword">continue</span>;</span><br><span class="line">                    <span class="keyword">if</span> (maxLevel &gt;= <span class="number">0</span>) <span class="comment">//? 为何特意又强调？感觉多此一举</span></span><br><span class="line">                        <span class="keyword">if</span> (kpUn.octave &gt; maxLevel)</span><br><span class="line">                            <span class="keyword">continue</span>;</span><br><span class="line">                }</span><br><span class="line"></span><br><span class="line">                <span class="comment">// 通过检查，计算候选特征点到圆中心的距离，查看是否是在这个圆形区域之内</span></span><br><span class="line">                <span class="type">const</span> <span class="type">float</span> distx = kpUn.pt.x - x;</span><br><span class="line">                <span class="type">const</span> <span class="type">float</span> disty = kpUn.pt.y - y;</span><br><span class="line"></span><br><span class="line">                <span class="comment">// 如果x方向和y方向的距离都在指定的半径之内，存储其index为候选特征点</span></span><br><span class="line">                <span class="keyword">if</span> (distx * distx + disty * disty &lt; r * r) </span><br><span class="line">                    vIndices.<span class="built_in">push_back</span>(vCell[j]);</span><br><span class="line">            }</span><br><span class="line">        }</span><br><span class="line">    }</span><br><span class="line">    <span class="keyword">return</span> vIndices;</span><br><span class="line">}</span><br></pre></td></tr></table></figure>
+<h3 id="判断地图点是否在视野内">判断地图点是否在视野内</h3>
+<p><code>bool Frame::isInFrustum(MapPoint *pMP, float viewingCosLimit)</code>这个函数在前文中的地图点也提到过，用于判断一个地图点是否在当前帧的视野内。具体而言，当一个地图点满足下面所有条件时，就认为该地图点在当前帧的视野内(也就是理论上可以被检测到)</p>
+<ul>
+<li><strong>相机坐标系约束</strong>：地图点投影到当前帧后深度信息为正，也就是地图点在相机前方</li>
+<li><strong>像素坐标系约束</strong>：地图点投影后的像素点位于帧畸变矫正后的有效像素区域内</li>
+<li><strong>特征提取约束</strong>：地图点与当前帧光心的距离在有效区域内，不然无法通过金字塔提取出来，有效距离的含义在地图点中也提到过了</li>
+<li><strong>视角约束</strong>：地图点平均方向和地图点与当前帧光心的夹角小于一定阈值，即地图点中所描述的平均观测方向</li>
+</ul>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * @brief 判断地图点是否在视野中</span></span><br><span class="line"><span class="comment"> * @param[in] pMP                       当前地图点</span></span><br><span class="line"><span class="comment"> * @param[in] viewingCosLimit           当前相机指向地图点向量和地图点的平均观测方向夹角余弦阈值</span></span><br><span class="line"><span class="comment"> * @return true                         地图点合格，且在视野内</span></span><br><span class="line"><span class="comment"> * @return false                        地图点不合格，抛弃</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="function"><span class="type">bool</span> <span class="title">Frame::isInFrustum</span><span class="params">(MapPoint *pMP, <span class="type">float</span> viewingCosLimit)</span></span></span><br><span class="line"><span class="function"></span>{</span><br><span class="line">    ...</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 根据当前帧(粗糙)位姿转化到当前相机坐标系下的三维点Pc</span></span><br><span class="line">    <span class="type">const</span> cv::Mat Pc = mRcw * P + mtcw;</span><br><span class="line">    <span class="type">const</span> <span class="type">float</span> &amp;PcX = Pc.<span class="built_in">at</span>&lt;<span class="type">float</span>&gt;(<span class="number">0</span>);</span><br><span class="line">    <span class="type">const</span> <span class="type">float</span> &amp;PcY = Pc.<span class="built_in">at</span>&lt;<span class="type">float</span>&gt;(<span class="number">1</span>);</span><br><span class="line">    <span class="type">const</span> <span class="type">float</span> &amp;PcZ = Pc.<span class="built_in">at</span>&lt;<span class="type">float</span>&gt;(<span class="number">2</span>);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 将这个地图点变换到当前帧的相机坐标系下，如果深度值为正才能继续下一步。</span></span><br><span class="line">    <span class="keyword">if</span> (PcZ &lt; <span class="number">0.0f</span>)</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 将地图点投影到当前帧的像素坐标，如果在图像有效范围内才能继续下一步。</span></span><br><span class="line">    <span class="type">const</span> <span class="type">float</span> invz = <span class="number">1.0f</span> / PcZ;</span><br><span class="line">    <span class="type">const</span> <span class="type">float</span> u = fx * PcX * invz + cx;</span><br><span class="line">    <span class="type">const</span> <span class="type">float</span> v = fy * PcY * invz + cy;</span><br><span class="line">    <span class="keyword">if</span> (u &lt; mnMinX || u &gt; mnMaxX)</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">    <span class="keyword">if</span> (v &lt; mnMinY || v &gt; mnMaxY)</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 计算地图点到相机中心的距离，如果在有效距离范围内才能继续下一步。</span></span><br><span class="line">    <span class="comment">// 可靠距离范围:[0.8f*mfMinDistance, 1.2f*mfMaxDistance]</span></span><br><span class="line">    <span class="type">const</span> <span class="type">float</span> maxDistance = pMP-&gt;<span class="built_in">GetMaxDistanceInvariance</span>();</span><br><span class="line">    <span class="type">const</span> <span class="type">float</span> minDistance = pMP-&gt;<span class="built_in">GetMinDistanceInvariance</span>();</span><br><span class="line">    <span class="comment">// 得到当前地图点距离当前帧相机光心的距离</span></span><br><span class="line">    <span class="type">const</span> cv::Mat PO = P - mOw;</span><br><span class="line">    <span class="type">const</span> <span class="type">float</span> dist = cv::<span class="built_in">norm</span>(PO);</span><br><span class="line">    <span class="keyword">if</span> (dist &lt; minDistance || dist &gt; maxDistance)</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 计算当前相机指向地图点向量和地图点的平均观测方向夹角，小于阈值才能进入下一步。</span></span><br><span class="line">    cv::Mat Pn = pMP-&gt;<span class="built_in">GetNormal</span>();</span><br><span class="line">    <span class="comment">// 计算当前相机指向地图点向量和地图点的平均观测方向夹角的余弦值，注意平均观测方向为单位向量</span></span><br><span class="line">    <span class="type">const</span> <span class="type">float</span> viewCos = PO.<span class="built_in">dot</span>(Pn) / dist;</span><br><span class="line">    <span class="keyword">if</span> (viewCos &lt; viewingCosLimit)</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line"></span><br><span class="line">    ...</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">true</span>;</span><br><span class="line">}</span><br></pre></td></tr></table></figure>
+<h3 id="对于双目与rgbd">对于双目与RGBD</h3>
+<p>对于双目与RGBD而言，会额外存储以下信息（单目下面两个数据结构都是-1）：</p>
+<ul>
+<li><code>mvuRight</code>：左目特征点对应右目图像的横坐标（对极矫正后纵坐标是一样的）</li>
+<li><code>mvDepth</code>：左目特征点对应的深度</li>
+</ul>
+<p>如果是双目相机，由于在对极约束后可以直接得到<code>mvuRight</code>，因此需要根据视差来计算<code>mvDepth</code>；相反，对于RGBD相机而言，<code>mvDepth</code>是直接获取的，所以需要根据基线来反向计算出<code>mvuRight</code></p>
+<h2 id="关键帧keyframe">关键帧KeyFrame</h2>
+<p>在tracking线程中决定是否添加关键帧，关键帧具备普通帧的数据结构比如位姿、特征点、网格划分等等，但同样维护了一些用于优化的数据。</p>
+<h3 id="共视图与生成树">共视图与生成树</h3>
+<p>当两个关键帧能同时观测到至少15个共同的地图点时，就认为两者具有共视关系，共视权重为共同地图点数量。每个关键帧会按照权重降序存储共视帧，并单独记录共视权重最高的共视关键帧作为父关键帧。共视图会用于LocalMapping中扩大地图点以及LoopClosing中闭环检测和重定位，除此之外Tracking中也会利用共视关系来优化普通帧的位姿。</p>
+<p>记录父关键帧的目的是维护生成树，每个关键帧只会存在一个父节点，但是可能会有多个子节点。生成树本身不会参与任何优化，其作用是在LoopClosing中创建本质图进行优化。（本质图仅用于闭环检测，本质图不止包含生成树，还包含闭环关系和一些较好的共视关系）</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/*</span></span><br><span class="line"><span class="comment"> * 更新关键帧之间的连接图</span></span><br><span class="line"><span class="comment"> * </span></span><br><span class="line"><span class="comment"> * 1. 首先获得该关键帧的所有MapPoint点，统计观测到这些3d点的每个关键帧与其它所有关键帧之间的共视程度</span></span><br><span class="line"><span class="comment"> *    对每一个找到的关键帧，建立一条边，边的权重是该关键帧与当前关键帧公共3d点的个数。</span></span><br><span class="line"><span class="comment"> * 2. 并且该权重必须大于一个阈值，如果没有超过该阈值的权重，那么就只保留权重最大的边（与其它关键帧的共视程度比较高）</span></span><br><span class="line"><span class="comment"> * 3. 对这些连接按照权重从大到小进行排序，以方便将来的处理</span></span><br><span class="line"><span class="comment"> *    更新完covisibility图之后，如果没有初始化过，则初始化为连接权重最大的边（与其它关键帧共视程度最高的那个关键帧），类似于最大生成树</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">KeyFrame::UpdateConnections</span><span class="params">()</span></span></span><br><span class="line"><span class="function"></span>{</span><br><span class="line">    ...</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 通过地图点被关键帧观测来间接统计关键帧之间的共视程度</span></span><br><span class="line">    <span class="comment">// 统计每一个地图点都有多少关键帧与当前关键帧存在共视关系，统计结果放在KFcounter</span></span><br><span class="line">    <span class="keyword">for</span>(vector&lt;MapPoint*&gt;::iterator vit=vpMP.<span class="built_in">begin</span>(), vend=vpMP.<span class="built_in">end</span>(); vit!=vend; vit++)</span><br><span class="line">    {</span><br><span class="line">        MapPoint* pMP = *vit;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span>(!pMP)</span><br><span class="line">            <span class="keyword">continue</span>;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span>(pMP-&gt;<span class="built_in">isBad</span>())</span><br><span class="line">            <span class="keyword">continue</span>;</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 对于每一个地图点，observations记录了可以观测到该地图点的所有关键帧</span></span><br><span class="line">        map&lt;KeyFrame*,<span class="type">size_t</span>&gt; observations = pMP-&gt;<span class="built_in">GetObservations</span>();</span><br><span class="line"></span><br><span class="line">        <span class="keyword">for</span>(map&lt;KeyFrame*,<span class="type">size_t</span>&gt;::iterator mit=observations.<span class="built_in">begin</span>(), mend=observations.<span class="built_in">end</span>(); mit!=mend; mit++)</span><br><span class="line">        {</span><br><span class="line">            <span class="comment">// 除去自身，自己与自己不算共视</span></span><br><span class="line">            <span class="keyword">if</span>(mit-&gt;first-&gt;mnId==mnId)</span><br><span class="line">                <span class="keyword">continue</span>;</span><br><span class="line">            <span class="comment">// map[key] = value，当要插入的键存在时，会覆盖键对应的原来的值。如果键不存在，则添加一组键值对</span></span><br><span class="line">            <span class="comment">// mit-&gt;first 是地图点看到的关键帧，同一个关键帧看到的地图点会累加到该关键帧计数</span></span><br><span class="line">            <span class="comment">// 所以最后KFcounter 第一个参数表示某个关键帧，第2个参数表示该关键帧看到了多少当前帧的地图点，也就是共视程度</span></span><br><span class="line">            KFcounter[mit-&gt;first]++;</span><br><span class="line">        }</span><br><span class="line">    }</span><br><span class="line"></span><br><span class="line">    ...</span><br><span class="line">}</span><br></pre></td></tr></table></figure>
+<h3 id="关键帧数据库keyframedatabase">关键帧数据库KeyFrameDatabase</h3>
+<p>每个关键帧中还会存储一个关键帧数据库KeyFrameDatabase，记为KFDB，其中KFDB全局只会存在一个实例，它使用词袋作为特征，为每个关键帧构建特征集。其作用是通过词袋匹配在Tracking中重定位时获取重定位候选帧以及在LoopClosing中获取闭环候选帧。</p>
+<p>KFDB里有两个比较关键的数据结构：</p>
+<ul>
+<li><code>const ORBVocabulary *mpVoc</code>：预先训练好的词典（本身也是个词袋），用于计算两个关键帧之间的相似程度</li>
+<li><code>std::vector&lt;list&lt;KeyFrame *&gt;&gt; mvInvertedFile</code>：倒排索引，<code>mvInvertedFile[i]</code>表示包含了第i个word id的所有关键帧，用于粗略匹配候选关键帧</li>
+</ul>
+<p>计算重定位候选关键帧和闭环候选关键帧时的步骤是极为类似的：</p>
+<img src="/2025/02/21/ORBSLAM2%E6%BA%90%E7%A0%81%E5%B0%8F%E8%AE%B0-2/pic1.png" class="">
+<h4 id="重定位候选关键帧输入普通帧frame">重定位候选关键帧(输入普通帧Frame)</h4>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/*</span></span><br><span class="line"><span class="comment"> * @brief 在重定位中找到与该帧相似的候选关键帧组</span></span><br><span class="line"><span class="comment"> * Step 1. 找出和当前帧具有公共单词的所有关键帧</span></span><br><span class="line"><span class="comment"> * Step 2. 只和具有共同单词较多的关键帧进行相似度计算</span></span><br><span class="line"><span class="comment"> * Step 3. 将与关键帧相连（权值最高）的前十个关键帧归为一组，计算累计得分</span></span><br><span class="line"><span class="comment"> * Step 4. 只返回累计得分较高的组中分数最高的关键帧</span></span><br><span class="line"><span class="comment"> * @param F 需要重定位的帧</span></span><br><span class="line"><span class="comment"> * @return  相似的候选关键帧数组</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="function">vector&lt;KeyFrame *&gt; <span class="title">KeyFrameDatabase::DetectRelocalizationCandidates</span><span class="params">(Frame *F)</span></span></span><br><span class="line"><span class="function"></span>{</span><br><span class="line">    list&lt;KeyFrame *&gt; lKFsSharingWords;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 找出和当前帧具有公共单词(word)的所有关键帧</span></span><br><span class="line">    {</span><br><span class="line">        <span class="function">unique_lock&lt;mutex&gt; <span class="title">lock</span><span class="params">(mMutex)</span></span>;</span><br><span class="line"></span><br><span class="line">        <span class="comment">// mBowVec 内部实际存储的是std::map&lt;WordId, WordValue&gt;</span></span><br><span class="line">        <span class="comment">// WordId 和 WordValue 表示Word在叶子中的id 和权重</span></span><br><span class="line">        <span class="keyword">for</span> (DBoW2::BowVector::const_iterator vit = F-&gt;mBowVec.<span class="built_in">begin</span>(), vend = F-&gt;mBowVec.<span class="built_in">end</span>(); vit != vend; vit++)</span><br><span class="line">        {</span><br><span class="line">            <span class="comment">// 根据倒排索引，提取所有包含该wordid的所有KeyFrame</span></span><br><span class="line">            list&lt;KeyFrame *&gt; &amp;lKFs = mvInvertedFile[vit-&gt;first];</span><br><span class="line"></span><br><span class="line">            <span class="keyword">for</span> (list&lt;KeyFrame *&gt;::iterator lit = lKFs.<span class="built_in">begin</span>(), lend = lKFs.<span class="built_in">end</span>(); lit != lend; lit++)</span><br><span class="line">            {</span><br><span class="line">                KeyFrame *pKFi = *lit;</span><br><span class="line">                <span class="comment">// pKFi-&gt;mnRelocQuery起标记作用，是为了防止重复选取</span></span><br><span class="line">                <span class="keyword">if</span> (pKFi-&gt;mnRelocQuery != F-&gt;mnId)</span><br><span class="line">                {</span><br><span class="line">                    <span class="comment">// pKFi还没有标记为F的重定位候选帧</span></span><br><span class="line">                    pKFi-&gt;mnRelocWords = <span class="number">0</span>;</span><br><span class="line">                    pKFi-&gt;mnRelocQuery = F-&gt;mnId;</span><br><span class="line">                    lKFsSharingWords.<span class="built_in">push_back</span>(pKFi);</span><br><span class="line">                }</span><br><span class="line">                pKFi-&gt;mnRelocWords++;</span><br><span class="line">            }</span><br><span class="line">        }</span><br><span class="line">    }</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 如果和当前帧具有公共单词的关键帧数目为0，无法进行重定位，返回空</span></span><br><span class="line">    <span class="keyword">if</span> (lKFsSharingWords.<span class="built_in">empty</span>())</span><br><span class="line">        <span class="keyword">return</span> <span class="built_in">vector</span>&lt;KeyFrame *&gt;();</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 统计上述关键帧中与当前帧F具有共同单词最多的单词数maxCommonWords，用来设定阈值1</span></span><br><span class="line">    <span class="type">int</span> maxCommonWords = <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">for</span> (list&lt;KeyFrame *&gt;::iterator lit = lKFsSharingWords.<span class="built_in">begin</span>(), lend = lKFsSharingWords.<span class="built_in">end</span>(); lit != lend; lit++)</span><br><span class="line">    {</span><br><span class="line">        <span class="keyword">if</span> ((*lit)-&gt;mnRelocWords &gt; maxCommonWords)</span><br><span class="line">            maxCommonWords = (*lit)-&gt;mnRelocWords;</span><br><span class="line">    }</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 阈值1：最小公共单词数为最大公共单词数目的0.8倍</span></span><br><span class="line">    <span class="type">int</span> minCommonWords = maxCommonWords * <span class="number">0.8f</span>;</span><br><span class="line"></span><br><span class="line">    list&lt;pair&lt;<span class="type">float</span>, KeyFrame *&gt;&gt; lScoreAndMatch;</span><br><span class="line"></span><br><span class="line">    <span class="type">int</span> nscores = <span class="number">0</span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 遍历上述关键帧，挑选出共有单词数大于阈值1的及其和当前帧单词匹配得分存入lScoreAndMatch</span></span><br><span class="line">    <span class="keyword">for</span> (list&lt;KeyFrame *&gt;::iterator lit = lKFsSharingWords.<span class="built_in">begin</span>(), lend = lKFsSharingWords.<span class="built_in">end</span>(); lit != lend; lit++)</span><br><span class="line">    {</span><br><span class="line">        KeyFrame *pKFi = *lit;</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 当前帧F只和具有共同单词较多（大于minCommonWords）的关键帧进行比较</span></span><br><span class="line">        <span class="keyword">if</span> (pKFi-&gt;mnRelocWords &gt; minCommonWords)</span><br><span class="line">        {</span><br><span class="line">            nscores++; <span class="comment">// 这个变量后面没有用到</span></span><br><span class="line">            <span class="comment">// 用mBowVec来计算两者的相似度得分</span></span><br><span class="line">            <span class="type">float</span> si = mpVoc-&gt;<span class="built_in">score</span>(F-&gt;mBowVec, pKFi-&gt;mBowVec);</span><br><span class="line">            pKFi-&gt;mRelocScore = si;</span><br><span class="line">            lScoreAndMatch.<span class="built_in">push_back</span>(<span class="built_in">make_pair</span>(si, pKFi));</span><br><span class="line">        }</span><br><span class="line">    }</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (lScoreAndMatch.<span class="built_in">empty</span>())</span><br><span class="line">        <span class="keyword">return</span> <span class="built_in">vector</span>&lt;KeyFrame *&gt;();</span><br><span class="line"></span><br><span class="line">    list&lt;pair&lt;<span class="type">float</span>, KeyFrame *&gt;&gt; lAccScoreAndMatch;</span><br><span class="line">    <span class="type">float</span> bestAccScore = <span class="number">0</span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 计算lScoreAndMatch中每个关键帧的共视关键帧组的总得分，得到最高组得分bestAccScore，并以此决定阈值2</span></span><br><span class="line">    <span class="comment">// 单单计算当前帧和某一关键帧的相似性是不够的，这里将与关键帧共视程度最高的前十个关键帧归为一组，计算累计得分</span></span><br><span class="line">    <span class="keyword">for</span> (list&lt;pair&lt;<span class="type">float</span>, KeyFrame *&gt;&gt;::iterator it = lScoreAndMatch.<span class="built_in">begin</span>(), itend = lScoreAndMatch.<span class="built_in">end</span>(); it != itend; it++)</span><br><span class="line">    {</span><br><span class="line">        KeyFrame *pKFi = it-&gt;second;</span><br><span class="line">        <span class="comment">// 取出与关键帧pKFi共视程度最高的前10个关键帧</span></span><br><span class="line">        vector&lt;KeyFrame *&gt; vpNeighs = pKFi-&gt;<span class="built_in">GetBestCovisibilityKeyFrames</span>(<span class="number">10</span>);</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 该组最高分数</span></span><br><span class="line">        <span class="type">float</span> bestScore = it-&gt;first;</span><br><span class="line">        <span class="comment">// 该组累计得分</span></span><br><span class="line">        <span class="type">float</span> accScore = bestScore;</span><br><span class="line">        <span class="comment">// 该组最高分数对应的关键帧</span></span><br><span class="line">        KeyFrame *pBestKF = pKFi;</span><br><span class="line">        <span class="comment">// 遍历共视关键帧，累计得分</span></span><br><span class="line">        <span class="keyword">for</span> (vector&lt;KeyFrame *&gt;::iterator vit = vpNeighs.<span class="built_in">begin</span>(), vend = vpNeighs.<span class="built_in">end</span>(); vit != vend; vit++)</span><br><span class="line">        {</span><br><span class="line">            KeyFrame *pKF2 = *vit;</span><br><span class="line">            <span class="keyword">if</span> (pKF2-&gt;mnRelocQuery != F-&gt;mnId)</span><br><span class="line">                <span class="keyword">continue</span>;</span><br><span class="line">            <span class="comment">// 只有pKF2也在重定位候选帧中，才能贡献分数</span></span><br><span class="line">            accScore += pKF2-&gt;mRelocScore;</span><br><span class="line"></span><br><span class="line">            <span class="comment">// 统计得到组里分数最高的KeyFrame</span></span><br><span class="line">            <span class="keyword">if</span> (pKF2-&gt;mRelocScore &gt; bestScore)</span><br><span class="line">            {</span><br><span class="line">                pBestKF = pKF2;</span><br><span class="line">                bestScore = pKF2-&gt;mRelocScore;</span><br><span class="line">            }</span><br><span class="line">        }</span><br><span class="line"></span><br><span class="line">        lAccScoreAndMatch.<span class="built_in">push_back</span>(<span class="built_in">make_pair</span>(accScore, pBestKF));</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 记录所有组中最高的得分</span></span><br><span class="line">        <span class="keyword">if</span> (accScore &gt; bestAccScore)</span><br><span class="line">            bestAccScore = accScore;</span><br><span class="line">    }</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 得到所有组中总得分大于阈值2的，组内得分最高的关键帧，作为候选关键帧组</span></span><br><span class="line">    <span class="comment">// 阈值2：最高得分的0.75倍</span></span><br><span class="line">    <span class="type">float</span> minScoreToRetain = <span class="number">0.75f</span> * bestAccScore;</span><br><span class="line">    set&lt;KeyFrame *&gt; spAlreadyAddedKF;</span><br><span class="line">    vector&lt;KeyFrame *&gt; vpRelocCandidates;</span><br><span class="line">    vpRelocCandidates.<span class="built_in">reserve</span>(lAccScoreAndMatch.<span class="built_in">size</span>());</span><br><span class="line">    <span class="keyword">for</span> (list&lt;pair&lt;<span class="type">float</span>, KeyFrame *&gt;&gt;::iterator it = lAccScoreAndMatch.<span class="built_in">begin</span>(), itend = lAccScoreAndMatch.<span class="built_in">end</span>(); it != itend; it++)</span><br><span class="line">    {</span><br><span class="line">        <span class="type">const</span> <span class="type">float</span> &amp;si = it-&gt;first;</span><br><span class="line">        <span class="comment">// 只返回累计得分大于阈值2的组中分数最高的关键帧</span></span><br><span class="line">        <span class="keyword">if</span> (si &gt; minScoreToRetain)</span><br><span class="line">        {</span><br><span class="line">            KeyFrame *pKFi = it-&gt;second;</span><br><span class="line">            <span class="comment">// 判断该pKFi是否已经添加在队列中了</span></span><br><span class="line">            <span class="keyword">if</span> (!spAlreadyAddedKF.<span class="built_in">count</span>(pKFi))</span><br><span class="line">            {</span><br><span class="line">                vpRelocCandidates.<span class="built_in">push_back</span>(pKFi);</span><br><span class="line">                spAlreadyAddedKF.<span class="built_in">insert</span>(pKFi);</span><br><span class="line">            }</span><br><span class="line">        }</span><br><span class="line">    }</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> vpRelocCandidates;</span><br><span class="line">}</span><br></pre></td></tr></table></figure>
+<h4 id="闭环候选关键帧输入关键帧keyframe">闭环候选关键帧(输入关键帧KeyFrame)</h4>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br><span class="line">144</span><br><span class="line">145</span><br><span class="line">146</span><br><span class="line">147</span><br><span class="line">148</span><br><span class="line">149</span><br><span class="line">150</span><br><span class="line">151</span><br><span class="line">152</span><br><span class="line">153</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * @brief 在闭环检测中找到与该关键帧可能闭环的关键帧（注意不和当前帧连接）</span></span><br><span class="line"><span class="comment"> * Step 1：找出和当前帧具有公共单词的所有关键帧，不包括与当前帧连接的关键帧</span></span><br><span class="line"><span class="comment"> * Step 2：只和具有共同单词较多的（最大数目的80%以上）关键帧进行相似度计算</span></span><br><span class="line"><span class="comment"> * Step 3：计算上述候选帧对应的共视关键帧组的总得分，只取最高组得分75%以上的组</span></span><br><span class="line"><span class="comment"> * Step 4：得到上述组中分数最高的关键帧作为闭环候选关键帧</span></span><br><span class="line"><span class="comment"> * @param[in] pKF               需要闭环检测的关键帧</span></span><br><span class="line"><span class="comment"> * @param[in] minScore          候选闭环关键帧帧和当前关键帧的BoW相似度至少要大于minScore</span></span><br><span class="line"><span class="comment"> * @return vector&lt;KeyFrame*&gt;    闭环候选关键帧</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="function">vector&lt;KeyFrame *&gt; <span class="title">KeyFrameDatabase::DetectLoopCandidates</span><span class="params">(KeyFrame *pKF, <span class="type">float</span> minScore)</span></span></span><br><span class="line"><span class="function"></span>{</span><br><span class="line">    <span class="comment">// 取出与当前关键帧相连（&gt;15个共视地图点）的所有关键帧，这些相连关键帧都是局部相连，在闭环检测的时候将被剔除</span></span><br><span class="line">    <span class="comment">// 相连关键帧定义见 KeyFrame::UpdateConnections()</span></span><br><span class="line">    set&lt;KeyFrame *&gt; spConnectedKeyFrames = pKF-&gt;<span class="built_in">GetConnectedKeyFrames</span>();</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 用于保存可能与当前关键帧形成闭环的候选帧（只要有相同的word，且不属于局部相连（共视）帧）</span></span><br><span class="line">    list&lt;KeyFrame *&gt; lKFsSharingWords;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 找出和当前帧具有公共单词的所有关键帧，不包括与当前帧连接的关键帧</span></span><br><span class="line">    {</span><br><span class="line">        <span class="function">unique_lock&lt;mutex&gt; <span class="title">lock</span><span class="params">(mMutex)</span></span>;</span><br><span class="line"></span><br><span class="line">        <span class="comment">// words是检测图像是否匹配的枢纽，遍历该pKF的每一个word</span></span><br><span class="line">        <span class="comment">// mBowVec 内部实际存储的是std::map&lt;WordId, WordValue&gt;</span></span><br><span class="line">        <span class="comment">// WordId 和 WordValue 表示Word在叶子中的id和权重</span></span><br><span class="line">        <span class="keyword">for</span> (DBoW2::BowVector::const_iterator vit = pKF-&gt;mBowVec.<span class="built_in">begin</span>(), vend = pKF-&gt;mBowVec.<span class="built_in">end</span>(); vit != vend; vit++)</span><br><span class="line">        {</span><br><span class="line">            <span class="comment">// 提取所有包含该word的KeyFrame</span></span><br><span class="line">            list&lt;KeyFrame *&gt; &amp;lKFs = mvInvertedFile[vit-&gt;first];</span><br><span class="line">            <span class="comment">// 然后对这些关键帧展开遍历</span></span><br><span class="line">            <span class="keyword">for</span> (list&lt;KeyFrame *&gt;::iterator lit = lKFs.<span class="built_in">begin</span>(), lend = lKFs.<span class="built_in">end</span>(); lit != lend; lit++)</span><br><span class="line">            {</span><br><span class="line">                KeyFrame *pKFi = *lit;</span><br><span class="line"></span><br><span class="line">                <span class="keyword">if</span> (pKFi-&gt;mnLoopQuery != pKF-&gt;mnId)</span><br><span class="line">                {</span><br><span class="line">                    <span class="comment">// 还没有标记为pKF的闭环候选帧</span></span><br><span class="line">                    pKFi-&gt;mnLoopWords = <span class="number">0</span>;</span><br><span class="line">                    <span class="comment">// 和当前关键帧共视的话不作为闭环候选帧</span></span><br><span class="line">                    <span class="keyword">if</span> (!spConnectedKeyFrames.<span class="built_in">count</span>(pKFi))</span><br><span class="line">                    {</span><br><span class="line">                        <span class="comment">// 没有共视就标记作为闭环候选关键帧，放到lKFsSharingWords里</span></span><br><span class="line">                        pKFi-&gt;mnLoopQuery = pKF-&gt;mnId;</span><br><span class="line">                        lKFsSharingWords.<span class="built_in">push_back</span>(pKFi);</span><br><span class="line">                    }</span><br><span class="line">                }</span><br><span class="line">                pKFi-&gt;mnLoopWords++; <span class="comment">// 记录pKFi与pKF具有相同word的个数</span></span><br><span class="line">            }</span><br><span class="line">        }</span><br><span class="line">    }</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 如果没有关键帧和这个关键帧具有相同的单词,那么就返回空</span></span><br><span class="line">    <span class="keyword">if</span> (lKFsSharingWords.<span class="built_in">empty</span>())</span><br><span class="line">        <span class="keyword">return</span> <span class="built_in">vector</span>&lt;KeyFrame *&gt;();</span><br><span class="line"></span><br><span class="line">    list&lt;pair&lt;<span class="type">float</span>, KeyFrame *&gt;&gt; lScoreAndMatch;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 统计上述所有闭环候选帧中与当前帧具有共同单词最多的单词数，用来决定相对阈值</span></span><br><span class="line">    <span class="type">int</span> maxCommonWords = <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">for</span> (list&lt;KeyFrame *&gt;::iterator lit = lKFsSharingWords.<span class="built_in">begin</span>(), lend = lKFsSharingWords.<span class="built_in">end</span>(); lit != lend; lit++)</span><br><span class="line">    {</span><br><span class="line">        <span class="keyword">if</span> ((*lit)-&gt;mnLoopWords &gt; maxCommonWords)</span><br><span class="line">            maxCommonWords = (*lit)-&gt;mnLoopWords;</span><br><span class="line">    }</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 确定最小公共单词数为最大公共单词数目的0.8倍</span></span><br><span class="line">    <span class="type">int</span> minCommonWords = maxCommonWords * <span class="number">0.8f</span>;</span><br><span class="line"></span><br><span class="line">    <span class="type">int</span> nscores = <span class="number">0</span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 遍历上述所有闭环候选帧，挑选出共有单词数大于minCommonWords且单词匹配度大于minScore存入lScoreAndMatch</span></span><br><span class="line">    <span class="keyword">for</span> (list&lt;KeyFrame *&gt;::iterator lit = lKFsSharingWords.<span class="built_in">begin</span>(), lend = lKFsSharingWords.<span class="built_in">end</span>(); lit != lend; lit++)</span><br><span class="line">    {</span><br><span class="line">        KeyFrame *pKFi = *lit;</span><br><span class="line"></span><br><span class="line">        <span class="comment">// pKF只和具有共同单词较多（大于minCommonWords）的关键帧进行比较</span></span><br><span class="line">        <span class="keyword">if</span> (pKFi-&gt;mnLoopWords &gt; minCommonWords)</span><br><span class="line">        {</span><br><span class="line">            nscores++; <span class="comment">// 这个变量后面没有用到</span></span><br><span class="line"></span><br><span class="line">            <span class="comment">// 用mBowVec来计算两者的相似度得分</span></span><br><span class="line">            <span class="type">float</span> si = mpVoc-&gt;<span class="built_in">score</span>(pKF-&gt;mBowVec, pKFi-&gt;mBowVec);</span><br><span class="line"></span><br><span class="line">            pKFi-&gt;mLoopScore = si;</span><br><span class="line">            <span class="keyword">if</span> (si &gt;= minScore)</span><br><span class="line">                lScoreAndMatch.<span class="built_in">push_back</span>(<span class="built_in">make_pair</span>(si, pKFi));</span><br><span class="line">        }</span><br><span class="line">    }</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 如果没有超过指定相似度阈值的，那么也就直接跳过去</span></span><br><span class="line">    <span class="keyword">if</span> (lScoreAndMatch.<span class="built_in">empty</span>())</span><br><span class="line">        <span class="keyword">return</span> <span class="built_in">vector</span>&lt;KeyFrame *&gt;();</span><br><span class="line"></span><br><span class="line">    list&lt;pair&lt;<span class="type">float</span>, KeyFrame *&gt;&gt; lAccScoreAndMatch;</span><br><span class="line">    <span class="type">float</span> bestAccScore = minScore;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 计算上述候选帧对应的共视关键帧组的总得分，得到最高组得分bestAccScore，并以此决定阈值minScoreToRetain</span></span><br><span class="line">    <span class="keyword">for</span> (list&lt;pair&lt;<span class="type">float</span>, KeyFrame *&gt;&gt;::iterator it = lScoreAndMatch.<span class="built_in">begin</span>(), itend = lScoreAndMatch.<span class="built_in">end</span>(); it != itend; it++)</span><br><span class="line">    {</span><br><span class="line">        KeyFrame *pKFi = it-&gt;second;</span><br><span class="line">        vector&lt;KeyFrame *&gt; vpNeighs = pKFi-&gt;<span class="built_in">GetBestCovisibilityKeyFrames</span>(<span class="number">10</span>);</span><br><span class="line"></span><br><span class="line">        <span class="type">float</span> bestScore = it-&gt;first; <span class="comment">// 该组最高分数</span></span><br><span class="line">        <span class="type">float</span> accScore = it-&gt;first;  <span class="comment">// 该组累计得分</span></span><br><span class="line">        KeyFrame *pBestKF = pKFi;    <span class="comment">// 该组最高分数对应的关键帧</span></span><br><span class="line">        <span class="comment">// 遍历共视关键帧，累计得分</span></span><br><span class="line">        <span class="keyword">for</span> (vector&lt;KeyFrame *&gt;::iterator vit = vpNeighs.<span class="built_in">begin</span>(), vend = vpNeighs.<span class="built_in">end</span>(); vit != vend; vit++)</span><br><span class="line">        {</span><br><span class="line">            KeyFrame *pKF2 = *vit;</span><br><span class="line">            <span class="comment">// 只有pKF2也在闭环候选帧中，且公共单词数超过最小要求，才能贡献分数</span></span><br><span class="line">            <span class="keyword">if</span> (pKF2-&gt;mnLoopQuery == pKF-&gt;mnId &amp;&amp; pKF2-&gt;mnLoopWords &gt; minCommonWords)</span><br><span class="line">            {</span><br><span class="line">                accScore += pKF2-&gt;mLoopScore;</span><br><span class="line">                <span class="comment">// 统计得到组里分数最高的关键帧</span></span><br><span class="line">                <span class="keyword">if</span> (pKF2-&gt;mLoopScore &gt; bestScore)</span><br><span class="line">                {</span><br><span class="line">                    pBestKF = pKF2;</span><br><span class="line">                    bestScore = pKF2-&gt;mLoopScore;</span><br><span class="line">                }</span><br><span class="line">            }</span><br><span class="line">        }</span><br><span class="line"></span><br><span class="line">        lAccScoreAndMatch.<span class="built_in">push_back</span>(<span class="built_in">make_pair</span>(accScore, pBestKF));</span><br><span class="line">        <span class="comment">// 记录所有组中组得分最高的组，用于确定相对阈值</span></span><br><span class="line">        <span class="keyword">if</span> (accScore &gt; bestAccScore)</span><br><span class="line">            bestAccScore = accScore;</span><br><span class="line">    }</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 所有组中最高得分的0.75倍，作为最低阈值</span></span><br><span class="line">    <span class="type">float</span> minScoreToRetain = <span class="number">0.75f</span> * bestAccScore;</span><br><span class="line"></span><br><span class="line">    set&lt;KeyFrame *&gt; spAlreadyAddedKF;</span><br><span class="line">    vector&lt;KeyFrame *&gt; vpLoopCandidates;</span><br><span class="line">    vpLoopCandidates.<span class="built_in">reserve</span>(lAccScoreAndMatch.<span class="built_in">size</span>());</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Step 5：只取组得分大于阈值的组，得到组中分数最高的关键帧们作为闭环候选关键帧</span></span><br><span class="line">    <span class="keyword">for</span> (list&lt;pair&lt;<span class="type">float</span>, KeyFrame *&gt;&gt;::iterator it = lAccScoreAndMatch.<span class="built_in">begin</span>(), itend = lAccScoreAndMatch.<span class="built_in">end</span>(); it != itend; it++)</span><br><span class="line">    {</span><br><span class="line">        <span class="keyword">if</span> (it-&gt;first &gt; minScoreToRetain)</span><br><span class="line">        {</span><br><span class="line">            KeyFrame *pKFi = it-&gt;second;</span><br><span class="line">            <span class="comment">// spAlreadyAddedKF 是为了防止重复添加</span></span><br><span class="line">            <span class="keyword">if</span> (!spAlreadyAddedKF.<span class="built_in">count</span>(pKFi))</span><br><span class="line">            {</span><br><span class="line">                vpLoopCandidates.<span class="built_in">push_back</span>(pKFi);</span><br><span class="line">                spAlreadyAddedKF.<span class="built_in">insert</span>(pKFi);</span><br><span class="line">            }</span><br><span class="line">        }</span><br><span class="line">    }</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> vpLoopCandidates;</span><br><span class="line">}</span><br></pre></td></tr></table></figure>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/SLAM/" rel="tag"># SLAM</a>
+              <a href="/tags/ORBSLAM2/" rel="tag"># ORBSLAM2</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2025/02/19/ORBSLAM2%E6%BA%90%E7%A0%81%E5%B0%8F%E8%AE%B0-1/" rel="prev" title="ORBSLAM2源码小记(1)--地图点MapPoint和地图Map">
+      <i class="fa fa-chevron-left"></i> ORBSLAM2源码小记(1)--地图点MapPoint和地图Map
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2025/02/22/ORBSLAM2%E6%BA%90%E7%A0%81%E5%B0%8F%E8%AE%B0-3/" rel="next" title="ORBSLAM2源码小记(3)--初始化器Initializer">
+      ORBSLAM2源码小记(3)--初始化器Initializer <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+    <div class="comments" id="valine-comments"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%99%AE%E9%80%9A%E5%B8%A7frame"><span class="nav-number">1.</span> <span class="nav-text">普通帧Frame</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%89%B9%E5%BE%81%E6%8F%90%E5%8F%96%E4%B8%8E%E7%BD%91%E6%A0%BC%E5%88%92%E5%88%86"><span class="nav-number">1.1.</span> <span class="nav-text">特征提取与网格划分</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E7%89%B9%E5%BE%81%E7%82%B9%E6%95%B0%E7%9B%AE"><span class="nav-number">1.1.1.</span> <span class="nav-text">特征点数目</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E7%BD%91%E6%A0%BC%E5%88%86%E9%85%8D"><span class="nav-number">1.1.2.</span> <span class="nav-text">网格分配</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%88%A4%E6%96%AD%E5%9C%B0%E5%9B%BE%E7%82%B9%E6%98%AF%E5%90%A6%E5%9C%A8%E8%A7%86%E9%87%8E%E5%86%85"><span class="nav-number">1.2.</span> <span class="nav-text">判断地图点是否在视野内</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%AF%B9%E4%BA%8E%E5%8F%8C%E7%9B%AE%E4%B8%8Ergbd"><span class="nav-number">1.3.</span> <span class="nav-text">对于双目与RGBD</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%85%B3%E9%94%AE%E5%B8%A7keyframe"><span class="nav-number">2.</span> <span class="nav-text">关键帧KeyFrame</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%85%B1%E8%A7%86%E5%9B%BE%E4%B8%8E%E7%94%9F%E6%88%90%E6%A0%91"><span class="nav-number">2.1.</span> <span class="nav-text">共视图与生成树</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%85%B3%E9%94%AE%E5%B8%A7%E6%95%B0%E6%8D%AE%E5%BA%93keyframedatabase"><span class="nav-number">2.2.</span> <span class="nav-text">关键帧数据库KeyFrameDatabase</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E9%87%8D%E5%AE%9A%E4%BD%8D%E5%80%99%E9%80%89%E5%85%B3%E9%94%AE%E5%B8%A7%E8%BE%93%E5%85%A5%E6%99%AE%E9%80%9A%E5%B8%A7frame"><span class="nav-number">2.2.1.</span> <span class="nav-text">重定位候选关键帧(输入普通帧Frame)</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E9%97%AD%E7%8E%AF%E5%80%99%E9%80%89%E5%85%B3%E9%94%AE%E5%B8%A7%E8%BE%93%E5%85%A5%E5%85%B3%E9%94%AE%E5%B8%A7keyframe"><span class="nav-number">2.2.2.</span> <span class="nav-text">闭环候选关键帧(输入关键帧KeyFrame)</span></a></li></ol></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Staskaer"
+      src="/imgs/theme_pic/head_img.png">
+  <p class="site-author-name" itemprop="name">Staskaer</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">97</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">10</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">24</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/Staskaer" title="Github → https:&#x2F;&#x2F;github.com&#x2F;Staskaer" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:liujiaxin011121@gmail.com" title="E-Mail → mailto:liujiaxin011121@gmail.com" rel="noopener" target="_blank"><i class="fa fa-envelope fa-fw"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://www.zhihu.com/people/staskaer" title="Zhihu → https:&#x2F;&#x2F;www.zhihu.com&#x2F;people&#x2F;staskaer" rel="noopener" target="_blank"><i class="fab fa-zhihu fa-fw"></i></a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2025</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Staskaer</span>
+</div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+
+<script>
+NexT.utils.loadComments(document.querySelector('#valine-comments'), () => {
+  NexT.utils.getScript('https://cdn.jsdelivr.net/npm/valine@1.5.1/dist/Valine.min.js', () => {
+    var GUEST = ['nick', 'mail', 'link'];
+    var guest = 'nick,mail,link';
+    guest = guest.split(',').filter(item => {
+      return GUEST.includes(item);
+    });
+    new Valine({
+      el         : '#valine-comments',
+      verify     : false,
+      notify     : false,
+      appId      : 'xH8NDrh9u4SQrUpQOd0lICnX-MdYXbMMI',
+      appKey     : 'jl3JjPS4jsosZG29Zv24Y7LE',
+      placeholder: "Just go go",
+      avatar     : 'mm',
+      meta       : guest,
+      pageSize   : '10' || 10,
+      visitor    : false,
+      lang       : 'zh-Hans' || 'zh-cn',
+      path       : location.pathname,
+      recordIP   : false,
+      serverURLs : 'https://xh8ndrh9.api.lncldglobal.com'
+    });
+  }, window.Valine);
+});
+</script>
+
+</body>
+</html>
+

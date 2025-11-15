@@ -1,0 +1,763 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 6.2.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/imgs/theme_pic/staskaer.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/imgs/theme_pic/staskaer.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/imgs/theme_pic/staskaer.png">
+  <link rel="mask-icon" href="/imgs/theme_pic/staskaer.png" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Gemini","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"mac"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"valine","storage":true,"lazyload":false,"nav":null,"activeClass":"valine"},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="操作系统的镜像、引导和内核调试">
+<meta property="og:type" content="article">
+<meta property="og:title" content="从ucore来总结操作系统(1)----操作系统的镜像、引导和内核调试">
+<meta property="og:url" content="http://example.com/2023/01/14/%E4%BB%8Eucore%E6%9D%A5%E6%80%BB%E7%BB%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-1/index.html">
+<meta property="og:site_name" content="Staskaer">
+<meta property="og:description" content="操作系统的镜像、引导和内核调试">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="http://example.com/2023/01/14/%E4%BB%8Eucore%E6%9D%A5%E6%80%BB%E7%BB%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-1/pic0.png">
+<meta property="og:image" content="http://example.com/2023/01/14/%E4%BB%8Eucore%E6%9D%A5%E6%80%BB%E7%BB%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-1/pic1.jpg">
+<meta property="og:image" content="http://example.com/2023/01/14/%E4%BB%8Eucore%E6%9D%A5%E6%80%BB%E7%BB%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-1/pic2.jpg">
+<meta property="og:image" content="http://example.com/2023/01/14/%E4%BB%8Eucore%E6%9D%A5%E6%80%BB%E7%BB%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-1/pic3.png">
+<meta property="og:image" content="http://example.com/2023/01/14/%E4%BB%8Eucore%E6%9D%A5%E6%80%BB%E7%BB%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-1/pic4.png">
+<meta property="og:image" content="http://example.com/2023/01/14/%E4%BB%8Eucore%E6%9D%A5%E6%80%BB%E7%BB%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-1/pic5.png">
+<meta property="og:image" content="http://example.com/2023/01/14/%E4%BB%8Eucore%E6%9D%A5%E6%80%BB%E7%BB%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-1/pic6.png">
+<meta property="og:image" content="http://example.com/2023/01/14/%E4%BB%8Eucore%E6%9D%A5%E6%80%BB%E7%BB%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-1/pic7.png">
+<meta property="og:image" content="http://example.com/2023/01/14/%E4%BB%8Eucore%E6%9D%A5%E6%80%BB%E7%BB%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-1/pic8.png">
+<meta property="og:image" content="http://example.com/2023/01/14/%E4%BB%8Eucore%E6%9D%A5%E6%80%BB%E7%BB%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-1/pic9.png">
+<meta property="og:image" content="http://example.com/2023/01/14/%E4%BB%8Eucore%E6%9D%A5%E6%80%BB%E7%BB%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-1/pic10.png">
+<meta property="article:published_time" content="2023-01-14T05:56:34.000Z">
+<meta property="article:modified_time" content="2025-06-17T15:50:22.381Z">
+<meta property="article:author" content="Staskaer">
+<meta property="article:tag" content="ucore操作系统">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://example.com/2023/01/14/%E4%BB%8Eucore%E6%9D%A5%E6%80%BB%E7%BB%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-1/pic0.png">
+
+<link rel="canonical" href="http://example.com/2023/01/14/%E4%BB%8Eucore%E6%9D%A5%E6%80%BB%E7%BB%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-1/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'en'
+  };
+</script>
+
+  <title>从ucore来总结操作系统(1)----操作系统的镜像、引导和内核调试 | Staskaer</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+<style>mjx-container[jax="SVG"] {
+  direction: ltr;
+}
+
+mjx-container[jax="SVG"] > svg {
+  overflow: visible;
+}
+
+mjx-container[jax="SVG"][display="true"] {
+  display: block;
+  text-align: center;
+  margin: 1em 0;
+}
+
+mjx-container[jax="SVG"][justify="left"] {
+  text-align: left;
+}
+
+mjx-container[jax="SVG"][justify="right"] {
+  text-align: right;
+}
+
+g[data-mml-node="merror"] > g {
+  fill: red;
+  stroke: red;
+}
+
+g[data-mml-node="merror"] > rect[data-background] {
+  fill: yellow;
+  stroke: none;
+}
+
+g[data-mml-node="mtable"] > line[data-line] {
+  stroke-width: 70px;
+  fill: none;
+}
+
+g[data-mml-node="mtable"] > rect[data-frame] {
+  stroke-width: 70px;
+  fill: none;
+}
+
+g[data-mml-node="mtable"] > .mjx-dashed {
+  stroke-dasharray: 140;
+}
+
+g[data-mml-node="mtable"] > .mjx-dotted {
+  stroke-linecap: round;
+  stroke-dasharray: 0,140;
+}
+
+g[data-mml-node="mtable"] > svg {
+  overflow: visible;
+}
+
+[jax="SVG"] mjx-tool {
+  display: inline-block;
+  position: relative;
+  width: 0;
+  height: 0;
+}
+
+[jax="SVG"] mjx-tool > mjx-tip {
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+mjx-tool > mjx-tip {
+  display: inline-block;
+  padding: .2em;
+  border: 1px solid #888;
+  font-size: 70%;
+  background-color: #F8F8F8;
+  color: black;
+  box-shadow: 2px 2px 5px #AAAAAA;
+}
+
+g[data-mml-node="maction"][data-toggle] {
+  cursor: pointer;
+}
+
+mjx-status {
+  display: block;
+  position: fixed;
+  left: 1em;
+  bottom: 1em;
+  min-width: 25%;
+  padding: .2em .4em;
+  border: 1px solid #888;
+  font-size: 90%;
+  background-color: #F8F8F8;
+  color: black;
+}
+
+foreignObject[data-mjx-xml] {
+  font-family: initial;
+  line-height: normal;
+  overflow: visible;
+}
+
+.MathJax path {
+  stroke-width: 3;
+}
+
+mjx-container[display="true"] {
+  overflow: auto hidden;
+}
+
+mjx-container[display="true"] + br {
+  display: none;
+}
+</style></head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Staskaer</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">Hi, this is Staskaer</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+        <li class="menu-item menu-item-links">
+
+    <a href="/links/" rel="section"><i class="fa fa-link fa-fw"></i>links</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2023/01/14/%E4%BB%8Eucore%E6%9D%A5%E6%80%BB%E7%BB%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-1/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/imgs/theme_pic/head_img.png">
+      <meta itemprop="name" content="Staskaer">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Staskaer">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          从ucore来总结操作系统(1)----操作系统的镜像、引导和内核调试
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2023-01-14 13:56:34" itemprop="dateCreated datePublished" datetime="2023-01-14T13:56:34+08:00">2023-01-14</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2025-06-17 23:50:22" itemprop="dateModified" datetime="2025-06-17T23:50:22+08:00">2025-06-17</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/" itemprop="url" rel="index"><span itemprop="name">操作系统</span></a>
+                </span>
+            </span>
+
+          
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Valine: </span>
+    
+    <a title="valine" href="/2023/01/14/%E4%BB%8Eucore%E6%9D%A5%E6%80%BB%E7%BB%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-1/#valine-comments" itemprop="discussionUrl">
+      <span class="post-comments-count valine-comment-count" data-xid="/2023/01/14/%E4%BB%8Eucore%E6%9D%A5%E6%80%BB%E7%BB%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-1/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h2 id="操作系统的镜像引导和内核调试">操作系统的镜像、引导和内核调试</h2>
+<span id="more"></span>
+<p>最近看完了《现代操作系统》一书，想着顺便找个lab做做看，体验一下写操作系统的快乐，同时加深一下对操作系统的理解。然后就看到了清华大学的ucore lab，这个lab是清华大学操作系统课程的lab，是一个很好的入门lab，所以就决定做做这个lab玩一玩。</p>
+<div class="note primary">
+            <p>下面给出这个lab对应的视频、github仓库和实验指导书</p><ul><li>视频 : <a target="_blank" rel="noopener" href="https://www.bilibili.com/video/BV1uW411f72n/"><font color="#0000ff">清华 操作系统原理</font></a></li><li>Github : <a target="_blank" rel="noopener" href="https://github.com/kiukotsu/ucore"><font color="#0000ff">ucore_lab</font></a></li><li>实验指导书 : <a target="_blank" rel="noopener" href="https://objectkuan.gitbooks.io/ucore-docs/content/lab0/lab0_1_goals.html"><font color="#0000ff">ucore_lab_guide</font></a></li></ul>
+          </div>
+<div class="note warning">
+            <p>另外，需要注意的一点就是，这个仓库的代码是存在一些问题的，如果在比较新版本的GCC下运行，容易出现以下<a target="_blank" rel="noopener" href="https://github.com/chyyuu/os_kernel_lab/pull/22"><font color="#0000ff">两个问题</font></a>:</p><ul><li>生成的bootloader超过一个扇区，导致无法生成镜像</li><li>内核初始化在lgdt函数中无限循环</li></ul><p>原因是-fPIC在 GCC 的较新版本 (&gt;=7) 中默认启用，会生成位置无关的代码，导致出错。</p><p><strong>解决方法是：修改每个Lab中的MakeFile，为两处CFLAG添加<code>-fno-PIC</code>选项</strong></p><p><img src="/2023/01/14/%E4%BB%8Eucore%E6%9D%A5%E6%80%BB%E7%BB%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-1/pic0.png" class=""></p>
+          </div>
+<h3 id="x00-环境准备">0X00 环境准备</h3>
+<p>先把ucore的代码拉下来，装好对应的环境。这里要注意的，不带GUI的linux似乎是不可以的(得用X11转发，我觉得挺麻烦的，没弄)。我一开始打算直接vscode+remote ssh来做，然后在make debug的时候报错。猜测是使用QEMU硬件模拟器的问题。</p>
+<p>ucore就是一个简单的操作系统，真实操作系统的部分它一个不少，但是它的目的是让我们学习操作系统的原理，所以它的代码量是很少的。同时呢，它也避开了各种先进CPU的奇奇怪怪的特性，针对的是i386这种比较简单的CPU。</p>
+<p>但是很明显，我们很难找到一台i386的机器，所以我们需要一个模拟器来模拟这个CPU。这里我们使用的是QEMU，它是一个开源的模拟器，可以模拟很多CPU，包括i386。但是，QEMU是一个硬件模拟器，它模拟的是CPU、内存、硬盘、网卡等等，而不是一个操作系统。</p>
+<p>因此，想要运行ucore这个操作系统，就只需要把它制作成一个镜像，然后使用QEMU来运行这个镜像就可以了。</p>
+<h3 id="x01-ucore的镜像">0X01 ucore的镜像</h3>
+<p>其实，ucore的镜像制作并不需要我们去实现，进入到lab1文件夹中，执行<code>make</code>就会在<code>./bin/</code>中编译出多个程序，其中就包括<code>ucore.img</code>这个镜像文件。我们主要就是来分析一下这个镜像文件是怎么做的，这也是lab1中练习1的内容。</p>
+<p>其实只要执行<code>make V=</code>就能更清楚的看到编译的过程，这里就不贴出来了。</p>
+<p>我画了一个流程图来表示生成过程</p>
+<img src="/2023/01/14/%E4%BB%8Eucore%E6%9D%A5%E6%80%BB%E7%BB%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-1/pic1.jpg" class="">
+<p>上图中的蓝色的表示为源文件，黄色的为最终<code>bin</code>目录中存在的文件。</p>
+<p>制作一个镜像，首先需要编译出整个系统，因此需要把<code>kern/*</code>的文件全部编译出来，这个目录下的文件涉及到了操作系统的内核，包括进程管理、内存管理、中断处理、调试和驱动等等。<strong>其中中断处理用到的中断向量表是由<code>tools/vector.c</code>编译的程序动态生成的，因为中断向量表重复性很高。</strong>最终，就能得到一个操作系统的内核，也就是<code>bin/kernel</code>这个文件。</p>
+<p>但是仅有一个操作系统内核文件是不够的。系统启动时，BIOS会调用bootloader来负责将内核加载到内存中，然后跳转到内核的入口地址执行。因此，我们还需要一个bootloader，目录<code>boot/</code>下的文件就是用于生成这个bootloader的。<strong>有一个硬性要求是这个bootloader程序被编译后的大小不能超过512-2个字节</strong>，其中512个字节是一个扇区的大小(也就是扇区0，主引导扇区)，剩下两个字节是一个符合规范的硬盘主引导扇区的固定标志位，还有一个要求是代码的起始段地址为0x7c00，这个要求在编译时就能满足。</p>
+<p>由于主引导扇区存在上述限制，而我们直接编译出来的bootloader显然不一定符合，我们需要一个程序来检查这个bootloader大小是否满足要求，同时再将固定位置的两个字节填上。这个程序就是<code>tools/sign.c</code>编译得到的。</p>
+<p>但是们编译的可执行文件是ELF格式，存在各个段，这些段会显著增加大小，而且我们实际上也用不到这些段，所以要去掉这些段，去除的指令为<code>objcopy -S -O binary obj/bootblock.o obj/bootblock.out</code>。我们来看一下去除前后文件大小的比对</p>
+<img src="/2023/01/14/%E4%BB%8Eucore%E6%9D%A5%E6%80%BB%E7%BB%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-1/pic2.jpg" class="">
+<p>显然，去除前足足由4.1Kb，远远超过了限制。在去除之后就小于512B了，可以放到一个扇区内了。</p>
+<p>再使用sign处理之后，就得到了一个<strong>512B的符合规范的主引导扇区了</strong>，这个二进制文件就是<code>bin/bootblock</code>。</p>
+<p>现在我们得到了存有bootloader的<code>bootblock</code>，同时也得到了一个操作系统内核<code>kernel</code>，然后就可以开始正式组装镜像了。首先使用<code>dd</code>命令创建一个含有1000个块的文件，每个块大小512字节。然后把<code>bootblock</code>放到第一块里面，从第二个块开始，放入<code>kernel</code>。最后就得到了需要的镜像<code>ucore.img</code>了。</p>
+<h3 id="x02-ucore的引导">0X02 ucore的引导</h3>
+<p>接下来，我们使用QEMU来模拟一个硬件，并在模拟的硬件平台上使用镜像来运行操作系统，同时通过GDB来监测运行情况。</p>
+<p>首先先改写MakeFile，让QEMU将运行的汇编指令保存</p>
+<figure class="highlight makefile"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="section">debug: <span class="variable">$(UCOREIMG)</span></span></span><br><span class="line">	<span class="variable">$(V)</span><span class="variable">$(TERMINAL)</span> -e <span class="string">"<span class="variable">$(QEMU)</span> -S -s -d in_asm -D <span class="variable">$(BINDIR)</span>/q.log -parallel stdio -hda <span class="variable">$&lt;</span> -serial null"</span></span><br><span class="line">	<span class="variable">$(V)</span>sleep 2</span><br><span class="line">	<span class="variable">$(V)</span><span class="variable">$(TERMINAL)</span> -e <span class="string">"gdb -q -tui -x tools/gdbinit"</span></span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>修改<code>tools/gdbinit</code>如下，使得GDB进去后立马进入调试，不需要其默认运行到0x7c00，我们从上电后的代码开始看。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">target remote :1234</span><br><span class="line">set architecture i8086</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>然后执行<code>make debug</code>来进行调试</p>
+<p>执行<code>b *0x7c00</code>来设置一个断点，然后执行<code>c</code>来继续执行到断点，执行<code>layout asm</code>来显示汇编，再执行若干条代码后退出即可。</p>
+<p>我们来看一下记录的汇编指令</p>
+<img src="/2023/01/14/%E4%BB%8Eucore%E6%9D%A5%E6%80%BB%E7%BB%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-1/pic3.png" class="">
+<p>可以看到，<strong>CPU上电后，指令指针寄存器的值为0xffff fff0</strong>，且对应位置是一条长跳转指令。然后剩下的这些代码是BIOS，负责检查硬件、初始化一类的，在我们的模拟中占据了绝大篇幅，我们不必细究，<strong>只需要知道BIOS在执行完后会固定跳转到0x7c00处</strong>，这个位置就是我们的bootloader。</p>
+<img src="/2023/01/14/%E4%BB%8Eucore%E6%9D%A5%E6%80%BB%E7%BB%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-1/pic4.png" class="">
+<p>我们可以对比一下日志中记录的0x7c00处的汇编和<code>boot/asm.s</code>文件中的代码段，两者其实是一样的，这更加说明了0x7c00处的代码就是我们的bootloader。</p>
+<div class="note info">
+            <p>在调试过程中，可以执行<code>layout asm</code>来显示汇编。但是可以发现BIOS部分的日志中执行的汇编和GDB调试的时候显示的汇编是对不上的。</p><p>这是因为BIOS首先运行在16位实模式下，而gdb 默认是32bit线性地址模式，调试BIOS的16bit代码（段地址）需要手动计算地址，计算公式如下：</p><p><strong>Linear Addr = ( cs &lt;&lt; 4 ) + ip</strong></p><p>如果 CS=0x0000，EIP=0xffff，则 Linear Address=0xffff0</p><p>可以使用<code>info register</code>查看寄存器</p><p>另外，为了正确反汇编16bit指令，可能需要在GDB中执行一下<code>set architecture i8086</code></p>
+          </div>
+<p>下面给出CPU上电后对镜像的引导过程：</p>
+<ul>
+<li>首先，CPU上电后处于<strong>实模式</strong>下，也就是直接引用物理内存，执行的第一条指令位置为0xFFFFFFF0，是一条长跳转指令，会继续执行BIOS中的代码</li>
+<li>BIOS会做相当长的自检之类的功能，最后会跳转到0x7c00处，这个位置就是我们的bootloader，也就是<strong>主引导扇区的代码</strong></li>
+<li>bootloader会进入到<strong>保护模式</strong>(下面会分析源码)，然后加载内核镜像到内存中，然后跳转到内核镜像的入口处，开始执行内核代码</li>
+</ul>
+<div class="note info">
+            <p>实模式就是采用CS:IP这样寻址，寻得是物理地址，共20位(就是8086那种寻址)</p><p>保护模式是使用GDT表，寻得是32位地址，可以寻址4G内存(本质上也是寻物理地址)</p><p><strong>保护二字体现在CPU会在硬件上自动根据GDT、段选择子等信息，来判断访问的内存是否存在、是否合法</strong></p>
+          </div>
+<h3 id="x03-bootloader的工作">0X03 Bootloader的工作</h3>
+<p>因此，系统加载的关键就是这个512字节的Bootloader，它从BIOS手上接下控制权，并转入保护模式运行；它将内核加载到内存中，并将控制权交给内核。这个过程我们称之为<strong>引导</strong>。</p>
+<p>我们的Bootloader主要就是<code>boot/bootasm.s</code>和<code>boot/bootmain.c</code>两个文件，下面我们来分析一下这两个文件。首先，先概述一下这两个文件的功能：</p>
+<ul>
+<li>boot/bootasm.s 是汇编代码，主要是切换到保护模式</li>
+<li>boot/bootmain.c 是C代码，主要是加载内核镜像到内存中，负责解析ELF格式的内核镜像</li>
+</ul>
+<div class="note primary">
+            <p><strong>A20开关</strong></p><p>地址线的第21位，也就是A20比较特殊。因为早期的8086只有20根地址线，寻址1Mb空间(也就是CS:IP，只有IP时只能寻址64k)。</p><p>后续的CPU，比如80396，有32根地址线，可以寻址4G空间。但是为了兼容早期的CPU，所以在80386中，<strong>引入了A20地址线，用来控制是否开启高位地址</strong>。</p><p>更具体的说，<strong>A20只是一个开关，当它打开的时候，A20线既可以为0，也可以为1，也就是正常工作；而当它关闭时，A20线只能为0</strong>。</p><p>所以，为了能让地址线全部正常工作，需要打开A20这个开关</p><p>但是由于历史原因，A20地址位由键盘控制器芯片8042管理。所以要给8042发命令激活A20。</p><p>给8042发命令时，先发送要写哪里，再发送要写什么。所以要两次写入，同时为了避免总线冲突，所以需要在汇编中存在一些循环重复测试</p>
+          </div>
+<div class="note info">
+            <p><strong>保护模式与A20</strong></p><p>CR0是控制寄存器，其中包含了6个预定义标志，0位是保护允许位PE(Protedted Enable)，用于启动保护模式。如果PE位置1，则保护模式启动，如果PE=0，则在实模式下运行。</p><p>也就是说，<strong>保护模式和A20开关没有必然的关系</strong>，即使不打开A20开关也是可以开启保护模式的，只是此时无法寻址一部分空间而已。</p><p>打开A20开关只是为了在保护模式时能够"满血"寻址所有的地址位。</p>
+          </div>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br></pre></td><td class="code"><pre><span class="line"># boot/bootasm.s</span><br><span class="line"></span><br><span class="line">#include &lt;asm.h&gt;</span><br><span class="line"></span><br><span class="line">#Start the CPU : switch to 32 - bit protected mode, jump into C.</span><br><span class="line">#The BIOS loads this code from the first sector of the hard disk into</span><br><span class="line">#memory at physical address 0x7c00 and starts executing in real mode</span><br><span class="line">#with % cs = 0 % ip = 7c00.</span><br><span class="line"></span><br><span class="line">.set PROT_MODE_CSEG,        0x8                     # kernel code segment selector</span><br><span class="line">.set PROT_MODE_DSEG,        0x10                    # kernel data segment selector</span><br><span class="line">.set CR0_PE_ON,             0x1                     # protected mode enable flag</span><br><span class="line"></span><br><span class="line">#start address should be 0 : 7c00, in real mode, the beginning address of the running bootloader</span><br><span class="line">.globl start</span><br><span class="line"></span><br><span class="line">########################## 从这里开始 ##########################</span><br><span class="line"></span><br><span class="line">start:</span><br><span class="line">.code16                                             # Assemble for 16-bit mode</span><br><span class="line">    # 关闭中断</span><br><span class="line">    cli                                             # Disable interrupts</span><br><span class="line">    cld                                             # String operations increment</span><br><span class="line"></span><br><span class="line">#Set up the important data segment registers(DS, ES, SS).</span><br><span class="line">    # 将flag置0和将段寄存器置0</span><br><span class="line">    xorw %ax, %ax                                   # Segment number zero</span><br><span class="line">    movw %ax, %ds                                   # -&gt; Data Segment</span><br><span class="line">    movw %ax, %es                                   # -&gt; Extra Segment</span><br><span class="line">    movw %ax, %ss                                   # -&gt; Stack Segment</span><br><span class="line"></span><br><span class="line">#Enable A20:</span><br><span class="line">#For backwards compatibility with the earliest PCs, physical</span><br><span class="line">#address line 20 is tied low, so that addresses higher than</span><br><span class="line"># 1MB wrap around to zero by default.This code undoes this.</span><br><span class="line">seta20.1:</span><br><span class="line">    # 先等待8042键盘控制器不忙</span><br><span class="line">    inb $0x64, %al                                  # Wait for not busy(8042 input buffer empty).</span><br><span class="line">    testb $0x2, %al</span><br><span class="line">    jnz seta20.1</span><br><span class="line"></span><br><span class="line">    # 发送写8042输出端口的指令</span><br><span class="line">    movb $0xd1, %al                                 # 0xd1 -&gt; port 0x64</span><br><span class="line">    # 这里的意思是下面写8042的P2端口</span><br><span class="line">    outb %al, $0x64                                 # 0xd1 means: write data to 8042's P2 port</span><br><span class="line"></span><br><span class="line">seta20.2:</span><br><span class="line">    # 等待8042键盘控制器不忙</span><br><span class="line">    inb $0x64, %al                                  # Wait for not busy(8042 input buffer empty).</span><br><span class="line">    testb $0x2, %al</span><br><span class="line">    jnz seta20.2</span><br><span class="line"></span><br><span class="line">    # 打开A20</span><br><span class="line">    movb $0xdf, %al                                 # 0xdf -&gt; port 0x60</span><br><span class="line">    # 这里的意思是传入8042的P2端口的具体数值，其实也就是把A20打开了</span><br><span class="line">    outb %al, $0x60                                 # 0xdf = 11011111, means set P2's A20 bit(the 1 bit) to 1</span><br><span class="line"></span><br><span class="line">#Switch from real to protected mode, using a bootstrap GDT</span><br><span class="line">#and segment translation that makes virtual addresses</span><br><span class="line">#identical to physical addresses, so that the</span><br><span class="line">#effective memory map does not change during the switch.</span><br><span class="line">    # 初始化GDT表：一个简单的GDT表和其描述符已经静态储存在引导区中，载入即可</span><br><span class="line">    lgdt gdtdesc</span><br><span class="line">    # 这里开启保护模式，先把cr0存入eax中，然后把eax的第0位置1，然后再把eax存入cr0中</span><br><span class="line">    movl %cr0, %eax</span><br><span class="line">    orl $CR0_PE_ON, %eax</span><br><span class="line">    movl %eax, %cr0</span><br><span class="line">    # 至此，开启了保护模式</span><br><span class="line"></span><br><span class="line">#Jump to next instruction, but in 32 - bit code segment.</span><br><span class="line">#Switches processor into 32 - bit mode.</span><br><span class="line">    # 通过长跳转更新cs的基地址，这样就可以进入32位模式了</span><br><span class="line">    ljmp $PROT_MODE_CSEG, $protcseg</span><br><span class="line"></span><br><span class="line">.code32                                             # Assemble for 32-bit mode</span><br><span class="line">protcseg:</span><br><span class="line">#Set up the protected - mode data segment registers</span><br><span class="line">    # 设置段寄存器，并建立堆栈</span><br><span class="line">    movw $PROT_MODE_DSEG, %ax                       # Our data segment selector</span><br><span class="line">    movw %ax, %ds                                   # -&gt; DS: Data Segment</span><br><span class="line">    movw %ax, %es                                   # -&gt; ES: Extra Segment</span><br><span class="line">    movw %ax, %fs                                   # -&gt; FS</span><br><span class="line">    movw %ax, %gs                                   # -&gt; GS</span><br><span class="line">    movw %ax, %ss                                   # -&gt; SS: Stack Segment</span><br><span class="line"></span><br><span class="line">#Set up the stack pointer and call into C.The stack region is from 0 --start(0x7c00)</span><br><span class="line">    movl $0x0, %ebp</span><br><span class="line">    movl $start, %esp</span><br><span class="line">    # 转到保护模式完成，进入bootmain中</span><br><span class="line">    call bootmain</span><br><span class="line"></span><br><span class="line">#If bootmain returns(it shouldn't), loop.</span><br><span class="line"># 如果bootmain返回了，就表示存在错误，就进入到一个死循环中</span><br><span class="line">spin:</span><br><span class="line">    jmp spin</span><br><span class="line"></span><br><span class="line">#Bootstrap GDT</span><br><span class="line"># GDT表</span><br><span class="line">.p2align 2                                          # force 4 byte alignment</span><br><span class="line">gdt:</span><br><span class="line">    SEG_NULLASM                                     # null seg</span><br><span class="line">    SEG_ASM(STA_X|STA_R, 0x0, 0xffffffff)           # code seg for bootloader and kernel</span><br><span class="line">    SEG_ASM(STA_W, 0x0, 0xffffffff)                 # data seg for bootloader and kernel</span><br><span class="line"></span><br><span class="line">gdtdesc:</span><br><span class="line">    .word 0x17                                      # sizeof(gdt) - 1</span><br><span class="line">    .long gdt                                       # address gdt</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="comment">// boot/bootmain.c</span></span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;defs.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;x86.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;elf.h&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="comment">/* *********************************************************************</span></span><br><span class="line"><span class="comment"> * This a dirt simple boot loader, whose sole job is to boot</span></span><br><span class="line"><span class="comment"> * an ELF kernel image from the first IDE hard disk.</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * DISK LAYOUT</span></span><br><span class="line"><span class="comment"> *  * This program(bootasm.S and bootmain.c) is the bootloader.</span></span><br><span class="line"><span class="comment"> *    It should be stored in the first sector of the disk.</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> *  * The 2nd sector onward holds the kernel image.</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> *  * The kernel image must be in ELF format.</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * BOOT UP STEPS</span></span><br><span class="line"><span class="comment"> *  * when the CPU boots it loads the BIOS into memory and executes it</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> *  * the BIOS intializes devices, sets of the interrupt routines, and</span></span><br><span class="line"><span class="comment"> *    reads the first sector of the boot device(e.g., hard-drive)</span></span><br><span class="line"><span class="comment"> *    into memory and jumps to it.</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> *  * Assuming this boot loader is stored in the first sector of the</span></span><br><span class="line"><span class="comment"> *    hard-drive, this code takes over...</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> *  * control starts in bootasm.S -- which sets up protected mode,</span></span><br><span class="line"><span class="comment"> *    and a stack so C code then run, then calls bootmain()</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> *  * bootmain() in this file takes over, reads in the kernel and jumps to it.</span></span><br><span class="line"><span class="comment"> * */</span></span><br><span class="line"><span class="type">unsigned</span> <span class="type">int</span> SECTSIZE = <span class="number">512</span>;</span><br><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">elfhdr</span> *<span class="title">ELFHDR</span> =</span> ((<span class="keyword">struct</span> elfhdr *)<span class="number">0x10000</span>); <span class="comment">// scratch space</span></span><br><span class="line"></span><br><span class="line"><span class="comment">/* waitdisk - wait for disk ready */</span></span><br><span class="line"><span class="comment">// 自旋，直到磁盘就绪</span></span><br><span class="line"><span class="type">static</span> <span class="type">void</span></span><br><span class="line"><span class="title function_">waitdisk</span><span class="params">(<span class="type">void</span>)</span></span><br><span class="line">{</span><br><span class="line">    <span class="keyword">while</span> ((inb(<span class="number">0x1F7</span>) &amp; <span class="number">0xC0</span>) != <span class="number">0x40</span>)</span><br><span class="line">        <span class="comment">/* do nothing */</span>;</span><br><span class="line">}</span><br><span class="line"></span><br><span class="line"><span class="comment">/* readsect - read a single sector at @secno into @dst */</span></span><br><span class="line"><span class="comment">// 读取扇区secno到dst处</span></span><br><span class="line"><span class="type">static</span> <span class="type">void</span></span><br><span class="line"><span class="title function_">readsect</span><span class="params">(<span class="type">void</span> *dst, <span class="type">uint32_t</span> secno)</span></span><br><span class="line">{</span><br><span class="line">    <span class="comment">// wait for disk to be ready</span></span><br><span class="line">    <span class="comment">// 等待磁盘就绪</span></span><br><span class="line">    waitdisk();</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 一些硬编码，用于读取扇区，控制磁盘驱动器的一些代码</span></span><br><span class="line">    outb(<span class="number">0x1F2</span>, <span class="number">1</span>); <span class="comment">// count = 1</span></span><br><span class="line">    outb(<span class="number">0x1F3</span>, secno &amp; <span class="number">0xFF</span>);</span><br><span class="line">    outb(<span class="number">0x1F4</span>, (secno &gt;&gt; <span class="number">8</span>) &amp; <span class="number">0xFF</span>);</span><br><span class="line">    outb(<span class="number">0x1F5</span>, (secno &gt;&gt; <span class="number">16</span>) &amp; <span class="number">0xFF</span>);</span><br><span class="line">    outb(<span class="number">0x1F6</span>, ((secno &gt;&gt; <span class="number">24</span>) &amp; <span class="number">0xF</span>) | <span class="number">0xE0</span>);</span><br><span class="line">    outb(<span class="number">0x1F7</span>, <span class="number">0x20</span>); <span class="comment">// cmd 0x20 - read sectors</span></span><br><span class="line"></span><br><span class="line">    <span class="comment">// wait for disk to be ready</span></span><br><span class="line">    waitdisk();</span><br><span class="line"></span><br><span class="line">    <span class="comment">// read a sector</span></span><br><span class="line">    <span class="comment">// 读取到dst位置</span></span><br><span class="line">    <span class="comment">// 作用为从0x1F0 IO端口读取SECTSIZE / 4个双字 (4Byte)大小的数据到基址为dst的内存中</span></span><br><span class="line">    insl(<span class="number">0x1F0</span>, dst, SECTSIZE / <span class="number">4</span>);</span><br><span class="line">}</span><br><span class="line"></span><br><span class="line"><span class="comment">/* *</span></span><br><span class="line"><span class="comment"> * readseg - read @count bytes at @offset from kernel into virtual address @va,</span></span><br><span class="line"><span class="comment"> * might copy more than asked.</span></span><br><span class="line"><span class="comment"> * */</span></span><br><span class="line"><span class="comment">// 从偏移offset处读取count字节，加载到虚拟内存va处</span></span><br><span class="line"><span class="type">static</span> <span class="type">void</span></span><br><span class="line"><span class="title function_">readseg</span><span class="params">(<span class="type">uintptr_t</span> va, <span class="type">uint32_t</span> count, <span class="type">uint32_t</span> offset)</span></span><br><span class="line">{</span><br><span class="line">    <span class="comment">// 结束时的虚拟地址</span></span><br><span class="line">    <span class="type">uintptr_t</span> end_va = va + count;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// round down to sector boundary</span></span><br><span class="line">    <span class="comment">// 从偏移offset处开始读取，向下取整到扇区边界</span></span><br><span class="line">    va -= offset % SECTSIZE;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// translate from bytes to sectors; kernel starts at sector 1</span></span><br><span class="line">    <span class="comment">// 计算读取的开始时的扇区号</span></span><br><span class="line">    <span class="type">uint32_t</span> secno = (offset / SECTSIZE) + <span class="number">1</span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// If this is too slow, we could read lots of sectors at a time.</span></span><br><span class="line">    <span class="comment">// We'd write more to memory than asked, but it doesn't matter --</span></span><br><span class="line">    <span class="comment">// we load in increasing order.</span></span><br><span class="line">    <span class="comment">// 调用readsect不断读取</span></span><br><span class="line">    <span class="keyword">for</span> (; va &lt; end_va; va += SECTSIZE, secno++)</span><br><span class="line">    {</span><br><span class="line">        readsect((<span class="type">void</span> *)va, secno);</span><br><span class="line">    }</span><br><span class="line">}</span><br><span class="line"></span><br><span class="line"><span class="comment">/* bootmain - the entry of bootloader */</span></span><br><span class="line"><span class="type">void</span> <span class="title function_">bootmain</span><span class="params">(<span class="type">void</span>)</span></span><br><span class="line">{</span><br><span class="line">    <span class="comment">// read the 1st page off disk</span></span><br><span class="line">    <span class="comment">// 读取ELF格式文件的第一个块</span></span><br><span class="line">    readseg((<span class="type">uintptr_t</span>)ELFHDR, SECTSIZE * <span class="number">8</span>, <span class="number">0</span>);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// is this a valid ELF?</span></span><br><span class="line">    <span class="comment">// 通过魔数来判断是否是ELF格式</span></span><br><span class="line">    <span class="keyword">if</span> (ELFHDR-&gt;e_magic != ELF_MAGIC)</span><br><span class="line">    {</span><br><span class="line">        <span class="keyword">goto</span> bad;</span><br><span class="line">    }</span><br><span class="line"></span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">proghdr</span> *<span class="title">ph</span>, *<span class="title">eph</span>;</span></span><br><span class="line"></span><br><span class="line">    <span class="comment">// load each program segment (ignores ph flags)</span></span><br><span class="line">    <span class="comment">// ELF头部有描述ELF文件应加载到内存什么位置的描述表，</span></span><br><span class="line">    <span class="comment">// 先将描述表的头地址存在ph中，然后将描述表的尾地址存在eph中，</span></span><br><span class="line">    ph = (<span class="keyword">struct</span> proghdr *)((<span class="type">uintptr_t</span>)ELFHDR + ELFHDR-&gt;e_phoff);</span><br><span class="line">    eph = ph + ELFHDR-&gt;e_phnum;</span><br><span class="line">    <span class="comment">// 按照描述表将ELF文件中数据载入内存</span></span><br><span class="line">    <span class="keyword">for</span> (; ph &lt; eph; ph++)</span><br><span class="line">    {</span><br><span class="line">        readseg(ph-&gt;p_va &amp; <span class="number">0xFFFFFF</span>, ph-&gt;p_memsz, ph-&gt;p_offset);</span><br><span class="line">    }</span><br><span class="line"></span><br><span class="line">    <span class="comment">// call the entry point from the ELF header</span></span><br><span class="line">    <span class="comment">// note: does not return</span></span><br><span class="line">    <span class="comment">// 根据ELF头部储存的入口信息，找到内核的入口</span></span><br><span class="line">    ((<span class="type">void</span> (*)(<span class="type">void</span>))(ELFHDR-&gt;e_entry &amp; <span class="number">0xFFFFFF</span>))();</span><br><span class="line"></span><br><span class="line">bad:</span><br><span class="line">    outw(<span class="number">0x8A00</span>, <span class="number">0x8A00</span>);</span><br><span class="line">    outw(<span class="number">0x8A00</span>, <span class="number">0x8E00</span>);</span><br><span class="line"></span><br><span class="line">    <span class="comment">/* do nothing */</span></span><br><span class="line">    <span class="keyword">while</span> (<span class="number">1</span>)</span><br><span class="line">        ;</span><br><span class="line">}</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>可以看到，两个文件做的事情都相当简单，无非就是打开保护，解析内核的ELF文件并进入内核。</p>
+<h3 id="x04-内核调试之函数调用堆栈跟踪函数">0X04 内核调试之函数调用堆栈跟踪函数</h3>
+<p>这个其实是lab1的练习5，就是实现一下<code>kern/debug/kdebug.c</code>中的<code>print_stackframe</code>函数，这个函数的作用是打印函数调用堆栈的信息，包括函数名，函数参数，函数返回地址等等。</p>
+<p>在实现之前，文档还贴心的介绍了一下CPU相关的寄存器：</p>
+<ul>
+<li>esp 栈指针寄存器(extended stack pointer)，其内存放着一个指针，该指针永远指向系统栈最上面一个栈帧的栈顶。</li>
+<li>ebp 基址指针寄存器(extended base pointer)，其内存放着一个指针，该指针永远指向系统栈最上面一个栈帧的底部。</li>
+<li>eip 指令指针寄存器(extended instruction pointer)，永远指向当前执行的指令的内存地址。</li>
+</ul>
+<img src="/2023/01/14/%E4%BB%8Eucore%E6%9D%A5%E6%80%BB%E7%BB%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-1/pic5.png" class="">
+<p>ebp指向的堆栈位置储存着caller的ebp，以此为线索可以得到所有使用堆栈的函数ebp。而ebp+4指向的是调用时的eip，也就是返回地址。ebp+8、+12这些则是可能的参数。</p>
+<p><strong>虽然它要求编程，但是lab中的文件不是已经编好了嘛...所以就分析一下叭。</strong></p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="type">void</span> <span class="title function_">print_stackframe</span><span class="params">(<span class="type">void</span>)</span></span><br><span class="line">{</span><br><span class="line">    <span class="comment">/* LAB1 YOUR CODE : STEP 1 */</span></span><br><span class="line">    <span class="comment">/* (1) call read_ebp() to get the value of ebp. the type is (uint32_t);</span></span><br><span class="line"><span class="comment">     * (2) call read_eip() to get the value of eip. the type is (uint32_t);</span></span><br><span class="line"><span class="comment">     * (3) from 0 .. STACKFRAME_DEPTH</span></span><br><span class="line"><span class="comment">     *    (3.1) printf value of ebp, eip</span></span><br><span class="line"><span class="comment">     *    (3.2) (uint32_t)calling arguments [0..4] = the contents in address (unit32_t)ebp +2 [0..4]</span></span><br><span class="line"><span class="comment">     *    (3.3) cprintf("\n");</span></span><br><span class="line"><span class="comment">     *    (3.4) call print_debuginfo(eip-1) to print the C calling function name and line number, etc.</span></span><br><span class="line"><span class="comment">     *    (3.5) popup a calling stackframe</span></span><br><span class="line"><span class="comment">     *           NOTICE: the calling funciton's return addr eip  = ss:[ebp+4]</span></span><br><span class="line"><span class="comment">     *                   the calling funciton's ebp = ss:[ebp]</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="comment">// 先读取ebp和eip的值，分别是栈底和当前指令地址</span></span><br><span class="line">    <span class="type">uint32_t</span> ebp = read_ebp();</span><br><span class="line">    <span class="type">uint32_t</span> eip = read_eip();</span><br><span class="line">    <span class="type">int</span> i, j;</span><br><span class="line">    <span class="comment">// 没有超过最大调用深度或者是ebp不为0的时候，就一直循环</span></span><br><span class="line">    <span class="keyword">for</span> (i = <span class="number">0</span>; i &lt; STACKFRAME_DEPTH &amp;&amp; ebp != <span class="number">0</span>; i++)</span><br><span class="line">    {</span><br><span class="line">        <span class="comment">// 16进制输出ebp和eip的值</span></span><br><span class="line">        cprintf(<span class="string">"ebp:0x%08x eip:0x%08x"</span>, ebp, eip);</span><br><span class="line">        <span class="comment">// 读取ebp+2(32位数据的+2，对应了字节+8)的值，也就是第一个参数的值</span></span><br><span class="line">        <span class="type">uint32_t</span> *arg = (<span class="type">uint32_t</span> *)ebp + <span class="number">2</span>;</span><br><span class="line">        cprintf(<span class="string">" arg:"</span>);</span><br><span class="line">        <span class="comment">// 从ebp+8开始，输出4个参数的值</span></span><br><span class="line">        <span class="comment">// 注意小端存储哦</span></span><br><span class="line">        <span class="keyword">for</span> (j = <span class="number">0</span>; j &lt; <span class="number">4</span>; j++)</span><br><span class="line">        {</span><br><span class="line">            cprintf(<span class="string">"0x%08x "</span>, arg[j]);</span><br><span class="line">        }</span><br><span class="line">        cprintf(<span class="string">"\n"</span>);</span><br><span class="line">        <span class="comment">// 打印调用函数的行数和函数名</span></span><br><span class="line">        print_debuginfo(eip - <span class="number">1</span>);</span><br><span class="line">        <span class="comment">// 重复获取上一次的ebp和eip</span></span><br><span class="line">        eip = ((<span class="type">uint32_t</span> *)ebp)[<span class="number">1</span>];</span><br><span class="line">        ebp = ((<span class="type">uint32_t</span> *)ebp)[<span class="number">0</span>];</span><br><span class="line">    }</span><br><span class="line">}</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>下面是我的一次调用结果</p>
+<img src="/2023/01/14/%E4%BB%8Eucore%E6%9D%A5%E6%80%BB%E7%BB%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-1/pic6.png" class="">
+<p>下面解释一下最后一行</p>
+<p>此时ebp的值是kern_init函数的栈顶地址，从前面练习我们知道，整个栈的栈顶地址为0x00007c00，ebp指向的栈位置存放调用者的ebp寄存器的值，ebp+4指向的栈位置存放返回地址的值，这意味着kern_init函数的调用者（也就是bootmain函数）没有传递任何输入参数给它！因为单是存放旧的ebp、返回地址已经占用8字节了。</p>
+<p>eip的值是kern_init函数的返回地址，也就是bootmain函数调用kern_init对应的指令的下一条指令的地址，反汇编bootmain函数证实了这个判断。</p>
+<img src="/2023/01/14/%E4%BB%8Eucore%E6%9D%A5%E6%80%BB%E7%BB%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-1/pic7.png" class="">
+<p>args:0xc031fcfa 0xc08ed88e 0x64e4d08e 0xfa7502a8：一般来说，args存放的4个元素是对应4个输入参数的值。但这里比较特殊，由于bootmain函数调用kern_init并没传递任何输入参数，并且栈顶的位置恰好在bootloader第一条指令存放的地址的上面，而args恰好是kern_int的ebp寄存器指向的栈顶往上第2~5个单元，因此args存放的就是bootloader指令的前16个字节。</p>
+<p>(需要注意下图中的数据都是小端存储的，因此每个字节需要反过来看)<br>
+<img src="/2023/01/14/%E4%BB%8Eucore%E6%9D%A5%E6%80%BB%E7%BB%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-1/pic8.png" class=""></p>
+<h3 id="x05-内核调试之中断初始化和处理">0X05 内核调试之中断初始化和处理</h3>
+<p>众所周知，中断信号发生后，需要传递中断号，然后内核根据中断号来在中断向量表中查找的对应的中断处理函数，然后执行中断处理函数。</p>
+<div class="note info">
+            <p><strong>BIOS中断、DOS中断、Linux中断的区别</strong></p><ul><li>BIOS和DOS都存在于<strong>实模式</strong>下，由它们建立的中断调用都是建立在中断向量表（Interrupt Vector Table，IVT）中的，都是通过软中断指令 int 中断号来调用。</li><li>BIOS 中断调用的主要功能是提供了硬件访问的方法，该方法使对硬件的操作变得简单易行。</li><li>DOS 是运行在实模式下的，故其建立的中断调用也建立在中断向量表中，只不过其中断向量号和BIOS的不能冲突。</li><li>Linux 内核是在进入<strong>保护模式</strong>后才建立中断例程的，<strong>不过在保护模式下，中断向量表已经不存在了</strong>，取而代之的是<strong>中断描述符表</strong>（Interrupt Descriptor Table，IDT）。Linux 的系统调用和DOS中断调用类似，不过Linux是通过int 0x80指令进入一个中断程序后再根据eax寄存器的值来调用不同的子功能函数的。</li></ul>
+          </div>
+<p>而中断向量表是在内核初始化的时候建立的。在ucore中，对于中断描述符表IDT的初始化，是在kern_init总控函数中通过idt_init函数进行的。</p>
+<div class="note primary">
+            <p>中断描述符IDT表示一个系统表，它与中断或异常向量相联系。每一个中断或异常向量在这个系统表中有对应的中断或异常处理程序入口地址。中断描述符的表每一项对应一个中断或异常向量，每个向量由8个字节组成。因此，最多需要256*8=2048 字节来存放IDT。</p>
+          </div>
+<p>当中断发生时，cpu会得到一个中断向量号，作为IDT（中断描述符表）的索引，IDT表起始地址由IDTR寄存器存储，cpu会从IDT表中找到该中断向量号相应的中断服务程序入口地址，跳转到中断处理程序处执行，并保存当前现场；当中断程序执行完毕，恢复现场，跳转到原中断点处继续执行。而IDT的表项为中断描述符，主要类型有<strong>中断门、陷阱门、任务门</strong>。</p>
+<img src="/2023/01/14/%E4%BB%8Eucore%E6%9D%A5%E6%80%BB%E7%BB%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-1/pic9.png" class="">
+<div class="note info">
+            <p>中断门：包含段选择符和中断或异常处理程序的段内偏移量，当控制权转移到一个适当的段时，处理器清IF标志，从而关闭将来会发生的可屏蔽中断</p><p>陷阱门：陷阱门是一种特殊的中断门，与中断门相似，只是控制权传递到一个适当的段时处理器不修改IF标志</p><p>任务门：当中断信号发生时，必须取代当前进程的那个进程的TSS选择符存放在任务门中。</p><p><em>以上内容来自百度</em></p>
+          </div>
+<p>这些门的描述符格式比较固定，在<code>kern/mm/mmh.c</code>中有一些宏可以直接设置：</p>
+<ul>
+<li>SETGATE(gate, istrap, sel, off, dpl) : 设置中断、陷阱门描述符</li>
+<li>SETCALLGATE(gate, ss, off, dpl) : 设置任务门描述符</li>
+</ul>
+<p>而且内核所有需要用到的中断函数都被<code>tools/vector.c</code>程序动态生成了，所以只需要把这些写入到IDT表中就可以了。</p>
+<p>我们先来看一下生成的<code>kern/trap/vector.s</code>中断表</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">.text</span><br><span class="line">.globl __alltraps</span><br><span class="line">.globl vector0</span><br><span class="line">vector0:</span><br><span class="line">  pushl $0</span><br><span class="line">  pushl $0</span><br><span class="line">  jmp __alltraps</span><br><span class="line"></span><br><span class="line">...省略一部分</span><br><span class="line"></span><br><span class="line">vector255:</span><br><span class="line">  pushl $0</span><br><span class="line">  pushl $255</span><br><span class="line">  jmp __alltraps</span><br><span class="line"></span><br><span class="line"># vector table</span><br><span class="line">.data</span><br><span class="line">.globl __vectors</span><br><span class="line">__vectors:</span><br><span class="line">  .long vector0</span><br><span class="line">  .long vector1</span><br><span class="line"></span><br><span class="line">...剩下的省略</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>可以看到，前面是中断号对应的处理程序，后面是一个__vectors数组，数组中给出了对应中断号的中断处理程序的位置。而中断处理程序只是把中断号压栈，然后跳转到<code>__alltraps</code>函数，这个函数在<code>kern/trap/trapentry.S</code>中定义</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">#include &lt;memlayout.h&gt;</span><br><span class="line"></span><br><span class="line"># vectors.S sends all traps here.</span><br><span class="line">.text</span><br><span class="line">.globl __alltraps</span><br><span class="line">__alltraps:</span><br><span class="line">    # push registers to build a trap frame</span><br><span class="line">    # therefore make the stack look like a struct trapframe</span><br><span class="line">    pushl %ds</span><br><span class="line">    pushl %es</span><br><span class="line">    pushl %fs</span><br><span class="line">    pushl %gs</span><br><span class="line">    pushal</span><br><span class="line"></span><br><span class="line">    # load GD_KDATA into %ds and %es to set up data segments for kernel</span><br><span class="line">    movl $GD_KDATA, %eax</span><br><span class="line">    movw %ax, %ds</span><br><span class="line">    movw %ax, %es</span><br><span class="line"></span><br><span class="line">    # push %esp to pass a pointer to the trapframe as an argument to trap()</span><br><span class="line">    pushl %esp</span><br><span class="line"></span><br><span class="line">    # call trap(tf), where tf=%esp</span><br><span class="line">    # 调用trap函数</span><br><span class="line">    call trap</span><br><span class="line"></span><br><span class="line">    # pop the pushed stack pointer</span><br><span class="line">    popl %esp</span><br><span class="line"></span><br><span class="line">    # return falls through to trapret...</span><br><span class="line">.globl __trapret</span><br><span class="line">__trapret:</span><br><span class="line">    # restore registers from stack</span><br><span class="line">    popal</span><br><span class="line"></span><br><span class="line">    # restore %ds, %es, %fs and %gs</span><br><span class="line">    popl %gs</span><br><span class="line">    popl %fs</span><br><span class="line">    popl %es</span><br><span class="line">    popl %ds</span><br><span class="line"></span><br><span class="line">    # get rid of the trap number and error code</span><br><span class="line">    addl $0x8, %esp</span><br><span class="line">    iret</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>可以看到，这个函数就是构造一个trapframe结构体，然后调用trap函数，trap函数在<code>kern/trap/trap.c</code>中定义</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="type">void</span> <span class="title function_">trap</span><span class="params">(<span class="keyword">struct</span> trapframe *tf)</span></span><br><span class="line">{</span><br><span class="line">    <span class="comment">// dispatch based on what type of trap occurred</span></span><br><span class="line">    trap_dispatch(tf);</span><br><span class="line">}</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>显然，<strong>ucore的所有中断都会由trap_dispatch进行实际上的处理</strong>，这个函数在<code>kern/trap/trap.c</code>中定义。如果我们需要修改对某个中断的处理函数，实际上也只需要在trap_dispatch函数中进行修改即可。</p>
+<img src="/2023/01/14/%E4%BB%8Eucore%E6%9D%A5%E6%80%BB%E7%BB%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-1/pic10.png" class="">
+<h3 id="x06-通过中断进行权限切换">0x06 通过中断进行权限切换</h3>
+<p>这个实验是一个challenge的实验，就是完成通过中断从用户态(ring 3)切换到内核态(ring 0)的功能。需要先把<code>kern/init:kern_init()</code>中的<code>switch_test()</code>解注释，然后完成<code>kern/init:lab1_switch_to_user()</code>和<code>kern/init:lab1_switch_to_kernel()</code>这两个函数。</p>
+<div class="note info">
+            <p><strong>CPL、DPL、RPL与IOPL</strong></p><p>DPL存储于段描述符中，<strong>规定访问该段的权限级别</strong>(Descriptor Privilege Level)，每个段的DPL固定。<br>当进程访问一个段时，需要进程特权级检查。</p><p>CPL存在于CS寄存器的低两位，即CPL是CS段描述符的DPL，<strong>是当前代码的权限级别</strong>(Current Privilege Level)。</p><p>RPL存在于段选择子中，<strong>说明的是进程对段访问的请求权限</strong>(Request Privilege Level)，是对于段选择子而言的，每个段选择子有自己的RPL。而且RPL对每个段来说不是固定的，两次访问同一段时的RPL可以不同。RPL可能会削弱CPL的作用，例如当前CPL=0的进程要访问一个数据段，它把段选择符中的RPL设为3，这样它对该段仍然只有特权为3的访问权限。</p><p>IOPL(I/O Privilege Level)即I/O特权标志，位于eflag寄存器中，用两位二进制位来表示，也称为I/O特权级字段。<strong>该字段指定了要求执行I/O指令的特权级</strong>。如 果当前的特权级别在数值上小于等于IOPL的值，那么，该I/O指令可执行，否则将发生一个保护异常。</p><p><strong>只有当CPL=0时，可以改变IOPL的值，当CPL&lt;=IOPL时，可以改变IF标志位。</strong></p>
+          </div>
+<div class="note primary">
+            <p><strong>特权级检查</strong></p><p>在下述的特权级比较中，需要注意特权级越低，其ring值越大。</p><p>访问门时（中断、陷入、异常），要求DPL[目标代码段] &lt;= CPL &lt;= DPL[门]</p><p><strong>访问门的代码权限比门的特权级要高，因为这样才能访问门。</strong></p><p><strong>但访问门的代码权限比被访问的段的权限要低，因为通过门的目的是访问特权级更高的段，这样就可以达到低权限应用程序使用高权限内核服务的目的。</strong></p><p>访问段时，要求DPL[段] &gt;= max {CPL, RPL}</p><p><strong>只能使用CPL, RPL中最低的权限来访问段数据</strong></p>
+          </div>
+<p>在之前提到的中断描述符中，有一个DPL位，表示门权限，或者说，只有不低于门的权限的代码才能通过门。要实现从r3到r0的提权，需要先保证有一个中断门在r3就能执行，且该中断门的目标代码段在r0，这样就实现了提权。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// kern/trap/trap.c</span></span><br><span class="line"><span class="comment">// 先设置一个提权用的中断门</span></span><br><span class="line"></span><br><span class="line"><span class="type">void</span> <span class="title function_">idt_init</span><span class="params">(<span class="type">void</span>)</span></span><br><span class="line">{</span><br><span class="line">    <span class="keyword">extern</span> <span class="type">uintptr_t</span> __vectors[];</span><br><span class="line">    <span class="type">int</span> i;</span><br><span class="line">    <span class="keyword">for</span> (i = <span class="number">0</span>; i &lt; <span class="keyword">sizeof</span>(idt) / <span class="number">256</span>; i++)</span><br><span class="line">    {</span><br><span class="line">        SETGATE(idt[i], <span class="number">0</span>, GD_KTEXT, __vectors[i], DPL_KERNEL);</span><br><span class="line">    }</span><br><span class="line">    <span class="comment">// 这里设置一个提权用的门</span></span><br><span class="line">    SETGATE(idt[T_SWITCH_TOK], <span class="number">0</span>, GD_KTEXT, __vectors[T_SWITCH_TOK], DPL_USER);</span><br><span class="line">    lidt(&amp;idt_pd);</span><br><span class="line">}</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>另外还需要一个TSS(Task State Segment) ，<strong>它是操作系统在进行进程切换时保存进程现场信息的段，CPU能够理解TSS段，是硬件结构，需要用软件来初始化</strong>，负责保留ring0、ring1、ring2的栈(ss、esp寄存器值)。当用户程序从ring3跳至ring0时(例如执行中断)，此时的栈就会从用户栈切换到内核栈。切换栈的操作从开始中断的那一瞬间（例如：从int 0x78到中断处理例程之间）就已完成。<strong>切换栈的操作为修改esp和ss寄存器。CPU会自动从TSS读取并修改</strong>而同时TSS段的段描述符保存在GDT中，其ring0的栈会在初始化GDT时被一起设置。<strong>TR寄存器会保存当前TSS的段描述符</strong>，以提高索引速度。</p>
+<p>那么切换栈是由谁来完成的呢？这个程序我们之前也见过，只是没有具体分析代码含义。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"># kern/trap/trapentry.s</span><br><span class="line"></span><br><span class="line">#include &lt;memlayout.h&gt;</span><br><span class="line"></span><br><span class="line"># vectors.S sends all traps here.</span><br><span class="line">.text</span><br><span class="line">.globl __alltraps</span><br><span class="line">__alltraps:</span><br><span class="line">    # push registers to build a trap frame</span><br><span class="line">    # therefore make the stack look like a struct trapframe</span><br><span class="line">    # 保护现场</span><br><span class="line">    pushl %ds</span><br><span class="line">    pushl %es</span><br><span class="line">    pushl %fs</span><br><span class="line">    pushl %gs</span><br><span class="line">    pushal</span><br><span class="line"></span><br><span class="line">    # load GD_KDATA into %ds and %es to set up data segments for kernel</span><br><span class="line">    # 内核区的数据段</span><br><span class="line">    movl $GD_KDATA, %eax</span><br><span class="line">    movw %ax, %ds</span><br><span class="line">    movw %ax, %es</span><br><span class="line"></span><br><span class="line">    # push %esp to pass a pointer to the trapframe as an argument to trap()</span><br><span class="line">    # 放入trapframe的地址，调用trap函数来处理中断</span><br><span class="line">    pushl %esp</span><br><span class="line"></span><br><span class="line">    # call trap(tf), where tf=%esp</span><br><span class="line">    call trap</span><br><span class="line"></span><br><span class="line">    # pop the pushed stack pointer</span><br><span class="line">    popl %esp</span><br><span class="line"></span><br><span class="line">    # return falls through to trapret...</span><br><span class="line">.globl __trapret</span><br><span class="line">__trapret:</span><br><span class="line">    # restore registers from stack</span><br><span class="line">    popal</span><br><span class="line"></span><br><span class="line">    # restore %ds, %es, %fs and %gs</span><br><span class="line">    popl %gs</span><br><span class="line">    popl %fs</span><br><span class="line">    popl %es</span><br><span class="line">    popl %ds</span><br><span class="line"></span><br><span class="line">    # get rid of the trap number and error code</span><br><span class="line">    addl $0x8, %esp</span><br><span class="line">    iret</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<div class="note info">
+            <p><strong>优先级切换中堆栈处理步骤</strong>：</p><ol type="1"><li>准备调用门</li><li>加载TSS，因为总共有4个优先级（ring0~3),所以每个优先级下面都对应一个堆栈。加载了TSS,就能够根据目标优先级而从TSS中获取想对应的堆栈地址</li><li>临时性保存当前，未切换前的SS_old和ESP_old的值</li><li>根据目标优先级从TSS中获取对应的对应得堆栈地址SS_new和ESP_new，并加载。（因为CPU只有一个SS和一个ESP寄存器，所以，所谓的加载，只是把新的SS_new和ESP_new的地址赋给CPU的SS和ESP寄存器）</li><li>将已经临时保存的SS_old和ESP_old的值保存到新堆栈中</li><li>将当前的CS_old和EIP_old保存入新堆栈</li><li>加载调用门中指定的新的CS和EIP,开始执行被调用者过程</li></ol><p><strong>优先级切换返回过程堆栈处理步骤：</strong></p><ol type="1"><li>加载被调用者堆栈上的CS_old和EIP_old</li><li>加载SS_old和ESP_old，切换到调用者堆栈，被调用者的SS_new和ESP_new被丢弃</li></ol>
+          </div>
+<p><strong>特权级的转变，就是改段寄存器的selecter，还有进行堆栈的变化。CPU认为只有之前发生特权级变化时才会额外压入ss、esp，所以中断返回时如果发现弹出的cs与当前cs不一致时，除了恢复之前栈上的cs(也恢复了CPL)，同时会额外的弹出esp、ss。通过这个机制我们也能欺骗机器进行堆栈的转换</strong></p>
+<p>当通过陷入门从ring3切换至ring0（特权提升）时：</p>
+<ul>
+<li>在陷入的一瞬间，CPU会因为特权级的改变，索引TSS，切换ss和esp为内核栈，并按顺序自动压入user_ss、user_esp、user_eflags、user_cs、old_eip以及err。(需要注意的是，CPU先切换到内核栈，此时的esp与ss不再指向用户栈。但此时CPU却可以再将用户栈地址存入内核栈。这种操作可能是依赖硬件来完成的。)</li>
+<li>之后CPU会在中断处理例程入口处，先将剩余的段寄存器以及所有的通用寄存器压栈，构成一个trapframe。然后将该trapframe传入给真正的中断处理例程并执行</li>
+<li>该处理例程会判断传入的中断数(trapno)并执行特定的代码。在提升特权级的代码中，程序会处理传入的trapframe信息中的CS、DS、eflags寄存器，修改上面的DPL、CPL与IOPL以达到提升特权的目的</li>
+<li>将修改后的trapframe压入用户栈（这一步没有修改user_esp寄存器），并设置中断处理例程结束后将要弹出esp寄存器的值为用户栈的新地址（<strong>与刚刚不同，这一步修改了将要恢复的user_esp寄存器</strong>）。（这样在退出中断处理程序，准备恢复上下文的时候，首先弹出的栈寄存器值是修改后的用户栈地址，其次弹出的通用寄存器、段寄存器等等都是存储于用户栈中的trapframe。）</li>
+</ul>
+<p>通过陷入门从ring0切换至ring3（特权降低） 的过程与特权提升的操作基本一样，不过有几个不同点需要注意一下：</p>
+<ul>
+<li>与ring3调用中断不同，当ring0调用中断时，进入中断前和进入中断后的这个过程，栈不发生改变</li>
+<li>因为在调用中断前的权限已经处于ring0了，而中断处理程序里的权限也是ring0，所以这一步陷入操作的特权级没有发生改变，故不需要访问TSS并重新设置ss 、esp寄存器。</li>
+<li>修改后的trapFrame不需要像上面那样保存至将要使用的栈，因为当前环境下iret前后特权级会发生改变，执行该命令会弹出ss和esp，所以可以通过iret来设置返回时的栈地址。</li>
+</ul>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="comment">// kern/init/init.c</span></span><br><span class="line"></span><br><span class="line"><span class="type">static</span> <span class="type">void</span> <span class="title function_">lab1_switch_to_user</span><span class="params">(<span class="type">void</span>)</span> {</span><br><span class="line">    <span class="comment">//LAB1 CHALLENGE 1 : TODO</span></span><br><span class="line">	<span class="keyword">asm</span> <span class="title function_">volatile</span> <span class="params">(</span></span><br><span class="line"><span class="params">	    <span class="string">"sub $0x8, %%esp \n"</span></span></span><br><span class="line"><span class="params">	    <span class="string">"int %0 \n"</span></span></span><br><span class="line"><span class="params">	    <span class="string">"movl %%ebp, %%esp"</span></span></span><br><span class="line"><span class="params">	    : </span></span><br><span class="line"><span class="params">	    : <span class="string">"i"</span>(T_SWITCH_TOU)</span></span><br><span class="line"><span class="params">	)</span>;</span><br><span class="line">}</span><br><span class="line"></span><br><span class="line"><span class="type">static</span> <span class="type">void</span> <span class="title function_">lab1_switch_to_kernel</span><span class="params">(<span class="type">void</span>)</span> {</span><br><span class="line">    <span class="comment">//LAB1 CHALLENGE 1 :  TODO</span></span><br><span class="line">	<span class="keyword">asm</span> <span class="title function_">volatile</span> <span class="params">(</span></span><br><span class="line"><span class="params">	    <span class="string">"int %0 \n"</span></span></span><br><span class="line"><span class="params">	    <span class="string">"movl %%ebp, %%esp \n"</span></span></span><br><span class="line"><span class="params">	    : </span></span><br><span class="line"><span class="params">	    : <span class="string">"i"</span>(T_SWITCH_TOK)</span></span><br><span class="line"><span class="params">	)</span>;</span><br><span class="line">}</span><br><span class="line"></span><br><span class="line"><span class="comment">// kern/trap/trap.c</span></span><br><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">trapframe</span> <span class="title">switchk2u</span>, *<span class="title">switchu2k</span>;</span></span><br><span class="line"></span><br><span class="line"><span class="type">static</span> <span class="type">void</span> <span class="title function_">trap_dispatch</span><span class="params">(<span class="keyword">struct</span> trapframe *tf)</span></span><br><span class="line">{</span><br><span class="line">    ...</span><br><span class="line">    <span class="keyword">case</span> T_SWITCH_TOU:</span><br><span class="line">        <span class="keyword">if</span> (tf-&gt;tf_cs != USER_CS) {</span><br><span class="line">            switchk2u = *tf;</span><br><span class="line">            switchk2u.tf_cs = USER_CS;</span><br><span class="line">            switchk2u.tf_ds = switchk2u.tf_es = switchk2u.tf_ss = USER_DS;</span><br><span class="line">            switchk2u.tf_esp = (<span class="type">uint32_t</span>)tf + <span class="keyword">sizeof</span>(<span class="keyword">struct</span> trapframe) - <span class="number">8</span>;</span><br><span class="line">		</span><br><span class="line">            <span class="comment">// set eflags, make sure ucore can use io under user mode.</span></span><br><span class="line">            <span class="comment">// if CPL &gt; IOPL, then cpu will generate a general protection.</span></span><br><span class="line">            switchk2u.tf_eflags |= FL_IOPL_MASK;</span><br><span class="line">		</span><br><span class="line">            <span class="comment">// set temporary stack</span></span><br><span class="line">            <span class="comment">// then iret will jump to the right stack</span></span><br><span class="line">            *((<span class="type">uint32_t</span> *)tf - <span class="number">1</span>) = (<span class="type">uint32_t</span>)&amp;switchk2u;</span><br><span class="line">        }</span><br><span class="line">        <span class="keyword">break</span>;</span><br><span class="line">    <span class="keyword">case</span> T_SWITCH_TOK:</span><br><span class="line">        <span class="keyword">if</span> (tf-&gt;tf_cs != KERNEL_CS) {</span><br><span class="line">            tf-&gt;tf_cs = KERNEL_CS;</span><br><span class="line">            tf-&gt;tf_ds = tf-&gt;tf_es = KERNEL_DS;</span><br><span class="line">            tf-&gt;tf_eflags &amp;= ~FL_IOPL_MASK;</span><br><span class="line">            switchu2k = (<span class="keyword">struct</span> trapframe *)(tf-&gt;tf_esp - (<span class="keyword">sizeof</span>(<span class="keyword">struct</span> trapframe) - <span class="number">8</span>));</span><br><span class="line">            memmove(switchu2k, tf, <span class="keyword">sizeof</span>(<span class="keyword">struct</span> trapframe) - <span class="number">8</span>);</span><br><span class="line">            *((<span class="type">uint32_t</span> *)tf - <span class="number">1</span>) = (<span class="type">uint32_t</span>)switchu2k;</span><br><span class="line">        }</span><br><span class="line">        <span class="keyword">break</span>;</span><br><span class="line">        ...</span><br><span class="line">}</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<h3 id="x07-总结">0X07 总结</h3>
+<p>通过这个lab1，我们学习了以下内容:</p>
+<ul>
+<li>操作系统的镜像是如何制作的：第一个扇区是什么、剩下的扇区是什么、bootloader去段的处理、bootloader的大小限制</li>
+<li>操作系统是如何启动的：BIOS什么模式、BIOS结束时如何进入bootloader、bootloader两个功能(保护模式、ELF)、bootloader如何进入内核</li>
+<li>内核的中断、中断描述符、各种门、在ucore中断函数的实现方法</li>
+<li>段和门权限的表示方法，通过中断提权</li>
+</ul>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/ucore%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/" rel="tag"># ucore操作系统</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2023/01/08/Python%E5%B0%8F%E6%8A%80%E5%B7%A7-11/" rel="prev" title="Python小技巧(11)--Python调用C/C++动态链接库">
+      <i class="fa fa-chevron-left"></i> Python小技巧(11)--Python调用C/C++动态链接库
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2023/01/16/%E4%BB%8Eucore%E6%9D%A5%E6%80%BB%E7%BB%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-2/" rel="next" title="从ucore来总结操作系统(2)----物理内存、虚拟内存、转换">
+      从ucore来总结操作系统(2)----物理内存、虚拟内存、转换 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+    <div class="comments" id="valine-comments"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E7%9A%84%E9%95%9C%E5%83%8F%E5%BC%95%E5%AF%BC%E5%92%8C%E5%86%85%E6%A0%B8%E8%B0%83%E8%AF%95"><span class="nav-number">1.</span> <span class="nav-text">操作系统的镜像、引导和内核调试</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#x00-%E7%8E%AF%E5%A2%83%E5%87%86%E5%A4%87"><span class="nav-number">1.1.</span> <span class="nav-text">0X00 环境准备</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#x01-ucore%E7%9A%84%E9%95%9C%E5%83%8F"><span class="nav-number">1.2.</span> <span class="nav-text">0X01 ucore的镜像</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#x02-ucore%E7%9A%84%E5%BC%95%E5%AF%BC"><span class="nav-number">1.3.</span> <span class="nav-text">0X02 ucore的引导</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#x03-bootloader%E7%9A%84%E5%B7%A5%E4%BD%9C"><span class="nav-number">1.4.</span> <span class="nav-text">0X03 Bootloader的工作</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#x04-%E5%86%85%E6%A0%B8%E8%B0%83%E8%AF%95%E4%B9%8B%E5%87%BD%E6%95%B0%E8%B0%83%E7%94%A8%E5%A0%86%E6%A0%88%E8%B7%9F%E8%B8%AA%E5%87%BD%E6%95%B0"><span class="nav-number">1.5.</span> <span class="nav-text">0X04 内核调试之函数调用堆栈跟踪函数</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#x05-%E5%86%85%E6%A0%B8%E8%B0%83%E8%AF%95%E4%B9%8B%E4%B8%AD%E6%96%AD%E5%88%9D%E5%A7%8B%E5%8C%96%E5%92%8C%E5%A4%84%E7%90%86"><span class="nav-number">1.6.</span> <span class="nav-text">0X05 内核调试之中断初始化和处理</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#x06-%E9%80%9A%E8%BF%87%E4%B8%AD%E6%96%AD%E8%BF%9B%E8%A1%8C%E6%9D%83%E9%99%90%E5%88%87%E6%8D%A2"><span class="nav-number">1.7.</span> <span class="nav-text">0x06 通过中断进行权限切换</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#x07-%E6%80%BB%E7%BB%93"><span class="nav-number">1.8.</span> <span class="nav-text">0X07 总结</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Staskaer"
+      src="/imgs/theme_pic/head_img.png">
+  <p class="site-author-name" itemprop="name">Staskaer</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">97</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">10</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">24</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/Staskaer" title="Github → https:&#x2F;&#x2F;github.com&#x2F;Staskaer" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:liujiaxin011121@gmail.com" title="E-Mail → mailto:liujiaxin011121@gmail.com" rel="noopener" target="_blank"><i class="fa fa-envelope fa-fw"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://www.zhihu.com/people/staskaer" title="Zhihu → https:&#x2F;&#x2F;www.zhihu.com&#x2F;people&#x2F;staskaer" rel="noopener" target="_blank"><i class="fab fa-zhihu fa-fw"></i></a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2025</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Staskaer</span>
+</div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+
+<script>
+NexT.utils.loadComments(document.querySelector('#valine-comments'), () => {
+  NexT.utils.getScript('https://cdn.jsdelivr.net/npm/valine@1.5.1/dist/Valine.min.js', () => {
+    var GUEST = ['nick', 'mail', 'link'];
+    var guest = 'nick,mail,link';
+    guest = guest.split(',').filter(item => {
+      return GUEST.includes(item);
+    });
+    new Valine({
+      el         : '#valine-comments',
+      verify     : false,
+      notify     : false,
+      appId      : 'xH8NDrh9u4SQrUpQOd0lICnX-MdYXbMMI',
+      appKey     : 'jl3JjPS4jsosZG29Zv24Y7LE',
+      placeholder: "Just go go",
+      avatar     : 'mm',
+      meta       : guest,
+      pageSize   : '10' || 10,
+      visitor    : false,
+      lang       : 'zh-Hans' || 'zh-cn',
+      path       : location.pathname,
+      recordIP   : false,
+      serverURLs : 'https://xh8ndrh9.api.lncldglobal.com'
+    });
+  }, window.Valine);
+});
+</script>
+
+</body>
+</html>
+

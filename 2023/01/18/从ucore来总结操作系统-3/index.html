@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 6.2.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/imgs/theme_pic/staskaer.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/imgs/theme_pic/staskaer.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/imgs/theme_pic/staskaer.png">
+  <link rel="mask-icon" href="/imgs/theme_pic/staskaer.png" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Gemini","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"mac"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"valine","storage":true,"lazyload":false,"nav":null,"activeClass":"valine"},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="页面置换与Page Fault">
+<meta property="og:type" content="article">
+<meta property="og:title" content="从ucore来总结操作系统(3)----页面置换与Page Fault">
+<meta property="og:url" content="http://example.com/2023/01/18/%E4%BB%8Eucore%E6%9D%A5%E6%80%BB%E7%BB%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-3/index.html">
+<meta property="og:site_name" content="Staskaer">
+<meta property="og:description" content="页面置换与Page Fault">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="http://example.com/2023/01/18/%E4%BB%8Eucore%E6%9D%A5%E6%80%BB%E7%BB%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-3/pic1.png">
+<meta property="article:published_time" content="2023-01-18T06:39:49.000Z">
+<meta property="article:modified_time" content="2025-06-17T15:50:22.375Z">
+<meta property="article:author" content="Staskaer">
+<meta property="article:tag" content="ucore操作系统">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://example.com/2023/01/18/%E4%BB%8Eucore%E6%9D%A5%E6%80%BB%E7%BB%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-3/pic1.png">
+
+<link rel="canonical" href="http://example.com/2023/01/18/%E4%BB%8Eucore%E6%9D%A5%E6%80%BB%E7%BB%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-3/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'en'
+  };
+</script>
+
+  <title>从ucore来总结操作系统(3)----页面置换与Page Fault | Staskaer</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+<style>mjx-container[jax="SVG"] {
+  direction: ltr;
+}
+
+mjx-container[jax="SVG"] > svg {
+  overflow: visible;
+}
+
+mjx-container[jax="SVG"][display="true"] {
+  display: block;
+  text-align: center;
+  margin: 1em 0;
+}
+
+mjx-container[jax="SVG"][justify="left"] {
+  text-align: left;
+}
+
+mjx-container[jax="SVG"][justify="right"] {
+  text-align: right;
+}
+
+g[data-mml-node="merror"] > g {
+  fill: red;
+  stroke: red;
+}
+
+g[data-mml-node="merror"] > rect[data-background] {
+  fill: yellow;
+  stroke: none;
+}
+
+g[data-mml-node="mtable"] > line[data-line] {
+  stroke-width: 70px;
+  fill: none;
+}
+
+g[data-mml-node="mtable"] > rect[data-frame] {
+  stroke-width: 70px;
+  fill: none;
+}
+
+g[data-mml-node="mtable"] > .mjx-dashed {
+  stroke-dasharray: 140;
+}
+
+g[data-mml-node="mtable"] > .mjx-dotted {
+  stroke-linecap: round;
+  stroke-dasharray: 0,140;
+}
+
+g[data-mml-node="mtable"] > svg {
+  overflow: visible;
+}
+
+[jax="SVG"] mjx-tool {
+  display: inline-block;
+  position: relative;
+  width: 0;
+  height: 0;
+}
+
+[jax="SVG"] mjx-tool > mjx-tip {
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+mjx-tool > mjx-tip {
+  display: inline-block;
+  padding: .2em;
+  border: 1px solid #888;
+  font-size: 70%;
+  background-color: #F8F8F8;
+  color: black;
+  box-shadow: 2px 2px 5px #AAAAAA;
+}
+
+g[data-mml-node="maction"][data-toggle] {
+  cursor: pointer;
+}
+
+mjx-status {
+  display: block;
+  position: fixed;
+  left: 1em;
+  bottom: 1em;
+  min-width: 25%;
+  padding: .2em .4em;
+  border: 1px solid #888;
+  font-size: 90%;
+  background-color: #F8F8F8;
+  color: black;
+}
+
+foreignObject[data-mjx-xml] {
+  font-family: initial;
+  line-height: normal;
+  overflow: visible;
+}
+
+.MathJax path {
+  stroke-width: 3;
+}
+
+mjx-container[display="true"] {
+  overflow: auto hidden;
+}
+
+mjx-container[display="true"] + br {
+  display: none;
+}
+</style></head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Staskaer</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">Hi, this is Staskaer</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+        <li class="menu-item menu-item-links">
+
+    <a href="/links/" rel="section"><i class="fa fa-link fa-fw"></i>links</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2023/01/18/%E4%BB%8Eucore%E6%9D%A5%E6%80%BB%E7%BB%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-3/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/imgs/theme_pic/head_img.png">
+      <meta itemprop="name" content="Staskaer">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Staskaer">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          从ucore来总结操作系统(3)----页面置换与Page Fault
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2023-01-18 14:39:49" itemprop="dateCreated datePublished" datetime="2023-01-18T14:39:49+08:00">2023-01-18</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2025-06-17 23:50:22" itemprop="dateModified" datetime="2025-06-17T23:50:22+08:00">2025-06-17</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/" itemprop="url" rel="index"><span itemprop="name">操作系统</span></a>
+                </span>
+            </span>
+
+          
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Valine: </span>
+    
+    <a title="valine" href="/2023/01/18/%E4%BB%8Eucore%E6%9D%A5%E6%80%BB%E7%BB%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-3/#valine-comments" itemprop="discussionUrl">
+      <span class="post-comments-count valine-comment-count" data-xid="/2023/01/18/%E4%BB%8Eucore%E6%9D%A5%E6%80%BB%E7%BB%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-3/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h2 id="页面置换与page-fault">页面置换与Page Fault</h2>
+<span id="more"></span>
+<p>这篇是lab3的内容，主要就是实操一下页面置换算法和当缺页发生时的处理。</p>
+<h3 id="x00-环境准备">0X00 环境准备</h3>
+<p>lab3也是基于lab2和lab1的，所以我们先用meld工具把lab2(lab2是包含lab1的)合并到lab3中已有的文件上。</p>
+<p>在lab2中，我们已经能够<strong>管理物理内存</strong>了(组织成块，并提供first fit分配算法、实现虚拟地址映射到PTE上)，有关内存的数据结构和相关操作都是直接针对实际存在的资源--物理内存空间的管理，没有从一般应用程序对内存的“需求”考虑，即需要有相关的数据结构和操作来体现一般应用程序对虚拟内存的“需求”。<strong>一般应用程序的对虚拟内存的“需求”与物理内存空间的“供给”没有直接的对应关系</strong>，ucore是通过page fault异常处理来间接完成这二者之间的衔接。因此，在lab3中，将进一步实现虚拟内存的缺页中断和页面置换。</p>
+<p>比如程序可以预先申请出一些内存，但是操作系统并不分配，直到程序用到这些内存所在的页面时，操作系统才通过page fault异常来分配(linux下的写时分配)。</p>
+<p>但是<strong>page_fault函数不知道哪些是“合法”的虚拟页</strong>，原因是ucore还缺少一定的数据结构来描述这种不在物理内存中的“合法”虚拟页。为此ucore通过建立<strong>mm_struct</strong>和<strong>vma_struct</strong>数据结构，描述了ucore模拟应用程序运行所需的合法内存空间。当访问内存产生page fault异常时，可获得访问的内存的方式（读或写）以及具体的虚拟内存地址，这样ucore就可以查询此地址，看是否属于vma_struct数据结构中描述的合法地址范围中，如果在，则可根据具体情况进行请求调页/页换入换出处理（这就是练习2涉及的部分）；如果不在，则报错。mm_struct和vma_struct数据结构结合页表表示虚拟地址空间和物理地址空间的示意图如下所示：</p>
+<img src="/2023/01/18/%E4%BB%8Eucore%E6%9D%A5%E6%80%BB%E7%BB%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-3/pic1.png" class="">
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="comment">// 描述一个进程的虚拟地址空间 每个进程的 pcb 中 会有一个指针指向本结构体</span></span><br><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">mm_struct</span></span></span><br><span class="line"><span class="class">{</span></span><br><span class="line">    <span class="comment">// 链接同一页目录表的虚拟内存空间 的 双向链表的 头节点</span></span><br><span class="line">    <span class="type">list_entry_t</span> mmap_list;</span><br><span class="line">    <span class="comment">// 当前正在使用的虚拟内存空间</span></span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">vma_struct</span> *<span class="title">mmap_cache</span>;</span></span><br><span class="line">    <span class="comment">// mm_struct 所维护的页表地址(拿来找 PTE)</span></span><br><span class="line">    <span class="comment">// 通过访问pgdir可以查找某虚拟地址对应的页表项是否存在以及页表项的属性等</span></span><br><span class="line">    <span class="type">pde_t</span> *pgdir;</span><br><span class="line">    <span class="comment">// 虚拟内存块的数目</span></span><br><span class="line">    <span class="type">int</span> map_count;</span><br><span class="line">    <span class="comment">// 记录访问情况链表头地址(用于置换算法)</span></span><br><span class="line">    <span class="type">void</span> *sm_priv;</span><br><span class="line">};</span><br><span class="line"></span><br><span class="line"><span class="comment">// 虚拟内存空间</span></span><br><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">vma_struct</span></span></span><br><span class="line"><span class="class">{</span></span><br><span class="line">    <span class="comment">// 虚拟内存空间属于的进程</span></span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">mm_struct</span> *<span class="title">vm_mm</span>;</span></span><br><span class="line">    <span class="comment">// 连续地址的虚拟内存空间的起始位置和结束位置</span></span><br><span class="line">    <span class="type">uintptr_t</span> vm_start;</span><br><span class="line">    <span class="type">uintptr_t</span> vm_end;</span><br><span class="line">    <span class="comment">// 虚拟内存空间的属性 (读/写/执行)</span></span><br><span class="line">    <span class="type">uint32_t</span> vm_flags;</span><br><span class="line">    <span class="comment">// 双向链表 从小到大将虚拟内存空间链接起来</span></span><br><span class="line">    <span class="type">list_entry_t</span> list_link;</span><br><span class="line">};</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<div class="note primary">
+            <p>mm_struct应该是整个进程的虚拟内存描述表，记录了整个进程所拥有的虚拟地址</p><p>vma_struct是描述了一个有效的虚拟内存空间的信息，比如虚拟内存空间的起始地址、结束地址、属性等。</p><p>由于进程的虚拟空间是固定的，所以只有一个mm_struct；但是进程的占用的虚拟空间是可以是不连续的、分块的，所以一个mm_struct可以包含多个vma_struct。</p>
+          </div>
+<p><strong>对于vma_struct</strong>，vm_start和vm_end描述了一个连续地址的虚拟内存空间的起始位置和结束位置，这两个值都应该是PGSIZE 对齐的，而且描述的是一个合理的地址空间范围（即严格确保 vm_start &lt; vm_end的关系）；list_link是一个双向链表，按照从小到大的顺序把一系列用vma_struct表示的虚拟内存空间链接起来，并且还要求这些链起来的vma_struct应该是不相交的，即vma之间的地址空间无交集；vm_flags表示了这个虚拟内存空间的属性，有只读、可读写、可执行。vm_mm是一个指针，指向一个比vma_struct更高的抽象层次的数据结构mm_struct，这里把一个mm_struct结构的变量简称为mm变量。</p>
+<p><strong>对于mm_struct</strong>，这个数据结构表示了包含所有虚拟内存空间的共同属性。其中，mmap_list是双向链表头，链接了所有属于同一页目录表的虚拟内存空间(目前只有一个目录表PDT)，mmap_cache是指向当前正在使用的虚拟内存空间，由于操作系统执行的“局部性”原理，当前正在用到的虚拟内存空间在接下来的操作中可能还会用到，这时就不需要查链表，而是直接使用此指针就可找到下一次要用到的虚拟内存空间。由于mmap_cache 的引入，可使得 mm_struct 数据结构的查询加速 30% 以上。pgdir 所指向的就是 mm_struct数据结构所维护的页表。通过访问pgdir可以查找某虚拟地址对应的页表项是否存在以及页表项的属性等。map_count记录mmap_list 里面链接的 vma_struct的个数。sm_priv指向用来链接记录页访问情况的链表头，这建立了mm_struct和后续要讲到的swap_manager之间的联系。</p>
+<p><strong>总而言之就是 mm_struct 描述了整个进程的虚拟地址空间 而 vma_struct 描述了 进程中的一小部分虚拟内存空间</strong></p>
+<p>除此之外，page页面结构体页新增了两个成员</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">Page</span> {</span></span><br><span class="line">    <span class="comment">// 引用计数</span></span><br><span class="line">    <span class="type">int</span> ref;                        <span class="comment">// page frame's reference counter</span></span><br><span class="line">    <span class="comment">// 用两个bit表示两种属性</span></span><br><span class="line">    <span class="comment">// 1. PG_reserved位 此位为1时表示该页是内核保留的，不可分配</span></span><br><span class="line">    <span class="comment">// 2. PG_property位 此位为1时表示可分配，为0表示已分配</span></span><br><span class="line">    <span class="type">uint32_t</span> flags;                 <span class="comment">// array of flags that describe the status of the page frame</span></span><br><span class="line">    <span class="comment">// 空闲块大小(以物理页位大小)，仅在当前页是空闲块的第一个物理页时有效</span></span><br><span class="line">    <span class="type">unsigned</span> <span class="type">int</span> property;          <span class="comment">// the num of free block, used in first fit pm manager</span></span><br><span class="line">    <span class="type">list_entry_t</span> page_link;         <span class="comment">// free list link</span></span><br><span class="line"></span><br><span class="line">    <span class="comment">// 下面是新增的成员</span></span><br><span class="line">    <span class="type">list_entry_t</span> pra_page_link;     <span class="comment">// 用于连接上一个和下一个*可交换已分配*的物理页</span></span><br><span class="line">    <span class="type">uintptr_t</span> pra_vaddr;            <span class="comment">// 用于保存该物理页所对应的虚拟地址。</span></span><br><span class="line">};</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<h3 id="x01-缺页中断写时创建和页面置换算法">0X01 缺页中断、写时创建和页面置换算法</h3>
+<p>此时我们需要完成<code>kern/mm/vmm.c</code>中的，<code>do_pgfault</code>函数，这个函数的作用是处理缺页中断。当缺页发生的时候，CPU会先把产生缺页中断的虚拟地址存放进CR2寄存器，然后把错误码等压入堆栈，并通过<code>__alltraps-&gt;trap-&gt;trap_dispatch-&gt;pgfault_handler-&gt;do_pgfault</code>这样调用栈来最终由do_pgfault函数处理缺页中断。</p>
+<div class="note info">
+            <p><strong>缺页中断实质上还是需要硬件的支持</strong>。在保护模式下，CPU引用一个段需要查看段描述符，段描述符存在段描述符表中。但有的时候，对应的段并不存在于内存中(CPU允许段描述符表中注册的段不再内存中，这是它提供给软件的策略)，此时硬件产生缺页中断。</p><p><strong>不过，不同体系的处理器产生缺页中断的过程不一致，所以系统如何检测到缺页发生可以当作是硬件黑盒</strong></p>
+          </div>
+<p>同样的，这个函数中同样存在大量的注释和已经写好的代码。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br><span class="line">144</span><br><span class="line">145</span><br><span class="line">146</span><br><span class="line">147</span><br><span class="line">148</span><br><span class="line">149</span><br><span class="line">150</span><br><span class="line">151</span><br><span class="line">152</span><br><span class="line">153</span><br><span class="line">154</span><br><span class="line">155</span><br><span class="line">156</span><br><span class="line">157</span><br><span class="line">158</span><br><span class="line">159</span><br><span class="line">160</span><br><span class="line">161</span><br><span class="line">162</span><br><span class="line">163</span><br><span class="line">164</span><br><span class="line">165</span><br><span class="line">166</span><br><span class="line">167</span><br><span class="line">168</span><br><span class="line">169</span><br><span class="line">170</span><br><span class="line">171</span><br><span class="line">172</span><br><span class="line">173</span><br><span class="line">174</span><br><span class="line">175</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="comment">/* do_pgfault - interrupt handler to process the page fault execption</span></span><br><span class="line"><span class="comment"> * @mm         : the control struct for a set of vma using the same PDT</span></span><br><span class="line"><span class="comment"> * @error_code : the error code recorded in trapframe-&gt;tf_err which is setted by x86 hardware</span></span><br><span class="line"><span class="comment"> * @addr       : the addr which causes a memory access exception, (the contents of the CR2 register)</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * CALL GRAPH: trap--&gt; trap_dispatch--&gt;pgfault_handler--&gt;do_pgfault</span></span><br><span class="line"><span class="comment"> * The processor provides ucore's do_pgfault function with two items of information to aid in diagnosing</span></span><br><span class="line"><span class="comment"> * the exception and recovering from it.</span></span><br><span class="line"><span class="comment"> *   (1) The contents of the CR2 register. The processor loads the CR2 register with the</span></span><br><span class="line"><span class="comment"> *       32-bit linear address that generated the exception. The do_pgfault fun can</span></span><br><span class="line"><span class="comment"> *       use this address to locate the corresponding page directory and page-table</span></span><br><span class="line"><span class="comment"> *       entries.</span></span><br><span class="line"><span class="comment"> *   (2) An error code on the kernel stack. The error code for a page fault has a format different from</span></span><br><span class="line"><span class="comment"> *       that for other exceptions. The error code tells the exception handler three things:</span></span><br><span class="line"><span class="comment"> *         -- The P flag   (bit 0) indicates whether the exception was due to a not-present page (0)</span></span><br><span class="line"><span class="comment"> *            or to either an access rights violation or the use of a reserved bit (1).</span></span><br><span class="line"><span class="comment"> *         -- The W/R flag (bit 1) indicates whether the memory access that caused the exception</span></span><br><span class="line"><span class="comment"> *            was a read (0) or write (1).</span></span><br><span class="line"><span class="comment"> *         -- The U/S flag (bit 2) indicates whether the processor was executing at user mode (1)</span></span><br><span class="line"><span class="comment"> *            or supervisor mode (0) at the time of the exception.</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="type">int</span> <span class="title function_">do_pgfault</span><span class="params">(<span class="keyword">struct</span> mm_struct *mm, <span class="type">uint32_t</span> error_code, <span class="type">uintptr_t</span> addr)</span></span><br><span class="line">{</span><br><span class="line">    <span class="type">int</span> ret = -E_INVAL;</span><br><span class="line">    <span class="comment">// try to find a vma which include addr</span></span><br><span class="line">    <span class="comment">// 尝试找到一个包含addr的vma</span></span><br><span class="line">    <span class="comment">// 也就是看一下这个地址是不是在进程某个vma的范围内</span></span><br><span class="line">    <span class="comment">// vma管理的是所有有效地址，所以如果不在vma中，就是不合法的</span></span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">vma_struct</span> *<span class="title">vma</span> =</span> find_vma(mm, addr);</span><br><span class="line"></span><br><span class="line">    pgfault_num++;</span><br><span class="line">    <span class="comment">// If the addr is in the range of a mm's vma?</span></span><br><span class="line">    <span class="comment">// 没有vma包含这个地址，不合法</span></span><br><span class="line">    <span class="keyword">if</span> (vma == <span class="literal">NULL</span> || vma-&gt;vm_start &gt; addr)</span><br><span class="line">    {</span><br><span class="line">        cprintf(<span class="string">"not valid addr %x, and  can not find it in vma\n"</span>, addr);</span><br><span class="line">        <span class="keyword">goto</span> failed;</span><br><span class="line">    }</span><br><span class="line">    <span class="comment">// check the error_code</span></span><br><span class="line">    <span class="comment">// 下面执行权限检查和判断访问页面是否存在物理页面中</span></span><br><span class="line">    <span class="keyword">switch</span> (error_code &amp; <span class="number">3</span>)</span><br><span class="line">    {</span><br><span class="line">    <span class="keyword">default</span>:</span><br><span class="line">        <span class="comment">// 进到此处，说明对页面是写请求，同时页面存在于物理内存中</span></span><br><span class="line">        <span class="comment">// 但是还没有检查权限，权限的检查是case 2中的代码</span></span><br><span class="line">        <span class="comment">// 如果权限也满足，就可以直接写入了，不需要置换</span></span><br><span class="line">        <span class="comment">/* error code flag : default is 3 ( W/R=1, P=1): write, present */</span></span><br><span class="line">    <span class="keyword">case</span> <span class="number">2</span>: <span class="comment">/* error code flag : (W/R=1, P=0): write, not present */</span></span><br><span class="line">        <span class="comment">// 写页面，但是页面不存在</span></span><br><span class="line">        <span class="comment">// 检查下权限，没有写入权限就fail</span></span><br><span class="line">        <span class="keyword">if</span> (!(vma-&gt;vm_flags &amp; VM_WRITE))</span><br><span class="line">        {</span><br><span class="line">            cprintf(<span class="string">"do_pgfault failed: error code flag = write AND not present, but the addr's vma cannot write\n"</span>);</span><br><span class="line">            <span class="keyword">goto</span> failed;</span><br><span class="line">        }</span><br><span class="line">        <span class="keyword">break</span>;</span><br><span class="line">    <span class="keyword">case</span> <span class="number">1</span>: <span class="comment">/* error code flag : (W/R=0, P=1): read, present */</span></span><br><span class="line">        <span class="comment">// 读内存，且内存也存在于物理内存中</span></span><br><span class="line">        <span class="comment">// 肯定是可以直接读的，不应该进入缺页中断中，直接错误</span></span><br><span class="line">        cprintf(<span class="string">"do_pgfault failed: error code flag = read AND present\n"</span>);</span><br><span class="line">        <span class="keyword">goto</span> failed;</span><br><span class="line">    <span class="keyword">case</span> <span class="number">0</span>: <span class="comment">/* error code flag : (W/R=0, P=0): read, not present */</span></span><br><span class="line">        <span class="comment">// 读内存，但是内存不存在于物理内存中</span></span><br><span class="line">        <span class="comment">// 检查下权限，没有读权限就fail</span></span><br><span class="line">        <span class="keyword">if</span> (!(vma-&gt;vm_flags &amp; (VM_READ | VM_EXEC)))</span><br><span class="line">        {</span><br><span class="line">            cprintf(<span class="string">"do_pgfault failed: error code flag = read AND not present, but the addr's vma cannot read or exec\n"</span>);</span><br><span class="line">            <span class="keyword">goto</span> failed;</span><br><span class="line">        }</span><br><span class="line">    }</span><br><span class="line">    <span class="comment">/* IF (write an existed addr ) OR</span></span><br><span class="line"><span class="comment">     *    (write an non_existed addr &amp;&amp; addr is writable) OR</span></span><br><span class="line"><span class="comment">     *    (read  an non_existed addr &amp;&amp; addr is readable)</span></span><br><span class="line"><span class="comment">     * THEN</span></span><br><span class="line"><span class="comment">     *    continue process</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="comment">// 检查完权限，下面正式处理</span></span><br><span class="line"></span><br><span class="line">    <span class="comment">// 设置页表条目所对应的权限</span></span><br><span class="line">    <span class="type">uint32_t</span> perm = PTE_U;</span><br><span class="line">    <span class="keyword">if</span> (vma-&gt;vm_flags &amp; VM_WRITE)</span><br><span class="line">    {</span><br><span class="line">        perm |= PTE_W;</span><br><span class="line">    }</span><br><span class="line">    <span class="comment">// 内存对齐</span></span><br><span class="line">    addr = ROUNDDOWN(addr, PGSIZE);</span><br><span class="line"></span><br><span class="line">    ret = -E_NO_MEM;</span><br><span class="line">    <span class="type">pte_t</span> *ptep = <span class="literal">NULL</span>;</span><br><span class="line">    <span class="comment">/*LAB3 EXERCISE 1: YOUR CODE</span></span><br><span class="line"><span class="comment">     * Maybe you want help comment, BELOW comments can help you finish the code</span></span><br><span class="line"><span class="comment">     *</span></span><br><span class="line"><span class="comment">     * Some Useful MACROs and DEFINEs, you can use them in below implementation.</span></span><br><span class="line"><span class="comment">     * MACROs or Functions:</span></span><br><span class="line"><span class="comment">     *   get_pte : get an pte and return the kernel virtual address of this pte for la</span></span><br><span class="line"><span class="comment">     *             if the PT contians this pte didn't exist, alloc a page for PT (notice the 3th parameter '1')</span></span><br><span class="line"><span class="comment">     *   pgdir_alloc_page : call alloc_page &amp; page_insert functions to allocate a page size memory &amp; setup</span></span><br><span class="line"><span class="comment">     *             an addr map pa&lt;---&gt;la with linear address la and the PDT pgdir</span></span><br><span class="line"><span class="comment">     * DEFINES:</span></span><br><span class="line"><span class="comment">     *   VM_WRITE  : If vma-&gt;vm_flags &amp; VM_WRITE == 1/0, then the vma is writable/non writable</span></span><br><span class="line"><span class="comment">     *   PTE_W           0x002                   // page table/directory entry flags bit : Writeable</span></span><br><span class="line"><span class="comment">     *   PTE_U           0x004                   // page table/directory entry flags bit : User can access</span></span><br><span class="line"><span class="comment">     * VARIABLES:</span></span><br><span class="line"><span class="comment">     *   mm-&gt;pgdir : the PDT of these vma</span></span><br><span class="line"><span class="comment">     *</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line"><span class="meta">#<span class="keyword">if</span> 1</span></span><br><span class="line"></span><br><span class="line">    <span class="comment">/*LAB3 EXERCISE 1: YOUR CODE*/</span></span><br><span class="line">    <span class="comment">// 先尝试获取pte，如果不存在，get_pte会自动创建一个pte表项</span></span><br><span class="line">    ptep = get_pte(mm-&gt;pgdir, addr, <span class="number">1</span>); <span class="comment">//(1) try to find a pte, if pte's PT(Page Table) isn't existed, then create a PT.</span></span><br><span class="line">    <span class="keyword">if</span> (ptep == <span class="literal">NULL</span>)</span><br><span class="line">    {</span><br><span class="line">        <span class="keyword">goto</span> failed;</span><br><span class="line">    }</span><br><span class="line">    <span class="comment">// 如果这个表项对应的物理地址不存在，那么就需要分配一个物理页</span></span><br><span class="line">    <span class="keyword">if</span> (*ptep == <span class="number">0</span>)</span><br><span class="line">    {</span><br><span class="line">        <span class="comment">// 分配一个物理页，并让虚拟地址addr映射到这个物理页</span></span><br><span class="line">        <span class="comment">// 就是让之前分配的pte表项指向这个物理页</span></span><br><span class="line">        <span class="keyword">if</span> (pgdir_alloc_page(mm-&gt;pgdir, addr, perm) == <span class="literal">NULL</span>)</span><br><span class="line">            <span class="keyword">goto</span> failed;</span><br><span class="line">        <span class="comment">//(2) if the phy addr isn't exist, then alloc a page &amp; map the phy addr with logical addr</span></span><br><span class="line">    }</span><br><span class="line">    <span class="keyword">else</span></span><br><span class="line">    <span class="comment">// 如果PTE存在，说明该页被置换到外存，需要换回来</span></span><br><span class="line">    {</span><br><span class="line">        <span class="comment">/*LAB3 EXERCISE 2: YOUR CODE</span></span><br><span class="line"><span class="comment">         * Now we think this pte is a  swap entry, we should load data from disk to a page with phy addr,</span></span><br><span class="line"><span class="comment">         * and map the phy addr with logical addr, trigger swap manager to record the access situation of this page.</span></span><br><span class="line"><span class="comment">         *</span></span><br><span class="line"><span class="comment">         *  Some Useful MACROs and DEFINEs, you can use them in below implementation.</span></span><br><span class="line"><span class="comment">         *  MACROs or Functions:</span></span><br><span class="line"><span class="comment">         *    swap_in(mm, addr, &amp;page) : alloc a memory page, then according to the swap entry in PTE for addr,</span></span><br><span class="line"><span class="comment">         *                               find the addr of disk page, read the content of disk page into this memroy page</span></span><br><span class="line"><span class="comment">         *    page_insert ： build the map of phy addr of an Page with the linear addr la</span></span><br><span class="line"><span class="comment">         *    swap_map_swappable ： set the page swappable</span></span><br><span class="line"><span class="comment">         */</span></span><br><span class="line">        <span class="keyword">if</span> (swap_init_ok)</span><br><span class="line">        {</span><br><span class="line">            <span class="keyword">struct</span> Page *page = <span class="literal">NULL</span>;</span><br><span class="line">            <span class="comment">// 先把目标地址加载到内存page页上</span></span><br><span class="line">            ret = swap_in(mm, addr, &amp;page);</span><br><span class="line">            <span class="keyword">if</span> (ret != <span class="number">0</span>)</span><br><span class="line">            {</span><br><span class="line">                <span class="keyword">goto</span> failed;</span><br><span class="line">            }</span><br><span class="line"></span><br><span class="line">            <span class="comment">// 然后把page页映射到虚拟地址addr上，权限为perm</span></span><br><span class="line">            ret = page_insert(mm-&gt;pgdir, page, addr, perm);</span><br><span class="line"></span><br><span class="line">            <span class="comment">// 最后把page页设置为可交换的</span></span><br><span class="line">            swap_map_swappable(mm, addr, page, <span class="number">1</span>);</span><br><span class="line"></span><br><span class="line">            <span class="comment">// 然后设置一下page页的虚拟地址</span></span><br><span class="line">            page-&gt;pra_vaddr = addr;</span><br><span class="line">            <span class="comment">//(1）According to the mm AND addr, try to load the content of right disk page</span></span><br><span class="line">            <span class="comment">//    into the memory which page managed.</span></span><br><span class="line">            <span class="comment">//(2) According to the mm, addr AND page, setup the map of phy addr &lt;---&gt; logical addr</span></span><br><span class="line">            <span class="comment">//(3) make the page swappable.</span></span><br><span class="line">        }</span><br><span class="line">        <span class="keyword">else</span></span><br><span class="line"></span><br><span class="line">        {</span><br><span class="line">            cprintf(<span class="string">"no swap_init_ok but ptep is %x, failed\n"</span>, *ptep);</span><br><span class="line">            <span class="keyword">goto</span> failed;</span><br><span class="line">        }</span><br><span class="line">    }</span><br><span class="line"><span class="meta">#<span class="keyword">endif</span></span></span><br><span class="line">    ret = <span class="number">0</span>;</span><br><span class="line">failed:</span><br><span class="line">    <span class="keyword">return</span> ret;</span><br><span class="line">}</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>这个函数就是处理缺页中断的函数，它做的事情很简单：</p>
+<ul>
+<li>检查访问是否合法(vma、权限)</li>
+<li>访问PTE检查物理页面是否存在，说明物理页面本身不存在，不存在则创建一个物理页面</li>
+<li>如果PTE存在，那么说明物理页面之前被换出去了，那么再调用页面置换算法换回来</li>
+</ul>
+<p>然后实现一下FIFO页面置换算法，主要是实现<code>kern/mm/swap_fifo.c</code>中完成map_swappable和swap_out_victim函数。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="type">static</span> <span class="type">int</span> _fifo_map_swappable(<span class="keyword">struct</span> mm_struct *mm, <span class="type">uintptr_t</span> addr, <span class="keyword">struct</span> Page *page, <span class="type">int</span> swap_in)</span><br><span class="line">{</span><br><span class="line">    <span class="type">list_entry_t</span> *head = (<span class="type">list_entry_t</span> *)mm-&gt;sm_priv;</span><br><span class="line">    <span class="type">list_entry_t</span> *entry = &amp;(page-&gt;pra_page_link);</span><br><span class="line"></span><br><span class="line">    assert(entry != <span class="literal">NULL</span> &amp;&amp; head != <span class="literal">NULL</span>);</span><br><span class="line">    <span class="comment">// record the page access situlation</span></span><br><span class="line">    <span class="comment">/*LAB3 EXERCISE 2: YOUR CODE*/</span></span><br><span class="line">    <span class="comment">// 就是将这一页加入到链表头中(最近访问过的放前面) 使其可以被置换算法使用到</span></span><br><span class="line">    list_add(head, entry);</span><br><span class="line">    <span class="comment">//(1)link the most recent arrival page at the back of the pra_list_head qeueue.</span></span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">}</span><br><span class="line"><span class="comment">/*</span></span><br><span class="line"><span class="comment"> *  (4)_fifo_swap_out_victim: According FIFO PRA, we should unlink the  earliest arrival page in front of pra_list_head qeueue,</span></span><br><span class="line"><span class="comment"> *                            then set the addr of addr of this page to ptr_page.</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="comment">// 选择页面置换出去</span></span><br><span class="line"><span class="type">static</span> <span class="type">int</span> _fifo_swap_out_victim(<span class="keyword">struct</span> mm_struct *mm, <span class="keyword">struct</span> Page **ptr_page, <span class="type">int</span> in_tick)</span><br><span class="line">{</span><br><span class="line">    <span class="type">list_entry_t</span> *head = (<span class="type">list_entry_t</span> *)mm-&gt;sm_priv;</span><br><span class="line">    assert(head != <span class="literal">NULL</span>);</span><br><span class="line">    assert(in_tick == <span class="number">0</span>);</span><br><span class="line">    <span class="comment">/* Select the victim */</span></span><br><span class="line">    <span class="comment">/*LAB3 EXERCISE 2: YOUR CODE*/</span></span><br><span class="line">    <span class="comment">// 选择最早的页面作为置换出去的页面</span></span><br><span class="line">    <span class="type">list_entry_t</span> *victim = head-&gt;prev;</span><br><span class="line">    <span class="comment">// 查找到该页面的链表项</span></span><br><span class="line">    *ptr_page = le2page(victim, pra_page_link);</span><br><span class="line">    <span class="comment">// 将该页面从链表中删除</span></span><br><span class="line">    list_del(victim);</span><br><span class="line">    <span class="comment">//(1)  unlink the  earliest arrival page in front of pra_list_head qeueue</span></span><br><span class="line">    <span class="comment">//(2)  set the addr of addr of this page to ptr_page</span></span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">}</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>由于mm_struct中维护了访问的页面的顺序，所以通过其可以轻松的找出需要置换的页面并删除。</p>
+<h3 id="x02-总结">0X02 总结</h3>
+<p>通过这个lab3，我们学习了以下内容:</p>
+<ul>
+<li>缺页中断的处理：检查权限、检查页面位置、置换或分配</li>
+<li>使用FIFO算法实现页面置换</li>
+</ul>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/ucore%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/" rel="tag"># ucore操作系统</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2023/01/16/%E4%BB%8Eucore%E6%9D%A5%E6%80%BB%E7%BB%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-2/" rel="prev" title="从ucore来总结操作系统(2)----物理内存、虚拟内存、转换">
+      <i class="fa fa-chevron-left"></i> 从ucore来总结操作系统(2)----物理内存、虚拟内存、转换
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2023/01/20/%E4%BB%8Eucore%E6%9D%A5%E6%80%BB%E7%BB%93%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-4/" rel="next" title="从ucore来总结操作系统(4)----内核线程">
+      从ucore来总结操作系统(4)----内核线程 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+    <div class="comments" id="valine-comments"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%A1%B5%E9%9D%A2%E7%BD%AE%E6%8D%A2%E4%B8%8Epage-fault"><span class="nav-number">1.</span> <span class="nav-text">页面置换与Page Fault</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#x00-%E7%8E%AF%E5%A2%83%E5%87%86%E5%A4%87"><span class="nav-number">1.1.</span> <span class="nav-text">0X00 环境准备</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#x01-%E7%BC%BA%E9%A1%B5%E4%B8%AD%E6%96%AD%E5%86%99%E6%97%B6%E5%88%9B%E5%BB%BA%E5%92%8C%E9%A1%B5%E9%9D%A2%E7%BD%AE%E6%8D%A2%E7%AE%97%E6%B3%95"><span class="nav-number">1.2.</span> <span class="nav-text">0X01 缺页中断、写时创建和页面置换算法</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#x02-%E6%80%BB%E7%BB%93"><span class="nav-number">1.3.</span> <span class="nav-text">0X02 总结</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Staskaer"
+      src="/imgs/theme_pic/head_img.png">
+  <p class="site-author-name" itemprop="name">Staskaer</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">97</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">10</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">24</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/Staskaer" title="Github → https:&#x2F;&#x2F;github.com&#x2F;Staskaer" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:liujiaxin011121@gmail.com" title="E-Mail → mailto:liujiaxin011121@gmail.com" rel="noopener" target="_blank"><i class="fa fa-envelope fa-fw"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://www.zhihu.com/people/staskaer" title="Zhihu → https:&#x2F;&#x2F;www.zhihu.com&#x2F;people&#x2F;staskaer" rel="noopener" target="_blank"><i class="fab fa-zhihu fa-fw"></i></a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2025</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Staskaer</span>
+</div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+
+<script>
+NexT.utils.loadComments(document.querySelector('#valine-comments'), () => {
+  NexT.utils.getScript('https://cdn.jsdelivr.net/npm/valine@1.5.1/dist/Valine.min.js', () => {
+    var GUEST = ['nick', 'mail', 'link'];
+    var guest = 'nick,mail,link';
+    guest = guest.split(',').filter(item => {
+      return GUEST.includes(item);
+    });
+    new Valine({
+      el         : '#valine-comments',
+      verify     : false,
+      notify     : false,
+      appId      : 'xH8NDrh9u4SQrUpQOd0lICnX-MdYXbMMI',
+      appKey     : 'jl3JjPS4jsosZG29Zv24Y7LE',
+      placeholder: "Just go go",
+      avatar     : 'mm',
+      meta       : guest,
+      pageSize   : '10' || 10,
+      visitor    : false,
+      lang       : 'zh-Hans' || 'zh-cn',
+      path       : location.pathname,
+      recordIP   : false,
+      serverURLs : 'https://xh8ndrh9.api.lncldglobal.com'
+    });
+  }, window.Valine);
+});
+</script>
+
+</body>
+</html>
+

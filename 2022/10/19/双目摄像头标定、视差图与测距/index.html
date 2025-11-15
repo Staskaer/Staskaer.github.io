@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 6.2.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/imgs/theme_pic/staskaer.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/imgs/theme_pic/staskaer.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/imgs/theme_pic/staskaer.png">
+  <link rel="mask-icon" href="/imgs/theme_pic/staskaer.png" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Gemini","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"mac"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"valine","storage":true,"lazyload":false,"nav":null,"activeClass":"valine"},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="双目摄像头标定、视差图与测距">
+<meta property="og:type" content="article">
+<meta property="og:title" content="双目摄像头标定、视差图与测距的实现--玩具级别">
+<meta property="og:url" content="http://example.com/2022/10/19/%E5%8F%8C%E7%9B%AE%E6%91%84%E5%83%8F%E5%A4%B4%E6%A0%87%E5%AE%9A%E3%80%81%E8%A7%86%E5%B7%AE%E5%9B%BE%E4%B8%8E%E6%B5%8B%E8%B7%9D/index.html">
+<meta property="og:site_name" content="Staskaer">
+<meta property="og:description" content="双目摄像头标定、视差图与测距">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="http://example.com/2022/10/19/%E5%8F%8C%E7%9B%AE%E6%91%84%E5%83%8F%E5%A4%B4%E6%A0%87%E5%AE%9A%E3%80%81%E8%A7%86%E5%B7%AE%E5%9B%BE%E4%B8%8E%E6%B5%8B%E8%B7%9D/pic0.jpg">
+<meta property="og:image" content="http://example.com/2022/10/19/%E5%8F%8C%E7%9B%AE%E6%91%84%E5%83%8F%E5%A4%B4%E6%A0%87%E5%AE%9A%E3%80%81%E8%A7%86%E5%B7%AE%E5%9B%BE%E4%B8%8E%E6%B5%8B%E8%B7%9D/pic1.png">
+<meta property="og:image" content="http://example.com/2022/10/19/%E5%8F%8C%E7%9B%AE%E6%91%84%E5%83%8F%E5%A4%B4%E6%A0%87%E5%AE%9A%E3%80%81%E8%A7%86%E5%B7%AE%E5%9B%BE%E4%B8%8E%E6%B5%8B%E8%B7%9D/pic3.png">
+<meta property="article:published_time" content="2022-10-19T14:12:12.000Z">
+<meta property="article:modified_time" content="2025-06-17T15:50:22.391Z">
+<meta property="article:author" content="Staskaer">
+<meta property="article:tag" content="双目摄像头">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://example.com/2022/10/19/%E5%8F%8C%E7%9B%AE%E6%91%84%E5%83%8F%E5%A4%B4%E6%A0%87%E5%AE%9A%E3%80%81%E8%A7%86%E5%B7%AE%E5%9B%BE%E4%B8%8E%E6%B5%8B%E8%B7%9D/pic0.jpg">
+
+<link rel="canonical" href="http://example.com/2022/10/19/%E5%8F%8C%E7%9B%AE%E6%91%84%E5%83%8F%E5%A4%B4%E6%A0%87%E5%AE%9A%E3%80%81%E8%A7%86%E5%B7%AE%E5%9B%BE%E4%B8%8E%E6%B5%8B%E8%B7%9D/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'en'
+  };
+</script>
+
+  <title>双目摄像头标定、视差图与测距的实现--玩具级别 | Staskaer</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+<style>mjx-container[jax="SVG"] {
+  direction: ltr;
+}
+
+mjx-container[jax="SVG"] > svg {
+  overflow: visible;
+}
+
+mjx-container[jax="SVG"][display="true"] {
+  display: block;
+  text-align: center;
+  margin: 1em 0;
+}
+
+mjx-container[jax="SVG"][justify="left"] {
+  text-align: left;
+}
+
+mjx-container[jax="SVG"][justify="right"] {
+  text-align: right;
+}
+
+g[data-mml-node="merror"] > g {
+  fill: red;
+  stroke: red;
+}
+
+g[data-mml-node="merror"] > rect[data-background] {
+  fill: yellow;
+  stroke: none;
+}
+
+g[data-mml-node="mtable"] > line[data-line] {
+  stroke-width: 70px;
+  fill: none;
+}
+
+g[data-mml-node="mtable"] > rect[data-frame] {
+  stroke-width: 70px;
+  fill: none;
+}
+
+g[data-mml-node="mtable"] > .mjx-dashed {
+  stroke-dasharray: 140;
+}
+
+g[data-mml-node="mtable"] > .mjx-dotted {
+  stroke-linecap: round;
+  stroke-dasharray: 0,140;
+}
+
+g[data-mml-node="mtable"] > svg {
+  overflow: visible;
+}
+
+[jax="SVG"] mjx-tool {
+  display: inline-block;
+  position: relative;
+  width: 0;
+  height: 0;
+}
+
+[jax="SVG"] mjx-tool > mjx-tip {
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+mjx-tool > mjx-tip {
+  display: inline-block;
+  padding: .2em;
+  border: 1px solid #888;
+  font-size: 70%;
+  background-color: #F8F8F8;
+  color: black;
+  box-shadow: 2px 2px 5px #AAAAAA;
+}
+
+g[data-mml-node="maction"][data-toggle] {
+  cursor: pointer;
+}
+
+mjx-status {
+  display: block;
+  position: fixed;
+  left: 1em;
+  bottom: 1em;
+  min-width: 25%;
+  padding: .2em .4em;
+  border: 1px solid #888;
+  font-size: 90%;
+  background-color: #F8F8F8;
+  color: black;
+}
+
+foreignObject[data-mjx-xml] {
+  font-family: initial;
+  line-height: normal;
+  overflow: visible;
+}
+
+.MathJax path {
+  stroke-width: 3;
+}
+
+mjx-container[display="true"] {
+  overflow: auto hidden;
+}
+
+mjx-container[display="true"] + br {
+  display: none;
+}
+</style></head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Staskaer</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">Hi, this is Staskaer</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+        <li class="menu-item menu-item-links">
+
+    <a href="/links/" rel="section"><i class="fa fa-link fa-fw"></i>links</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2022/10/19/%E5%8F%8C%E7%9B%AE%E6%91%84%E5%83%8F%E5%A4%B4%E6%A0%87%E5%AE%9A%E3%80%81%E8%A7%86%E5%B7%AE%E5%9B%BE%E4%B8%8E%E6%B5%8B%E8%B7%9D/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/imgs/theme_pic/head_img.png">
+      <meta itemprop="name" content="Staskaer">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Staskaer">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          双目摄像头标定、视差图与测距的实现--玩具级别
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2022-10-19 22:12:12" itemprop="dateCreated datePublished" datetime="2022-10-19T22:12:12+08:00">2022-10-19</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2025-06-17 23:50:22" itemprop="dateModified" datetime="2025-06-17T23:50:22+08:00">2025-06-17</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E4%B8%89%E7%BB%B4%E8%A7%86%E8%A7%89/" itemprop="url" rel="index"><span itemprop="name">三维视觉</span></a>
+                </span>
+            </span>
+
+          
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Valine: </span>
+    
+    <a title="valine" href="/2022/10/19/%E5%8F%8C%E7%9B%AE%E6%91%84%E5%83%8F%E5%A4%B4%E6%A0%87%E5%AE%9A%E3%80%81%E8%A7%86%E5%B7%AE%E5%9B%BE%E4%B8%8E%E6%B5%8B%E8%B7%9D/#valine-comments" itemprop="discussionUrl">
+      <span class="post-comments-count valine-comment-count" data-xid="/2022/10/19/%E5%8F%8C%E7%9B%AE%E6%91%84%E5%83%8F%E5%A4%B4%E6%A0%87%E5%AE%9A%E3%80%81%E8%A7%86%E5%B7%AE%E5%9B%BE%E4%B8%8E%E6%B5%8B%E8%B7%9D/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h2 id="双目摄像头标定视差图与测距">双目摄像头标定、视差图与测距</h2>
+<span id="more"></span>
+<p>因为贫穷，所以从海鲜市场捡了俩双目摄像头来进行标定和重建。由于原理部分的笔记还在整理中，所以本篇主要是直接介绍应用，旨在快速完成标定和测距的任务。</p>
+<img src="/2022/10/19/%E5%8F%8C%E7%9B%AE%E6%91%84%E5%83%8F%E5%A4%B4%E6%A0%87%E5%AE%9A%E3%80%81%E8%A7%86%E5%B7%AE%E5%9B%BE%E4%B8%8E%E6%B5%8B%E8%B7%9D/pic0.jpg" class="">
+<p>廉价的相机...还是双帧不同步的，只能希望时差不要太大了捏。</p>
+<h3 id="相机标定">相机标定</h3>
+<h4 id="拍摄标定板">拍摄标定板</h4>
+<p>相机标定主要是用来标定相机内参矩阵的。我们使用张正友标定法。所以需要先拍摄一些标定图片。</p>
+<p>由于可能会出现图像中虽然有标定板，但是在标定程序中不能正确检测出角点，所以我们直接在拍摄的时候就显示出检测的角点，这样能保证拍摄下来的图像肯定能用于标定。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="comment"># coding=utf-8</span></span><br><span class="line"><span class="keyword">import</span> cv2</span><br><span class="line"><span class="keyword">import</span> numpy <span class="keyword">as</span> np</span><br><span class="line"><span class="keyword">import</span> os</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">find_chessboard_corners</span>(<span class="params">img</span>):</span><br><span class="line">    h, w = img.shape[:<span class="number">2</span>]</span><br><span class="line">    <span class="keyword">assert</span> w == img.shape[<span class="number">1</span>] <span class="keyword">and</span> h == img.shape[<span class="number">0</span>], (<span class="string">"size: %d x %d ... "</span> % (</span><br><span class="line">        img.shape[<span class="number">1</span>], img.shape[<span class="number">0</span>]))</span><br><span class="line">    pattern_size = (<span class="number">9</span>, <span class="number">6</span>)</span><br><span class="line">    found, corners = cv2.findChessboardCorners(img, pattern_size)</span><br><span class="line">    vis = <span class="literal">None</span></span><br><span class="line">    <span class="keyword">if</span> found:</span><br><span class="line">        term = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_COUNT, <span class="number">30</span>, <span class="number">0.1</span>)</span><br><span class="line">        cv2.cornerSubPix(img, corners, (<span class="number">5</span>, <span class="number">5</span>), (-<span class="number">1</span>, -<span class="number">1</span>), term)</span><br><span class="line">        vis = cv2.cvtColor(img, cv2.COLOR_GRAY2BGR)</span><br><span class="line">        cv2.drawChessboardCorners(vis, pattern_size, corners, found)</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> found, vis</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">cap0 = cv2.VideoCapture(<span class="number">0</span>)</span><br><span class="line">cap1 = cv2.VideoCapture(<span class="number">1</span>)</span><br><span class="line">img_path = <span class="string">r"StereoCamera\data\\"</span></span><br><span class="line">firstFrame = <span class="literal">None</span></span><br><span class="line">window_size = <span class="number">0</span></span><br><span class="line">i = <span class="number">0</span></span><br><span class="line">lst = <span class="built_in">open</span>(<span class="string">r'StereoCamera\data\imglst.lst'</span>, <span class="string">'w'</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">while</span> <span class="number">1</span>:</span><br><span class="line">    ret, frame1 = cap0.read()</span><br><span class="line">    ret, frame2 = cap1.read()</span><br><span class="line">    frame1 = cv2.resize(frame1, (<span class="number">640</span>, <span class="number">480</span>), interpolation=cv2.CV_8SC1)</span><br><span class="line">    frame2 = cv2.resize(frame2, (<span class="number">640</span>, <span class="number">480</span>), interpolation=cv2.CV_8SC1)</span><br><span class="line">    frame = np.concatenate([frame1, frame2], axis=<span class="number">1</span>)</span><br><span class="line">    cv2.imshow(<span class="string">'img'</span>, frame)</span><br><span class="line"></span><br><span class="line">    frame_left = frame1</span><br><span class="line">    frame_right = frame2</span><br><span class="line">    found1, vis1 = find_chessboard_corners(</span><br><span class="line">        cv2.cvtColor(frame_left, cv2.COLOR_BGR2GRAY))</span><br><span class="line">    found2, vis2 = find_chessboard_corners(</span><br><span class="line">        cv2.cvtColor(frame_right, cv2.COLOR_BGR2GRAY))</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> found1 <span class="keyword">and</span> found2:</span><br><span class="line">        image = np.concatenate([vis1, vis2], axis=<span class="number">1</span>)</span><br><span class="line">        image = np.concatenate([frame, image])</span><br><span class="line">        cv2.imshow(<span class="string">'output'</span>, image)</span><br><span class="line"></span><br><span class="line">    key = cv2.waitKey(<span class="number">30</span>)</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> key == <span class="built_in">ord</span>(<span class="string">"s"</span>) <span class="keyword">and</span> found1 <span class="keyword">and</span> found2:</span><br><span class="line"></span><br><span class="line">        cv2.imwrite((<span class="string">f'<span class="subst">{img_path}</span><span class="subst">{i}</span>left.jpg'</span>), frame_left)</span><br><span class="line">        cv2.imwrite((<span class="string">f'<span class="subst">{img_path}</span><span class="subst">{i}</span>right.jpg'</span>), frame_right)</span><br><span class="line"></span><br><span class="line">        lst.write(<span class="string">f"<span class="subst">{img_path}</span><span class="subst">{i}</span>left.jpg\n"</span>)</span><br><span class="line">        lst.write(<span class="string">f"<span class="subst">{img_path}</span><span class="subst">{i}</span>right.jpg\n"</span>)</span><br><span class="line">        i = i + <span class="number">1</span></span><br><span class="line">        <span class="keyword">if</span> i &gt; <span class="number">20</span>:</span><br><span class="line">            <span class="keyword">break</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> key &amp; <span class="number">0xFF</span> == <span class="built_in">ord</span>(<span class="string">'q'</span>):</span><br><span class="line">        <span class="keyword">break</span></span><br><span class="line"></span><br><span class="line">lst.close()</span><br><span class="line">cap0.release()</span><br><span class="line">cap1.release()</span><br><span class="line">cv2.destroyAllWindows()</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<div class="note info">
+            <p>注意修改路径和你的标定板的角点数目哦！</p><p>当出现角点的时候，按下s就能截取了，会保存若干图像和一个路径文件，用于标定。</p>
+          </div>
+<img src="/2022/10/19/%E5%8F%8C%E7%9B%AE%E6%91%84%E5%83%8F%E5%A4%B4%E6%A0%87%E5%AE%9A%E3%80%81%E8%A7%86%E5%B7%AE%E5%9B%BE%E4%B8%8E%E6%B5%8B%E8%B7%9D/pic1.png" class="">
+<p>一般来说，我们需要拍摄20张左右的标定板，让标定板最好位于各个位置。</p>
+<h4 id="调用opencv-samples中标定程序用于标定">调用opencv samples中标定程序用于标定</h4>
+<p>在opencv的samples/cpp文件夹中，有一个现成的给图像进行标定的程序<code>stereo_calib.cpp</code>，我们先把它编译好(在编译它之前，你得先编译opencv这个库哦~)。</p>
+<p>不妨假设你已经编译好这个程序了，下一步就是要制作一个xml文件，用于告诉他，哪些图像是用于标定的。</p>
+<p>xml形式如下，我们把这个文件命名为<code>stereo_calib.xml</code></p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="meta">&lt;?xml version=<span class="string">"1.0"</span>?&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">opencv_storage</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">imagelist</span>&gt;</span></span><br><span class="line">"data\0left.jpg"</span><br><span class="line">"data\0right.jpg"</span><br><span class="line">...</span><br><span class="line">(这里放你的图像路径哦，一行一个，像上面那样)</span><br><span class="line"><span class="tag">&lt;/<span class="name">imagelist</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">opencv_storage</span>&gt;</span></span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>然后在命令行中执行</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">// w h分别是角点的横向和纵向的数目，s是面积</span><br><span class="line"></span><br><span class="line">stereo_calib.exe -w=9 -h=6 -s=1 stereo_calib.xml</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>然后就会生成两个文件<code>intrinsics.yml</code>和<code>extrinsics.yml</code>这就是标定后的参数矩阵哦。</p>
+<h3 id="视差图与测距">视差图与测距</h3>
+<p>完成相机的标定后，我们使用BM算法进行立体匹配，然后根据空间坐标的公式完成测距。同样此处也不深入这些原理，而是给出应用。</p>
+<p>我们首先把之前的<code>intrinsics.yml</code>和<code>extrinsics.yml</code>放在测距文件的同一目录下，这样你复制下来就不用修改路径了。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="keyword">import</span> cv2 <span class="keyword">as</span> cv</span><br><span class="line"><span class="keyword">import</span> numpy <span class="keyword">as</span> np</span><br><span class="line"><span class="keyword">import</span> time</span><br><span class="line"><span class="keyword">import</span> os</span><br><span class="line"></span><br><span class="line">depthWinTitle = <span class="string">'Depth'</span></span><br><span class="line"></span><br><span class="line">cv.namedWindow(depthWinTitle)</span><br><span class="line">cv.createTrackbar(<span class="string">"num"</span>, depthWinTitle, <span class="number">0</span>, <span class="number">10</span>, <span class="keyword">lambda</span> x: <span class="literal">None</span>)</span><br><span class="line">cv.createTrackbar(<span class="string">"blockSize"</span>, depthWinTitle, <span class="number">5</span>, <span class="number">255</span>, <span class="keyword">lambda</span> x: <span class="literal">None</span>)</span><br><span class="line">cv.namedWindow(<span class="string">"3D Cam"</span>)</span><br><span class="line">cv.moveWindow(<span class="string">"3D Cam"</span>, <span class="number">100</span>, <span class="number">50</span>)</span><br><span class="line">cv.moveWindow(depthWinTitle, <span class="number">800</span>, <span class="number">50</span>)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">callbackfunc</span>(<span class="params">e, x, y, f, p</span>):</span><br><span class="line">    <span class="keyword">if</span> e == cv.EVENT_LBUTTONDOWN:</span><br><span class="line">        <span class="built_in">print</span>(threeD[y][x])</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">cv.setMouseCallback(depthWinTitle, callbackfunc, <span class="literal">None</span>)</span><br><span class="line"></span><br><span class="line">fs = cv.FileStorage(<span class="string">r'intrinsics.yml'</span>, cv.FILE_STORAGE_READ)</span><br><span class="line">M1 = fs.getNode(<span class="string">'M1'</span>).mat()</span><br><span class="line">D1 = fs.getNode(<span class="string">'D1'</span>).mat()</span><br><span class="line">M2 = fs.getNode(<span class="string">'M2'</span>).mat()</span><br><span class="line">D2 = fs.getNode(<span class="string">'D2'</span>).mat()</span><br><span class="line"></span><br><span class="line">fs = cv.FileStorage(<span class="string">r'extrinsics.yml'</span>, cv.FILE_STORAGE_READ)</span><br><span class="line">R = fs.getNode(<span class="string">'R'</span>).mat()</span><br><span class="line">T = fs.getNode(<span class="string">'T'</span>).mat()</span><br><span class="line">R1 = fs.getNode(<span class="string">'R1'</span>).mat()</span><br><span class="line">P1 = fs.getNode(<span class="string">'P1'</span>).mat()</span><br><span class="line">R2 = fs.getNode(<span class="string">'R2'</span>).mat()</span><br><span class="line">P2 = fs.getNode(<span class="string">'P2'</span>).mat()</span><br><span class="line">Q = fs.getNode(<span class="string">'Q'</span>).mat()</span><br><span class="line"></span><br><span class="line">cap0 = cv.VideoCapture(<span class="number">0</span>)</span><br><span class="line">cap1 = cv.VideoCapture(<span class="number">1</span>)</span><br><span class="line">size = (<span class="number">640</span>, <span class="number">480</span>)</span><br><span class="line">left_map1, left_map2 = cv.initUndistortRectifyMap(</span><br><span class="line">    M1, D1, R1, P1, size, cv.CV_16SC2)</span><br><span class="line">right_map1, right_map2 = cv.initUndistortRectifyMap(</span><br><span class="line">    M2, D2, R2, P2, size, cv.CV_16SC2)</span><br><span class="line"></span><br><span class="line"><span class="keyword">while</span> <span class="literal">True</span>:</span><br><span class="line">    ret, frame1 = cap0.read()</span><br><span class="line">    ret, frame2 = cap1.read()</span><br><span class="line">    frame1 = cv.resize(frame1, (<span class="number">640</span>, <span class="number">480</span>), interpolation=cv.CV_8SC1)</span><br><span class="line">    frame2 = cv.resize(frame2, (<span class="number">640</span>, <span class="number">480</span>), interpolation=cv.CV_8SC1)</span><br><span class="line">    frame = np.concatenate([frame1, frame2], axis=<span class="number">1</span>)</span><br><span class="line">    frame_left = frame1</span><br><span class="line">    frame_right = frame2</span><br><span class="line"></span><br><span class="line">    left_rectified = cv.remap(frame_left, left_map1,</span><br><span class="line">                              left_map2, cv.INTER_LINEAR)</span><br><span class="line">    right_rectified = cv.remap(</span><br><span class="line">        frame_right, right_map1, right_map2, cv.INTER_LINEAR)</span><br><span class="line">    rectified = np.concatenate([left_rectified, right_rectified], axis=<span class="number">1</span>)</span><br><span class="line">    image = np.concatenate([frame, rectified])</span><br><span class="line"></span><br><span class="line">    imgL = cv.cvtColor(left_rectified, cv.COLOR_BGR2GRAY)</span><br><span class="line">    imgR = cv.cvtColor(right_rectified, cv.COLOR_BGR2GRAY)</span><br><span class="line"></span><br><span class="line">    num = cv.getTrackbarPos(<span class="string">"num"</span>, depthWinTitle)</span><br><span class="line">    blockSize = cv.getTrackbarPos(<span class="string">"blockSize"</span>, depthWinTitle)</span><br><span class="line">    <span class="keyword">if</span> blockSize % <span class="number">2</span> == <span class="number">0</span>:</span><br><span class="line">        blockSize += <span class="number">1</span></span><br><span class="line">    <span class="keyword">if</span> blockSize &lt; <span class="number">5</span>:</span><br><span class="line">        blockSize = <span class="number">5</span></span><br><span class="line"></span><br><span class="line">    stereo = cv.StereoBM_create(numDisparities=<span class="number">16</span> * num, blockSize=blockSize)</span><br><span class="line">    <span class="comment">#print(16 * num, blockSize)</span></span><br><span class="line">    disparity = stereo.compute(imgL, imgR)</span><br><span class="line"></span><br><span class="line">    disp = cv.normalize(disparity, disparity, alpha=<span class="number">0</span>,</span><br><span class="line">                        beta=<span class="number">255</span>, norm_type=cv.NORM_MINMAX, dtype=cv.CV_8U)</span><br><span class="line">    threeD = cv.reprojectImageTo3D(disparity.astype(np.float32) / <span class="number">16.</span>, Q)</span><br><span class="line">    <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">1</span>, <span class="number">30</span>):</span><br><span class="line">        cv.line(image, (<span class="number">0</span>, <span class="number">16</span> * i), (<span class="number">640</span>, <span class="number">16</span> * i), (<span class="number">0</span>, <span class="number">255</span>, <span class="number">0</span>), <span class="number">1</span>)</span><br><span class="line"></span><br><span class="line">    cv.imshow(<span class="string">'3D Cam'</span>, image)</span><br><span class="line">    cv.imshow(depthWinTitle, disp)</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> cv.waitKey(<span class="number">1</span>) &amp; <span class="number">0xFF</span> == <span class="built_in">ord</span>(<span class="string">'q'</span>):</span><br><span class="line">        <span class="keyword">break</span></span><br><span class="line"></span><br><span class="line">cap0.release()</span><br><span class="line">cap1.release()</span><br><span class="line">cv.destroyAllWindows()</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>执行这个文件，就会自动采集图像进行匹配，最后计算出深度。</p>
+<p>用鼠标在视差图上点一下就会显示出深度信息了哦。</p>
+<img src="/2022/10/19/%E5%8F%8C%E7%9B%AE%E6%91%84%E5%83%8F%E5%A4%B4%E6%A0%87%E5%AE%9A%E3%80%81%E8%A7%86%E5%B7%AE%E5%9B%BE%E4%B8%8E%E6%B5%8B%E8%B7%9D/pic3.png" class="">
+<p>作为一个双帧不同步的摄像头，这个视差图的效果感觉已经可以了，准确率还算可以，能跟5块钱的超声波测距打的有来有回，符合了一个玩具的身份...</p>
+<p>当然，感觉标定板用的比较小，导致标定的误差还是比较大，还有一定的优化空间。</p>
+<p>有钱了一定要上好一点的相机！</p>
+<div class="note primary">
+            <p>这篇博客代表三维视觉部分正式开坑了啦，考虑到这部分代码写的比较乱，打算后面在具体阐述原理的时候把他们好好地整理成一个方便可用的库。</p>
+          </div>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/%E5%8F%8C%E7%9B%AE%E6%91%84%E5%83%8F%E5%A4%B4/" rel="tag"># 双目摄像头</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2022/10/19/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-12/" rel="prev" title="levelDB源码剖析(12)--迭代器的实现">
+      <i class="fa fa-chevron-left"></i> levelDB源码剖析(12)--迭代器的实现
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2022/10/21/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-13/" rel="next" title="levelDB源码剖析(13)--缓存Cache">
+      levelDB源码剖析(13)--缓存Cache <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+    <div class="comments" id="valine-comments"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8F%8C%E7%9B%AE%E6%91%84%E5%83%8F%E5%A4%B4%E6%A0%87%E5%AE%9A%E8%A7%86%E5%B7%AE%E5%9B%BE%E4%B8%8E%E6%B5%8B%E8%B7%9D"><span class="nav-number">1.</span> <span class="nav-text">双目摄像头标定、视差图与测距</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%9B%B8%E6%9C%BA%E6%A0%87%E5%AE%9A"><span class="nav-number">1.1.</span> <span class="nav-text">相机标定</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%8B%8D%E6%91%84%E6%A0%87%E5%AE%9A%E6%9D%BF"><span class="nav-number">1.1.1.</span> <span class="nav-text">拍摄标定板</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E8%B0%83%E7%94%A8opencv-samples%E4%B8%AD%E6%A0%87%E5%AE%9A%E7%A8%8B%E5%BA%8F%E7%94%A8%E4%BA%8E%E6%A0%87%E5%AE%9A"><span class="nav-number">1.1.2.</span> <span class="nav-text">调用opencv samples中标定程序用于标定</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%A7%86%E5%B7%AE%E5%9B%BE%E4%B8%8E%E6%B5%8B%E8%B7%9D"><span class="nav-number">1.2.</span> <span class="nav-text">视差图与测距</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Staskaer"
+      src="/imgs/theme_pic/head_img.png">
+  <p class="site-author-name" itemprop="name">Staskaer</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">97</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">10</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">24</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/Staskaer" title="Github → https:&#x2F;&#x2F;github.com&#x2F;Staskaer" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:liujiaxin011121@gmail.com" title="E-Mail → mailto:liujiaxin011121@gmail.com" rel="noopener" target="_blank"><i class="fa fa-envelope fa-fw"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://www.zhihu.com/people/staskaer" title="Zhihu → https:&#x2F;&#x2F;www.zhihu.com&#x2F;people&#x2F;staskaer" rel="noopener" target="_blank"><i class="fab fa-zhihu fa-fw"></i></a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2025</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Staskaer</span>
+</div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+
+<script>
+NexT.utils.loadComments(document.querySelector('#valine-comments'), () => {
+  NexT.utils.getScript('https://cdn.jsdelivr.net/npm/valine@1.5.1/dist/Valine.min.js', () => {
+    var GUEST = ['nick', 'mail', 'link'];
+    var guest = 'nick,mail,link';
+    guest = guest.split(',').filter(item => {
+      return GUEST.includes(item);
+    });
+    new Valine({
+      el         : '#valine-comments',
+      verify     : false,
+      notify     : false,
+      appId      : 'xH8NDrh9u4SQrUpQOd0lICnX-MdYXbMMI',
+      appKey     : 'jl3JjPS4jsosZG29Zv24Y7LE',
+      placeholder: "Just go go",
+      avatar     : 'mm',
+      meta       : guest,
+      pageSize   : '10' || 10,
+      visitor    : false,
+      lang       : 'zh-Hans' || 'zh-cn',
+      path       : location.pathname,
+      recordIP   : false,
+      serverURLs : 'https://xh8ndrh9.api.lncldglobal.com'
+    });
+  }, window.Valine);
+});
+</script>
+
+</body>
+</html>
+

@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 6.2.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/imgs/theme_pic/staskaer.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/imgs/theme_pic/staskaer.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/imgs/theme_pic/staskaer.png">
+  <link rel="mask-icon" href="/imgs/theme_pic/staskaer.png" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Gemini","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"mac"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"valine","storage":true,"lazyload":false,"nav":null,"activeClass":"valine"},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="levelDB的字符串Slice">
+<meta property="og:type" content="article">
+<meta property="og:title" content="levelDB源码剖析(5)--字符串Slice">
+<meta property="og:url" content="http://example.com/2022/09/20/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-5/index.html">
+<meta property="og:site_name" content="Staskaer">
+<meta property="og:description" content="levelDB的字符串Slice">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2022-09-20T00:59:43.000Z">
+<meta property="article:modified_time" content="2025-06-17T15:50:22.335Z">
+<meta property="article:author" content="Staskaer">
+<meta property="article:tag" content="C++">
+<meta property="article:tag" content="levelDB">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="http://example.com/2022/09/20/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-5/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'en'
+  };
+</script>
+
+  <title>levelDB源码剖析(5)--字符串Slice | Staskaer</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+<style>mjx-container[jax="SVG"] {
+  direction: ltr;
+}
+
+mjx-container[jax="SVG"] > svg {
+  overflow: visible;
+}
+
+mjx-container[jax="SVG"][display="true"] {
+  display: block;
+  text-align: center;
+  margin: 1em 0;
+}
+
+mjx-container[jax="SVG"][justify="left"] {
+  text-align: left;
+}
+
+mjx-container[jax="SVG"][justify="right"] {
+  text-align: right;
+}
+
+g[data-mml-node="merror"] > g {
+  fill: red;
+  stroke: red;
+}
+
+g[data-mml-node="merror"] > rect[data-background] {
+  fill: yellow;
+  stroke: none;
+}
+
+g[data-mml-node="mtable"] > line[data-line] {
+  stroke-width: 70px;
+  fill: none;
+}
+
+g[data-mml-node="mtable"] > rect[data-frame] {
+  stroke-width: 70px;
+  fill: none;
+}
+
+g[data-mml-node="mtable"] > .mjx-dashed {
+  stroke-dasharray: 140;
+}
+
+g[data-mml-node="mtable"] > .mjx-dotted {
+  stroke-linecap: round;
+  stroke-dasharray: 0,140;
+}
+
+g[data-mml-node="mtable"] > svg {
+  overflow: visible;
+}
+
+[jax="SVG"] mjx-tool {
+  display: inline-block;
+  position: relative;
+  width: 0;
+  height: 0;
+}
+
+[jax="SVG"] mjx-tool > mjx-tip {
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+mjx-tool > mjx-tip {
+  display: inline-block;
+  padding: .2em;
+  border: 1px solid #888;
+  font-size: 70%;
+  background-color: #F8F8F8;
+  color: black;
+  box-shadow: 2px 2px 5px #AAAAAA;
+}
+
+g[data-mml-node="maction"][data-toggle] {
+  cursor: pointer;
+}
+
+mjx-status {
+  display: block;
+  position: fixed;
+  left: 1em;
+  bottom: 1em;
+  min-width: 25%;
+  padding: .2em .4em;
+  border: 1px solid #888;
+  font-size: 90%;
+  background-color: #F8F8F8;
+  color: black;
+}
+
+foreignObject[data-mjx-xml] {
+  font-family: initial;
+  line-height: normal;
+  overflow: visible;
+}
+
+.MathJax path {
+  stroke-width: 3;
+}
+
+mjx-container[display="true"] {
+  overflow: auto hidden;
+}
+
+mjx-container[display="true"] + br {
+  display: none;
+}
+</style></head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Staskaer</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">Hi, this is Staskaer</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+        <li class="menu-item menu-item-links">
+
+    <a href="/links/" rel="section"><i class="fa fa-link fa-fw"></i>links</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2022/09/20/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-5/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/imgs/theme_pic/head_img.png">
+      <meta itemprop="name" content="Staskaer">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Staskaer">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          levelDB源码剖析(5)--字符串Slice
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2022-09-20 08:59:43" itemprop="dateCreated datePublished" datetime="2022-09-20T08:59:43+08:00">2022-09-20</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2025-06-17 23:50:22" itemprop="dateModified" datetime="2025-06-17T23:50:22+08:00">2025-06-17</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/" itemprop="url" rel="index"><span itemprop="name">levelDB源码剖析</span></a>
+                </span>
+            </span>
+
+          
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Valine: </span>
+    
+    <a title="valine" href="/2022/09/20/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-5/#valine-comments" itemprop="discussionUrl">
+      <span class="post-comments-count valine-comment-count" data-xid="/2022/09/20/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-5/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h2 id="leveldb的字符串slice">levelDB的字符串Slice</h2>
+<span id="more"></span>
+<hr>
+<p>上次我们分析编码解码的时候，注意到其中使用的参数有些是<code>Slice</code>类型，这个类型就是levelDB中自己封装的一个轻量级字符串类，其只包含了指向字符串的指针和字符串的长度。</p>
+<div class="note primary">
+            <p>Slice可以理解成切片，因为其指向底层字符串的首地址，并且标定出长度。</p><p>但是需要注意的是，Slice中不涉及对字符串的销毁和创建，它只是<strong>指向</strong>。因此调用Slice对象时<strong>必须确保底层的字符串没有被销毁</strong>。</p>
+          </div>
+<h3 id="源码解析部分">源码解析部分</h3>
+<div class="note primary">
+            <p>源码位置： <code>utils/slice.h</code></p>
+          </div>
+<p>没错，Slice对象只有一个头文件，全部方法都是内联的。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">LEVELDB_EXPORT</span> Slice</span><br><span class="line">{</span><br><span class="line"></span><br><span class="line"><span class="keyword">private</span>:               <span class="comment">//只有两个私有成员</span></span><br><span class="line">    <span class="type">const</span> <span class="type">char</span> *data_; <span class="comment">// 指向位于底层的字符串</span></span><br><span class="line">    <span class="type">size_t</span> size_;      <span class="comment">// 标识出字符串的长度</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="comment">/****start一些构造函数start****/</span></span><br><span class="line"></span><br><span class="line">    <span class="comment">// 空的构造函数</span></span><br><span class="line">    <span class="built_in">Slice</span>() : <span class="built_in">data_</span>(<span class="string">""</span>), <span class="built_in">size_</span>(<span class="number">0</span>) {}</span><br><span class="line">    <span class="comment">// 对字符串d进行0:n的切片，即d[:n]</span></span><br><span class="line">    <span class="built_in">Slice</span>(<span class="type">const</span> <span class="type">char</span> *d, <span class="type">size_t</span> n) : <span class="built_in">data_</span>(d), <span class="built_in">size_</span>(n) {}</span><br><span class="line">    <span class="comment">// 对string类型s进行0:n的切片，即s[:n]</span></span><br><span class="line">    <span class="built_in">Slice</span>(<span class="type">const</span> std::string &amp;s) : <span class="built_in">data_</span>(s.<span class="built_in">data</span>()), <span class="built_in">size_</span>(s.<span class="built_in">size</span>()) {}</span><br><span class="line">    <span class="comment">// 指向字符串s</span></span><br><span class="line">    <span class="built_in">Slice</span>(<span class="type">const</span> <span class="type">char</span> *s) : <span class="built_in">data_</span>(s), <span class="built_in">size_</span>(<span class="built_in">strlen</span>(s)) {}</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 拷贝构造函数和'='运算符使用的默认的即可</span></span><br><span class="line">    <span class="built_in">Slice</span>(<span class="type">const</span> Slice &amp;) = <span class="keyword">default</span>;</span><br><span class="line">    Slice &amp;<span class="keyword">operator</span>=(<span class="type">const</span> Slice &amp;) = <span class="keyword">default</span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/****end一些构造函数end****/</span></span><br><span class="line"></span><br><span class="line">    <span class="comment">/*下面是一些公有接口*/</span></span><br><span class="line"></span><br><span class="line">    <span class="comment">// 指向切片字符串的起始位置</span></span><br><span class="line">    <span class="function"><span class="type">const</span> <span class="type">char</span> *<span class="title">data</span><span class="params">()</span> <span class="type">const</span> </span>{ <span class="keyword">return</span> data_; }</span><br><span class="line">    <span class="comment">// 返回长度</span></span><br><span class="line">    <span class="function"><span class="type">size_t</span> <span class="title">size</span><span class="params">()</span> <span class="type">const</span> </span>{ <span class="keyword">return</span> size_; }</span><br><span class="line">    <span class="comment">// 判断是否为空</span></span><br><span class="line">    <span class="function"><span class="type">bool</span> <span class="title">empty</span><span class="params">()</span> <span class="type">const</span> </span>{ <span class="keyword">return</span> size_ == <span class="number">0</span>; }</span><br><span class="line">    <span class="comment">// 执行类似字符串的str[i]的访问</span></span><br><span class="line">    <span class="type">char</span> <span class="keyword">operator</span>[](<span class="type">size_t</span> n) <span class="type">const</span></span><br><span class="line">    {</span><br><span class="line">        <span class="built_in">assert</span>(n &lt; <span class="built_in">size</span>());</span><br><span class="line">        <span class="keyword">return</span> data_[n];</span><br><span class="line">    }</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 清除切片</span></span><br><span class="line">    <span class="function"><span class="type">void</span> <span class="title">clear</span><span class="params">()</span></span></span><br><span class="line"><span class="function">    </span>{</span><br><span class="line">        data_ = <span class="string">""</span>;</span><br><span class="line">        size_ = <span class="number">0</span>;</span><br><span class="line">    }</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 移除切片前n个字节</span></span><br><span class="line">    <span class="function"><span class="type">void</span> <span class="title">remove_prefix</span><span class="params">(<span class="type">size_t</span> n)</span></span></span><br><span class="line"><span class="function">    </span>{</span><br><span class="line">        <span class="built_in">assert</span>(n &lt;= <span class="built_in">size</span>());</span><br><span class="line">        data_ += n;</span><br><span class="line">        size_ -= n;</span><br><span class="line">    }</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 将切片创建成string类</span></span><br><span class="line">    <span class="function">std::string <span class="title">ToString</span><span class="params">()</span> <span class="type">const</span> </span>{ <span class="keyword">return</span> std::<span class="built_in">string</span>(data_, size_); }</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 与另一个切片比较</span></span><br><span class="line">    <span class="function"><span class="type">int</span> <span class="title">compare</span><span class="params">(<span class="type">const</span> Slice &amp;b)</span> <span class="type">const</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 此切片是否以切片x开头</span></span><br><span class="line">    <span class="function"><span class="type">bool</span> <span class="title">starts_with</span><span class="params">(<span class="type">const</span> Slice &amp;x)</span> <span class="type">const</span></span></span><br><span class="line"><span class="function">    </span>{</span><br><span class="line">        <span class="keyword">return</span> ((size_ &gt;= x.size_) &amp;&amp; (<span class="built_in">memcmp</span>(data_, x.data_, x.size_) == <span class="number">0</span>));</span><br><span class="line">    }</span><br><span class="line">};</span><br><span class="line"></span><br><span class="line"><span class="comment">// 判断x与y是否相等</span></span><br><span class="line"><span class="keyword">inline</span> <span class="type">bool</span> <span class="keyword">operator</span>==(<span class="type">const</span> Slice &amp;x, <span class="type">const</span> Slice &amp;y)</span><br><span class="line">{</span><br><span class="line">    <span class="built_in">return</span> ((x.<span class="built_in">size</span>() == y.<span class="built_in">size</span>()) &amp;&amp;</span><br><span class="line">            (<span class="built_in">memcmp</span>(x.<span class="built_in">data</span>(), y.<span class="built_in">data</span>(), x.<span class="built_in">size</span>()) == <span class="number">0</span>));</span><br><span class="line">}</span><br><span class="line"></span><br><span class="line"><span class="keyword">inline</span> <span class="type">bool</span> <span class="keyword">operator</span>!=(<span class="type">const</span> Slice &amp;x, <span class="type">const</span> Slice &amp;y) { <span class="keyword">return</span> !(x == y); }</span><br><span class="line"></span><br><span class="line"><span class="comment">// 比较字符串的函数</span></span><br><span class="line"><span class="function"><span class="keyword">inline</span> <span class="type">int</span> <span class="title">Slice::compare</span><span class="params">(<span class="type">const</span> Slice &amp;b)</span> <span class="type">const</span></span></span><br><span class="line"><span class="function"></span>{</span><br><span class="line">    <span class="type">const</span> <span class="type">size_t</span> min_len = (size_ &lt; b.size_) ? size_ : b.size_;</span><br><span class="line">    <span class="type">int</span> r = <span class="built_in">memcmp</span>(data_, b.data_, min_len);</span><br><span class="line">    <span class="keyword">if</span> (r == <span class="number">0</span>)</span><br><span class="line">    {</span><br><span class="line">        <span class="keyword">if</span> (size_ &lt; b.size_)</span><br><span class="line">            r = <span class="number">-1</span>;</span><br><span class="line">        <span class="keyword">else</span> <span class="keyword">if</span> (size_ &gt; b.size_)</span><br><span class="line">            r = +<span class="number">1</span>;</span><br><span class="line">    }</span><br><span class="line">    <span class="keyword">return</span> r;</span><br><span class="line">}</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>Slice的实现还是非常简单的，而且它提供了非常丰富的接口。</p>
+<p>但是Slice的实现我们也能看到一些问题：</p>
+<ul>
+<li>由于Slice类不涉及内存的分配和销毁，也不检查内存是否合法，因此在调用的时候需要特别注意。</li>
+<li>Slice类不涉及原子操作，虽然大部分都是const的读取，但是在多线程中将某一个Slice对象进行修改，则所有线程都需要执行同步。</li>
+</ul>
+<p>关于第二点，源文件中也有说明</p>
+<div class="note info">
+            <p>Multiple threads can invoke const methods on a Slice without external synchronization, but if any of the threads may call a non-const method, all threads accessing the same Slice must use external synchronization.</p><p>多线程在调用const方法后可以不同步，但是如果调用非const方法，所有访问被修改的Slice的线程必须执行同步。</p>
+          </div>
+<h2 id="总结部分">总结部分</h2>
+<div class="note primary">
+            <h3 id="编程小技巧">编程小技巧</h3><ul><li>C++可以在类内或类外重载运算符，而在类内重载又可以分为'类内隐式重载'和在'类外显示重载'，这几种方式区别如下。当然，此处不考虑友元。</li></ul><figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">x</span></span><br><span class="line">{</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    ...</span><br><span class="line">    <span class="type">int</span> <span class="keyword">operator</span>==(x&amp; other){}; <span class="comment">// 类内隐式</span></span><br><span class="line">}</span><br><span class="line"></span><br><span class="line"><span class="type">int</span> <span class="keyword">inline</span> x::<span class="keyword">operator</span>==(x&amp; other){};<span class="comment">// 类外显示</span></span><br><span class="line"></span><br><span class="line"><span class="type">int</span> <span class="keyword">inline</span> <span class="keyword">operator</span>==(x&amp; <span class="keyword">this</span>, x&amp; other){};<span class="comment">//类外重载</span></span><br><span class="line"></span><br></pre></td></tr></table></figure>
+          </div>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/C/" rel="tag"># C++</a>
+              <a href="/tags/levelDB/" rel="tag"># levelDB</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2022/09/14/%E8%AE%B0%E9%A3%8E%E7%81%AB%E8%BD%AEMIQI-RK3288%E5%BC%80%E5%8F%91%E6%9D%BF%E9%85%8D%E7%BD%AE/" rel="prev" title="记风火轮MIQI-RK3288开发板的踩坑过程">
+      <i class="fa fa-chevron-left"></i> 记风火轮MIQI-RK3288开发板的踩坑过程
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2022/09/21/linux%E4%B8%AD%E6%9B%B4%E6%96%B0python%E7%89%88%E6%9C%AC/" rel="next" title="linux中更新python版本">
+      linux中更新python版本 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+    <div class="comments" id="valine-comments"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#leveldb%E7%9A%84%E5%AD%97%E7%AC%A6%E4%B8%B2slice"><span class="nav-number">1.</span> <span class="nav-text">levelDB的字符串Slice</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%BA%90%E7%A0%81%E8%A7%A3%E6%9E%90%E9%83%A8%E5%88%86"><span class="nav-number">1.1.</span> <span class="nav-text">源码解析部分</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%80%BB%E7%BB%93%E9%83%A8%E5%88%86"><span class="nav-number">2.</span> <span class="nav-text">总结部分</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%BC%96%E7%A8%8B%E5%B0%8F%E6%8A%80%E5%B7%A7"><span class="nav-number">2.1.</span> <span class="nav-text">编程小技巧</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Staskaer"
+      src="/imgs/theme_pic/head_img.png">
+  <p class="site-author-name" itemprop="name">Staskaer</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">97</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">10</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">24</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/Staskaer" title="Github → https:&#x2F;&#x2F;github.com&#x2F;Staskaer" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:liujiaxin011121@gmail.com" title="E-Mail → mailto:liujiaxin011121@gmail.com" rel="noopener" target="_blank"><i class="fa fa-envelope fa-fw"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://www.zhihu.com/people/staskaer" title="Zhihu → https:&#x2F;&#x2F;www.zhihu.com&#x2F;people&#x2F;staskaer" rel="noopener" target="_blank"><i class="fab fa-zhihu fa-fw"></i></a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2025</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Staskaer</span>
+</div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+
+<script>
+NexT.utils.loadComments(document.querySelector('#valine-comments'), () => {
+  NexT.utils.getScript('https://cdn.jsdelivr.net/npm/valine@1.5.1/dist/Valine.min.js', () => {
+    var GUEST = ['nick', 'mail', 'link'];
+    var guest = 'nick,mail,link';
+    guest = guest.split(',').filter(item => {
+      return GUEST.includes(item);
+    });
+    new Valine({
+      el         : '#valine-comments',
+      verify     : false,
+      notify     : false,
+      appId      : 'xH8NDrh9u4SQrUpQOd0lICnX-MdYXbMMI',
+      appKey     : 'jl3JjPS4jsosZG29Zv24Y7LE',
+      placeholder: "Just go go",
+      avatar     : 'mm',
+      meta       : guest,
+      pageSize   : '10' || 10,
+      visitor    : false,
+      lang       : 'zh-Hans' || 'zh-cn',
+      path       : location.pathname,
+      recordIP   : false,
+      serverURLs : 'https://xh8ndrh9.api.lncldglobal.com'
+    });
+  }, window.Valine);
+});
+</script>
+
+</body>
+</html>
+
