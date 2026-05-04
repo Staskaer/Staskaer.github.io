@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 6.2.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/imgs/theme_pic/staskaer.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/imgs/theme_pic/staskaer.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/imgs/theme_pic/staskaer.png">
+  <link rel="mask-icon" href="/imgs/theme_pic/staskaer.png" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Gemini","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"mac"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"valine","storage":true,"lazyload":false,"nav":null,"activeClass":"valine"},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="一些论文">
+<meta property="og:type" content="article">
+<meta property="og:title" content="2026.3论文阅读">
+<meta property="og:url" content="http://example.com/2026/03/09/%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB26_3/index.html">
+<meta property="og:site_name" content="Staskaer">
+<meta property="og:description" content="一些论文">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="http://example.com/2026/03/09/%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB26_3/event_gpt_1.png">
+<meta property="og:image" content="http://example.com/2026/03/09/%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB26_3/event_gpt_2.png">
+<meta property="og:image" content="http://example.com/2026/03/09/%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB26_3/rt2.png">
+<meta property="og:image" content="http://example.com/2026/03/09/%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB26_3/LAPA.png">
+<meta property="og:image" content="http://example.com/2026/03/09/%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB26_3/gr00tn1.png">
+<meta property="og:image" content="http://example.com/2026/03/09/%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB26_3/interna1.png">
+<meta property="og:image" content="http://example.com/2026/03/09/%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB26_3/internvlam1.png">
+<meta property="og:image" content="http://example.com/2026/03/09/%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB26_3/linbotva.png">
+<meta property="og:image" content="http://example.com/2026/03/09/%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB26_3/damvla.png">
+<meta property="og:image" content="http://example.com/2026/03/09/%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB26_3/mem.png">
+<meta property="og:image" content="http://example.com/2026/03/09/%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB26_3/delta_vla.png">
+<meta property="og:image" content="http://example.com/2026/03/09/%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB26_3/hifvla.png">
+<meta property="og:image" content="http://example.com/2026/03/09/%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB26_3/vl2a.png">
+<meta property="og:image" content="http://example.com/2026/03/09/%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB26_3/val_adapter.png">
+<meta property="article:published_time" content="2026-03-09T07:50:59.000Z">
+<meta property="article:modified_time" content="2026-05-03T14:05:29.141Z">
+<meta property="article:author" content="Staskaer">
+<meta property="article:tag" content="VLA">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://example.com/2026/03/09/%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB26_3/event_gpt_1.png">
+
+<link rel="canonical" href="http://example.com/2026/03/09/%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB26_3/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'en'
+  };
+</script>
+
+  <title>2026.3论文阅读 | Staskaer</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+<style>mjx-container[jax="SVG"] {
+  direction: ltr;
+}
+
+mjx-container[jax="SVG"] > svg {
+  overflow: visible;
+}
+
+mjx-container[jax="SVG"][display="true"] {
+  display: block;
+  text-align: center;
+  margin: 1em 0;
+}
+
+mjx-container[jax="SVG"][justify="left"] {
+  text-align: left;
+}
+
+mjx-container[jax="SVG"][justify="right"] {
+  text-align: right;
+}
+
+g[data-mml-node="merror"] > g {
+  fill: red;
+  stroke: red;
+}
+
+g[data-mml-node="merror"] > rect[data-background] {
+  fill: yellow;
+  stroke: none;
+}
+
+g[data-mml-node="mtable"] > line[data-line] {
+  stroke-width: 70px;
+  fill: none;
+}
+
+g[data-mml-node="mtable"] > rect[data-frame] {
+  stroke-width: 70px;
+  fill: none;
+}
+
+g[data-mml-node="mtable"] > .mjx-dashed {
+  stroke-dasharray: 140;
+}
+
+g[data-mml-node="mtable"] > .mjx-dotted {
+  stroke-linecap: round;
+  stroke-dasharray: 0,140;
+}
+
+g[data-mml-node="mtable"] > svg {
+  overflow: visible;
+}
+
+[jax="SVG"] mjx-tool {
+  display: inline-block;
+  position: relative;
+  width: 0;
+  height: 0;
+}
+
+[jax="SVG"] mjx-tool > mjx-tip {
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+mjx-tool > mjx-tip {
+  display: inline-block;
+  padding: .2em;
+  border: 1px solid #888;
+  font-size: 70%;
+  background-color: #F8F8F8;
+  color: black;
+  box-shadow: 2px 2px 5px #AAAAAA;
+}
+
+g[data-mml-node="maction"][data-toggle] {
+  cursor: pointer;
+}
+
+mjx-status {
+  display: block;
+  position: fixed;
+  left: 1em;
+  bottom: 1em;
+  min-width: 25%;
+  padding: .2em .4em;
+  border: 1px solid #888;
+  font-size: 90%;
+  background-color: #F8F8F8;
+  color: black;
+}
+
+foreignObject[data-mjx-xml] {
+  font-family: initial;
+  line-height: normal;
+  overflow: visible;
+}
+
+.MathJax path {
+  stroke-width: 3;
+}
+
+mjx-container[display="true"] {
+  overflow: auto hidden;
+}
+
+mjx-container[display="true"] + br {
+  display: none;
+}
+</style></head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Staskaer</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">Hi, this is Staskaer</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-blog">
+
+    <a href="/blog/" rel="section"><i class="fa fa-blog fa-fw"></i>blog</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+        <li class="menu-item menu-item-links">
+
+    <a href="/links/" rel="section"><i class="fa fa-link fa-fw"></i>links</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2026/03/09/%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB26_3/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/imgs/theme_pic/head_img.png">
+      <meta itemprop="name" content="Staskaer">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Staskaer">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          2026.3论文阅读
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2026-03-09 15:50:59" itemprop="dateCreated datePublished" datetime="2026-03-09T15:50:59+08:00">2026-03-09</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2026-05-03 22:05:29" itemprop="dateModified" datetime="2026-05-03T22:05:29+08:00">2026-05-03</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB/" itemprop="url" rel="index"><span itemprop="name">论文阅读</span></a>
+                </span>
+            </span>
+
+          
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Valine: </span>
+    
+    <a title="valine" href="/2026/03/09/%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB26_3/#valine-comments" itemprop="discussionUrl">
+      <span class="post-comments-count valine-comment-count" data-xid="/2026/03/09/%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB26_3/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>一些论文</p>
+<span id="more"></span>
+<h2 id="eventgpt">EventGPT</h2>
+<p>架构：</p>
+<ol type="1">
+<li><strong>输入</strong>：将一段事件的事件划分成多个Window，每个window负责处理该窗口内的事件，组织成类似图像的格式（论文没说，也许是ts或者aa map之类的）</li>
+<li><strong>编码</strong>：openclip作为编码器，将每个window的frame编码</li>
+<li><strong>Spatio-Temporal Aggregator</strong>：因为有多个window，编码结果其实是<span class="math inline"><mjx-container class="MathJax" jax="SVG"><svg style="vertical-align: -0.05ex;" xmlns="http://www.w3.org/2000/svg" width="9.199ex" height="1.645ex" role="img" focusable="false" viewBox="0 -705 4065.9 727"><g stroke="currentColor" fill="currentColor" stroke-width="0" transform="scale(1,-1)"><g data-mml-node="math"><g data-mml-node="mi"><path data-c="1D447" d="M40 437Q21 437 21 445Q21 450 37 501T71 602L88 651Q93 669 101 677H569H659Q691 677 697 676T704 667Q704 661 687 553T668 444Q668 437 649 437Q640 437 637 437T631 442L629 445Q629 451 635 490T641 551Q641 586 628 604T573 629Q568 630 515 631Q469 631 457 630T439 622Q438 621 368 343T298 60Q298 48 386 46Q418 46 427 45T436 36Q436 31 433 22Q429 4 424 1L422 0Q419 0 415 0Q410 0 363 1T228 2Q99 2 64 0H49Q43 6 43 9T45 27Q49 40 55 46H83H94Q174 46 189 55Q190 56 191 56Q196 59 201 76T241 233Q258 301 269 344Q339 619 339 625Q339 630 310 630H279Q212 630 191 624Q146 614 121 583T67 467Q60 445 57 441T43 437H40Z"></path></g><g data-mml-node="mo" transform="translate(926.2,0)"><path data-c="2217" d="M229 286Q216 420 216 436Q216 454 240 464Q241 464 245 464T251 465Q263 464 273 456T283 436Q283 419 277 356T270 286L328 328Q384 369 389 372T399 375Q412 375 423 365T435 338Q435 325 425 315Q420 312 357 282T289 250L355 219L425 184Q434 175 434 161Q434 146 425 136T401 125Q393 125 383 131T328 171L270 213Q283 79 283 63Q283 53 276 44T250 35Q231 35 224 44T216 63Q216 80 222 143T229 213L171 171Q115 130 110 127Q106 124 100 124Q87 124 76 134T64 161Q64 166 64 169T67 175T72 181T81 188T94 195T113 204T138 215T170 230T210 250L74 315Q65 324 65 338Q65 353 74 363T98 374Q106 374 116 368T171 328L229 286Z"></path></g><g data-mml-node="mi" transform="translate(1648.4,0)"><path data-c="1D446" d="M308 24Q367 24 416 76T466 197Q466 260 414 284Q308 311 278 321T236 341Q176 383 176 462Q176 523 208 573T273 648Q302 673 343 688T407 704H418H425Q521 704 564 640Q565 640 577 653T603 682T623 704Q624 704 627 704T632 705Q645 705 645 698T617 577T585 459T569 456Q549 456 549 465Q549 471 550 475Q550 478 551 494T553 520Q553 554 544 579T526 616T501 641Q465 662 419 662Q362 662 313 616T263 510Q263 480 278 458T319 427Q323 425 389 408T456 390Q490 379 522 342T554 242Q554 216 546 186Q541 164 528 137T492 78T426 18T332 -20Q320 -22 298 -22Q199 -22 144 33L134 44L106 13Q83 -14 78 -18T65 -22Q52 -22 52 -14Q52 -11 110 221Q112 227 130 227H143Q149 221 149 216Q149 214 148 207T144 186T142 153Q144 114 160 87T203 47T255 29T308 24Z"></path></g><g data-mml-node="mo" transform="translate(2515.7,0)"><path data-c="2217" d="M229 286Q216 420 216 436Q216 454 240 464Q241 464 245 464T251 465Q263 464 273 456T283 436Q283 419 277 356T270 286L328 328Q384 369 389 372T399 375Q412 375 423 365T435 338Q435 325 425 315Q420 312 357 282T289 250L355 219L425 184Q434 175 434 161Q434 146 425 136T401 125Q393 125 383 131T328 171L270 213Q283 79 283 63Q283 53 276 44T250 35Q231 35 224 44T216 63Q216 80 222 143T229 213L171 171Q115 130 110 127Q106 124 100 124Q87 124 76 134T64 161Q64 166 64 169T67 175T72 181T81 188T94 195T113 204T138 215T170 230T210 250L74 315Q65 324 65 338Q65 353 74 363T98 374Q106 374 116 368T171 328L229 286Z"></path></g><g data-mml-node="mi" transform="translate(3237.9,0)"><path data-c="1D437" d="M287 628Q287 635 230 637Q207 637 200 638T193 647Q193 655 197 667T204 682Q206 683 403 683Q570 682 590 682T630 676Q702 659 752 597T803 431Q803 275 696 151T444 3L430 1L236 0H125H72Q48 0 41 2T33 11Q33 13 36 25Q40 41 44 43T67 46Q94 46 127 49Q141 52 146 61Q149 65 218 339T287 628ZM703 469Q703 507 692 537T666 584T629 613T590 629T555 636Q553 636 541 636T512 636T479 637H436Q392 637 386 627Q384 623 313 339T242 52Q242 48 253 48T330 47Q335 47 349 47T373 46Q499 46 581 128Q617 164 640 212T683 339T703 469Z"></path></g></g></g></svg></mjx-container></span>，沿着空间平均池化得到这段时间一共发生了什么动作；沿着时间维度最大池化得到在每个特定的时间点，整个画面整体发生了什么变化。</li>
+<li><strong>visual-adapter+event-adapter</strong>：两个mlp输入到llm中</li>
+</ol>
+<img src="/2026/03/09/%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB26_3/event_gpt_1.png" class="">
+<p>三步骤训练：</p>
+<ol type="1">
+<li>冻结openclip、llm，训练visual-adapter训练视觉语言对齐</li>
+<li>冻结openclip、llm和visual-adapter，训练event-adapter和spatio-temporal aggregator训练事件理解</li>
+<li>微调整个模型</li>
+</ol>
+<img src="/2026/03/09/%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB26_3/event_gpt_2.png" class="">
+<h2 id="rt1rt2和openvla">RT1，RT2和openvla</h2>
+<ol type="1">
+<li><strong>RT1</strong>：小模型，离散化输出，视觉编码和指令编码高度融合，transformer解码出输出token</li>
+<li><strong>RT2</strong>：vit(语义)+pale-e/PaLI-X，离散化输出，AR自回归，协同微调，每个batch内混入qa问答防止灾难性遗忘</li>
+<li><strong>openvla</strong>：siglip（语义）+dino（空间）+lamma，离散化输出，AR自回归，利用llama在Open X-Embodiment上微调（不协同微调应该是数据规模问题，基模的qa能力肯定也是下降的）</li>
+</ol>
+<img src="/2026/03/09/%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB26_3/rt2.png" class="">
+<h2 id="gt001-n1-n1.5-n1.6人型">GT001-N1, N1.5, N1.6（人型）</h2>
+<ol type="1">
+<li><strong>GT001-N1</strong>：大小脑，快慢系统。大脑vlm利用eagle-2（2b），冻结；小脑为dit，接受state作为输入，并将vlm输出作为cond注入到dit中，denoise出action。</li>
+<li><strong>GT001-N1.5</strong>：换基模，允许微调vlm扩展语义。</li>
+<li><strong>GT001-N1.6</strong>：Cosmos世界模型，不依赖视觉语言。</li>
+</ol>
+<p>数据部分（LAPA）：使用vqvae来获取视频中动作对应的action，输入相邻两帧，并将latent vector作为实际action（但这个action不能被人或者机械臂理解，只是一种语义表示，其目的是让不同的人在类似视角下的相同动作语义一致）。举例：第一人称视角下不同的人对于抓苹果这个动作的latent vector相似。</p>
+<img src="/2026/03/09/%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB26_3/LAPA.png" class="">
+<p>语义action训练：上述提取的video-action序列被作为一个单独的虚拟机器人LAPA的真值数据，由于每个机器人具有单独的decoder head，因此这个虚拟机器人的decoder head解码就是latent vector，用这种方式训练dit的先验语义。</p>
+<p>微调训练：用真实数据训练真实机器人的对应的decoder head与dit，但是这会导致灾难性遗忘，因此还引入了很多反事实场景用于训练。</p>
+<p>反事实场景：采集少量数据（例如把苹果放到篮子里），再通过sora一类视频生成模型生成反事实数据（例如把香蕉放到桶里），这些反事实数据有相同的视角和机器人外观；最后使用逆运动学IDM模型生成每帧对应的action（这也是一个神经网络，类似vqvae，但是他直接给出的就是关节状态）就可以得到大量的数据</p>
+<p>论文里在训练具体的机器人时最终用IDM取代了LAPA（post training部分，pretrain还是语义的）。因为当采集的真实数据较少时，LAPA效果更好（显然真实数据少意味着无法训练一个有效的IDM）；而反之IDM效果更好（post train还是微调dit）。</p>
+<img src="/2026/03/09/%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB26_3/gr00tn1.png" class="">
+<h2 id="internvla-a1m1">InternVLA A1，M1</h2>
+<ol type="1">
+<li><strong>A1</strong>：比M1更加强耦合，所有模型共享atten，通过mask来控制每个模型能观测到哪些输入。有理解专家、生成专家和动作专家，AR自回归，每个专家通过设计mask可以观测到输入以及上一个专家的输出。生成专家会基于当前几帧生成未来帧的结果（可以理解成未来物体的位置或者执行动作后结果），最后动作专家会结合当前以及未来toekn输出动作结果。其中动作专家是在COSMOS VAE结果下进行编码，可以通过decode解码出未来的帧。</li>
+<li><strong>M1</strong>：Qwen2.5-VL-3B-Instruct作为planner，DINOv2+Dit作为action expert。通过cot的方式先输出spatial planner，然后通过再结合planner的结果输出每个到达坐标，最后这些信息通过projective layer作为cond进入dit。训练时先使用2D spatial数据pretrain，然后post train则是利用spatial训练。</li>
+</ol>
+<p>M1这个planner强调spatial，输出的cot是像素空间点对点的移动；pi0.5的planner则是逻辑层级上的分级（先做什么，在做什么）。并且M1松耦合，通过projective layer转换cond；pi0.5则是紧耦合，直接输出expert接收的cond。</p>
+<p>对于A1而言，其提供了一个稳健的物理先验用于估计未来事件，比如想要抓取一个传送带的物体，常规vla一般只能抓取观测时的位姿从而失效。而a1由于有生成专家，所以可以基于前几帧的数据生成未来某个时刻下物体的位置，所以动作专家可以基于上述信息做出正确的决策。但这个模型还是mllm作为backbone（Qwen3-VL）</p>
+<img src="/2026/03/09/%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB26_3/interna1.png" class="">
+<img src="/2026/03/09/%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB26_3/internvlam1.png" class="">
+<h2 id="世界动作模型dreamzerolingbot-va">世界动作模型DreamZero、lingbot-va</h2>
+<p>VAM其实就是把backbone换成了video generation模型，然后通过预测未来时刻帧来对齐physical，先天具备数据大规模化、模型可解释性和隐式物理信息表征。</p>
+<ol type="1">
+<li><strong>lingbot-va</strong>： Wan2.2-5B，MOT架构。第一步，根据指令让世界模型生成解决方案（未来的视频）；第二步，使用逆运动学模型（IDM）从未来动作里解码出相应的action。输入会混合frame和action，且按照不同采样比例融合；同时由于两者数据分布差异大，通过<span class="math inline"><mjx-container class="MathJax" jax="SVG"><svg style="vertical-align: -1.334ex;" xmlns="http://www.w3.org/2000/svg" width="3.923ex" height="3.799ex" role="img" focusable="false" viewBox="0 -1089.5 1734 1679.1"><g stroke="currentColor" fill="currentColor" stroke-width="0" transform="scale(1,-1)"><g data-mml-node="math"><g data-mml-node="mfrac"><g data-mml-node="msqrt" transform="translate(231,456.2) scale(0.707)"><g transform="translate(853,0)"><g data-mml-node="msub"><g data-mml-node="mi"><path data-c="1D451" d="M366 683Q367 683 438 688T511 694Q523 694 523 686Q523 679 450 384T375 83T374 68Q374 26 402 26Q411 27 422 35Q443 55 463 131Q469 151 473 152Q475 153 483 153H487H491Q506 153 506 145Q506 140 503 129Q490 79 473 48T445 8T417 -8Q409 -10 393 -10Q359 -10 336 5T306 36L300 51Q299 52 296 50Q294 48 292 46Q233 -10 172 -10Q117 -10 75 30T33 157Q33 205 53 255T101 341Q148 398 195 420T280 442Q336 442 364 400Q369 394 369 396Q370 400 396 505T424 616Q424 629 417 632T378 637H357Q351 643 351 645T353 664Q358 683 366 683ZM352 326Q329 405 277 405Q242 405 210 374T160 293Q131 214 119 129Q119 126 119 118T118 106Q118 61 136 44T179 26Q233 26 290 98L298 109L352 326Z"></path></g><g data-mml-node="mi" transform="translate(553,-150) scale(0.707)"><path data-c="1D463" d="M173 380Q173 405 154 405Q130 405 104 376T61 287Q60 286 59 284T58 281T56 279T53 278T49 278T41 278H27Q21 284 21 287Q21 294 29 316T53 368T97 419T160 441Q202 441 225 417T249 361Q249 344 246 335Q246 329 231 291T200 202T182 113Q182 86 187 69Q200 26 250 26Q287 26 319 60T369 139T398 222T409 277Q409 300 401 317T383 343T365 361T357 383Q357 405 376 424T417 443Q436 443 451 425T467 367Q467 340 455 284T418 159T347 40T241 -11Q177 -11 139 22Q102 54 102 117Q102 148 110 181T151 298Q173 362 173 380Z"></path></g></g></g><g data-mml-node="mo" transform="translate(0,18)"><path data-c="221A" d="M95 178Q89 178 81 186T72 200T103 230T169 280T207 309Q209 311 212 311H213Q219 311 227 294T281 177Q300 134 312 108L397 -77Q398 -77 501 136T707 565T814 786Q820 800 834 800Q841 800 846 794T853 782V776L620 293L385 -193Q381 -200 366 -200Q357 -200 354 -197Q352 -195 256 15L160 225L144 214Q129 202 113 190T95 178Z"></path></g><rect width="945.9" height="42.4" x="853" y="775.6"></rect></g><g data-mml-node="msqrt" transform="translate(220,-473.5) scale(0.707)"><g transform="translate(853,0)"><g data-mml-node="msub"><g data-mml-node="mi"><path data-c="1D451" d="M366 683Q367 683 438 688T511 694Q523 694 523 686Q523 679 450 384T375 83T374 68Q374 26 402 26Q411 27 422 35Q443 55 463 131Q469 151 473 152Q475 153 483 153H487H491Q506 153 506 145Q506 140 503 129Q490 79 473 48T445 8T417 -8Q409 -10 393 -10Q359 -10 336 5T306 36L300 51Q299 52 296 50Q294 48 292 46Q233 -10 172 -10Q117 -10 75 30T33 157Q33 205 53 255T101 341Q148 398 195 420T280 442Q336 442 364 400Q369 394 369 396Q370 400 396 505T424 616Q424 629 417 632T378 637H357Q351 643 351 645T353 664Q358 683 366 683ZM352 326Q329 405 277 405Q242 405 210 374T160 293Q131 214 119 129Q119 126 119 118T118 106Q118 61 136 44T179 26Q233 26 290 98L298 109L352 326Z"></path></g><g data-mml-node="mi" transform="translate(553,-150) scale(0.707)"><path data-c="1D44E" d="M33 157Q33 258 109 349T280 441Q331 441 370 392Q386 422 416 422Q429 422 439 414T449 394Q449 381 412 234T374 68Q374 43 381 35T402 26Q411 27 422 35Q443 55 463 131Q469 151 473 152Q475 153 483 153H487Q506 153 506 144Q506 138 501 117T481 63T449 13Q436 0 417 -8Q409 -10 393 -10Q359 -10 336 5T306 36L300 51Q299 52 296 50Q294 48 292 46Q233 -10 172 -10Q117 -10 75 30T33 157ZM351 328Q351 334 346 350T323 385T277 405Q242 405 210 374T160 293Q131 214 119 129Q119 126 119 118T118 106Q118 61 136 44T179 26Q217 26 254 59T298 110Q300 114 325 217T351 328Z"></path></g></g></g><g data-mml-node="mo" transform="translate(0,18.4)"><path data-c="221A" d="M95 178Q89 178 81 186T72 200T103 230T169 280T207 309Q209 311 212 311H213Q219 311 227 294T281 177Q300 134 312 108L397 -77Q398 -77 501 136T707 565T814 786Q820 800 834 800Q841 800 846 794T853 782V776L620 293L385 -193Q381 -200 366 -200Q357 -200 354 -197Q352 -195 256 15L160 225L144 214Q129 202 113 190T95 178Z"></path></g><rect width="977.1" height="42.4" x="853" y="776"></rect></g><rect width="1494" height="60" x="120" y="220"></rect></g></g></g></svg></mjx-container></span>这个因子快速收敛。最后，实际上不需要精确采样出video，带噪声的video一样可以用于后续action推理</li>
+<li><strong>dreamzero</strong>： Wan2.1-I2V-14B，同时预测出video块和action块。latent video vector和action vector联合向量做fm损失。</li>
+</ol>
+<p>感觉小一点的模型用MoT会好一些。这两篇文章还有很多内容在加速上。另外，dreamzero做了只有人物演示post training并有显著提升的实现。</p>
+<img src="/2026/03/09/%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB26_3/linbotva.png" class="">
+<h2 id="dam-vla-2026.3-arxiv">DAM-VLA 2026.3 arxiv</h2>
+<p>引入MoE架构，将diffusion head分为快速移动head（接近）和精细操作head（处理）。vlm输出一个weight，用于评估当前处于哪个状态。用dino的cls和register token分别处理全局或者局部编码（register token让dino比vit在atten图上降低伪影）。</p>
+<p>全局轨迹级权重：由于精细操作和长程操作数据量不匹配，作者选出夹爪移动的瞬间，并用不对称高斯分布对附近loss加权。夹取前权重大；而夹取后权重小，因为夹取了就相对比较稳定了。</p>
+<p>局部动作块级权重：一般一次会一次预测出一个action chunk，但是由于moe架构，导致预测近的比较准，远的就不准。用指数衰减对一个action chunk进行加权。</p>
+<img src="/2026/03/09/%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB26_3/damvla.png" class="">
+<h2 id="vlm-posemanip灵巧手的文章-2026.3-aei">VLM-PoseManip（灵巧手的文章） 2026.3 AEI</h2>
+<p>非end2end，vlm+G-DNINO用于分解指令+HOID检测；Diffusion head计算出物体的6D pose；IK+优化+affordance计算灵巧手params。</p>
+<p>工程向论文。</p>
+<h2 id="physgraph-2026.3-arxiv">PhysGraph 2026.3 arxiv</h2>
+<p>GNN对HOI建模，物体（手掌，手指，工具，物体）为节点，接触关系（物理连接，接触）为边，构建图神经网络。</p>
+<p>通过引入物理先验偏置，来为网络提供先验信息，先验的偏置矩阵会被直接加在atten map上。具体而言，包括空间先验（沿着机械臂/手指关节，距离越近的部件越应该互相参考）、边缘偏置（区分两个部件是骨骼硬连接还是物理接触）、几何偏置（在三维空间中靠得越近的部件，交互的可能性越大，即使它们不属于同一只手）、解剖学偏置（同一根手指上的关节具有串联运动特性，不同手指的同一层级关节，比如所有手指的中关节，具有协同收缩的特）。</p>
+<p>偏置矩阵被直接加在atten上，对于增加偏置的节点呈现出更高的交互可能。为了避乱偏置混乱，利用多头注意力本身特性，在不同head上增加不同的偏置，从而让每个head学习不同先验。</p>
+<p>对标maniptrans，但是实验不充分，头重脚轻。</p>
+<h2 id="mem-multi-scale-embodied-memory-for-vision-language-action-models-2026.3-arixv">MEM: Multi-Scale Embodied Memory for Vision Language Action Models 2026.3 arixv</h2>
+<p>Pi0组提出的解决长时记忆问题的一篇文章，比如让机器人在厨房连续工作15分钟这种任务是很困难的，这篇文章能够在不牺牲推理速度的前提下，让机器人拥有最长15分钟尺度的记忆架构。</p>
+<p>短期记忆和长期记忆都是必不可少的，但是不能直接通过将累计帧全部输入的方式来增加记忆时间，否则计算量爆炸。这篇文章对于短期记忆处理方法是：先看懂这一帧有什么东西在哪里（空间），再隔几层网络让模型想这个东西过去几帧里是怎么动的（时间）；而对于长期记忆处理方法是内置一个高层策略，将已经做过的动作做成总结丢弃冗余信息。</p>
+<p>这篇文章的短期记忆虽然输入多帧，但是通过一个video encoder编码后只会出单帧，不会把所有的frame全部输入到llm里。这个video encoder会让每帧里的patch最对比，吸收掉所有冗余表征。</p>
+<img src="/2026/03/09/%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB26_3/mem.png" class="">
+<p>图像块只跟同一帧里图像对比（白色箭头），每隔4层网络施加一次时间注意力，每个patch只跟过去时间上的patch对比（黑色箭头）。当一切计算完成后，把历史17帧丢弃只保留最新帧。video encoder是连同mllm一同训练的。</p>
+<h2 id="delta-vla-2026.3-arxiv看起来投的应该是eccv">Delta VLA 2026.3 arxiv(看起来投的应该是eccv)</h2>
+<ol type="1">
+<li>核心是用一个token取代图像，降低运算量</li>
+<li>提出了两个组件PWKE (先验引导的世界知识提取器)和LWVQ (潜在世界变化量化)。前者用于将输入图像编码成Wt(包含区域token，语义token，深度token，用siglip和dino提取出来；从sam3等模型蒸馏)；后者负责将模型预测出来的Wt+1的Δ值量化，将回归问题变为分类问题。</li>
+<li>CA-Atten负责让模型在深度预测时仅利用深度token的信息，避免模态泄露。同时因为不是自回归，CA-Atten也负责确保每一token仅能利用到自身相关的信息，同时负责并行解码（仅针对action部分）。</li>
+<li>action chunk内部居然是双向atten，居然可以这么做嘛？</li>
+<li>非自回归。</li>
+</ol>
+<img src="/2026/03/09/%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB26_3/delta_vla.png" class="">
+<h2 id="hif-vla-2026.3-arxiv">Hif VLA 2026.3 arxiv</h2>
+<ol type="1">
+<li>openvla这种基于马尔可夫假说，只能通过当前帧来规划动作，但是如果将所有历史帧传进来又会有很大开销。</li>
+<li>使用视频编码器获取到运动矢量，然后使用这些矢量作为视频编码后送入到vlm。同时vlm也会同时预测未来的运动矢量和action。</li>
+<li>把历史特征当成Condition，用AdaLN注入到MLP/Attention Head里，而不是塞进VLM里，因为vlm是在文本-图像模态上训练的，不认识这种数据，会降低泛化性。</li>
+</ol>
+<img src="/2026/03/09/%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB26_3/hifvla.png" class="">
+<h2 id="vla-adapter-2025.9">vla-adapter 2025.9</h2>
+<p>理论文章，值得一看。主要分析了不同的VL特征（单层 vs 多层；Raw vs ActionQuery）对动作生成的具体影响，并得出了“全层特征融合+双特征结合最佳”的结论。</p>
+<p>现有 VLA 模型的桥接范式主要分为两大流派：使用Raw Features或引入ActionQuery。</p>
+<p>早期的 RoboVLMs 等，认为 VLM 的最后一层包含了最高级的语义信息，直接把最后一层的特征送到 Policy 里。英伟达的 GR00T 系列，认为中间层保留了更多的空间细节和多模态对齐信息，因此提取特定的中间层（或前半部分层）送入 Policy。OpenVLA-OFT，在 VLM 的最后一层加入可学习的 Token（ActionQuery），让这个 Token 去聚集信息，然后只把这个 Token 送给 Policy。像pi0这种则是提取的是 VLM 的所有层的输出特征，然后layer2layer的当作cond注入到policy里。</p>
+<img src="/2026/03/09/%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB26_3/vl2a.png" class="">
+<p>key findings：</p>
+<ol type="1">
+<li>对于 Raw features，中间层比深层更好，深层基本为语义信息，而中间层特征刚好完成了视觉和文本的初步融合，同时保留了丰富的局部细节和空间坐标</li>
+<li>对于 ActionQuery，深层比浅层/中间层更好，因为初始化的action query是无意义的</li>
+<li>逐层注入policy效果显著好于单层注入。</li>
+</ol>
+<img src="/2026/03/09/%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB26_3/val_adapter.png" class="">
+<p>最终设计：</p>
+<ol type="1">
+<li>逐层注入，policy和vlm为等层数</li>
+<li>同时使用Raw features和ActionQuery，可学习标量g作为raw feature的贡献度，tanh后作用在attention结果上拼接</li>
+<li>action query和本体状态P联合后做cross attention</li>
+</ol>
+<p>没看代码，但应该和pi0那种双流结构是类似的吧。</p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/VLA/" rel="tag"># VLA</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2025/05/24/VGGT-SLAM%E4%B8%8EMASt3R-SLAM%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB/" rel="prev" title="VGGT-SLAM与MASt3R-SLAM论文阅读">
+      <i class="fa fa-chevron-left"></i> VGGT-SLAM与MASt3R-SLAM论文阅读
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2026/04/02/%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB26-4/" rel="next" title="2026.4论文阅读">
+      2026.4论文阅读 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+    <div class="comments" id="valine-comments"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#eventgpt"><span class="nav-number">1.</span> <span class="nav-text">EventGPT</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#rt1rt2%E5%92%8Copenvla"><span class="nav-number">2.</span> <span class="nav-text">RT1，RT2和openvla</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#gt001-n1-n1.5-n1.6%E4%BA%BA%E5%9E%8B"><span class="nav-number">3.</span> <span class="nav-text">GT001-N1, N1.5, N1.6（人型）</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#internvla-a1m1"><span class="nav-number">4.</span> <span class="nav-text">InternVLA A1，M1</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%96%E7%95%8C%E5%8A%A8%E4%BD%9C%E6%A8%A1%E5%9E%8Bdreamzerolingbot-va"><span class="nav-number">5.</span> <span class="nav-text">世界动作模型DreamZero、lingbot-va</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#dam-vla-2026.3-arxiv"><span class="nav-number">6.</span> <span class="nav-text">DAM-VLA 2026.3 arxiv</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#vlm-posemanip%E7%81%B5%E5%B7%A7%E6%89%8B%E7%9A%84%E6%96%87%E7%AB%A0-2026.3-aei"><span class="nav-number">7.</span> <span class="nav-text">VLM-PoseManip（灵巧手的文章） 2026.3 AEI</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#physgraph-2026.3-arxiv"><span class="nav-number">8.</span> <span class="nav-text">PhysGraph 2026.3 arxiv</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#mem-multi-scale-embodied-memory-for-vision-language-action-models-2026.3-arixv"><span class="nav-number">9.</span> <span class="nav-text">MEM: Multi-Scale Embodied Memory for Vision Language Action Models 2026.3 arixv</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#delta-vla-2026.3-arxiv%E7%9C%8B%E8%B5%B7%E6%9D%A5%E6%8A%95%E7%9A%84%E5%BA%94%E8%AF%A5%E6%98%AFeccv"><span class="nav-number">10.</span> <span class="nav-text">Delta VLA 2026.3 arxiv(看起来投的应该是eccv)</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#hif-vla-2026.3-arxiv"><span class="nav-number">11.</span> <span class="nav-text">Hif VLA 2026.3 arxiv</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#vla-adapter-2025.9"><span class="nav-number">12.</span> <span class="nav-text">vla-adapter 2025.9</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Staskaer"
+      src="/imgs/theme_pic/head_img.png">
+  <p class="site-author-name" itemprop="name">Staskaer</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">99</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">11</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">25</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/Staskaer" title="Github → https:&#x2F;&#x2F;github.com&#x2F;Staskaer" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:liujiaxin011121@gmail.com" title="E-Mail → mailto:liujiaxin011121@gmail.com" rel="noopener" target="_blank"><i class="fa fa-envelope fa-fw"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://www.zhihu.com/people/staskaer" title="Zhihu → https:&#x2F;&#x2F;www.zhihu.com&#x2F;people&#x2F;staskaer" rel="noopener" target="_blank"><i class="fab fa-zhihu fa-fw"></i></a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2026</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Staskaer</span>
+</div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+
+<script>
+NexT.utils.loadComments(document.querySelector('#valine-comments'), () => {
+  NexT.utils.getScript('https://cdn.jsdelivr.net/npm/valine@1.5.1/dist/Valine.min.js', () => {
+    var GUEST = ['nick', 'mail', 'link'];
+    var guest = 'nick,mail,link';
+    guest = guest.split(',').filter(item => {
+      return GUEST.includes(item);
+    });
+    new Valine({
+      el         : '#valine-comments',
+      verify     : false,
+      notify     : false,
+      appId      : 'xH8NDrh9u4SQrUpQOd0lICnX-MdYXbMMI',
+      appKey     : 'jl3JjPS4jsosZG29Zv24Y7LE',
+      placeholder: "Just go go",
+      avatar     : 'mm',
+      meta       : guest,
+      pageSize   : '10' || 10,
+      visitor    : false,
+      lang       : 'zh-Hans' || 'zh-cn',
+      path       : location.pathname,
+      recordIP   : false,
+      serverURLs : 'https://xh8ndrh9.api.lncldglobal.com'
+    });
+  }, window.Valine);
+});
+</script>
+
+</body>
+</html>
+
