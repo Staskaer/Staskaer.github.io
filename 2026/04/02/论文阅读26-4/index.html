@@ -37,8 +37,13 @@
 <meta property="og:image" content="http://example.com/2026/04/02/%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB26-4/lapa.png">
 <meta property="og:image" content="http://example.com/2026/04/02/%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB26-4/jala.png">
 <meta property="og:image" content="http://example.com/2026/04/02/%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB26-4/vlajepa.png">
+<meta property="og:image" content="http://example.com/2026/04/02/%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB26-4/vipavla.png">
+<meta property="og:image" content="http://example.com/2026/04/02/%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB26-4/rephasevla.png">
+<meta property="og:image" content="http://example.com/2026/04/02/%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB26-4/rephase_wm.png">
+<meta property="og:image" content="http://example.com/2026/04/02/%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB26-4/acotvla.png">
+<meta property="og:image" content="http://example.com/2026/04/02/%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB26-4/tuna2.png">
 <meta property="article:published_time" content="2026-04-02T12:17:13.000Z">
-<meta property="article:modified_time" content="2026-05-03T15:40:14.622Z">
+<meta property="article:modified_time" content="2026-05-05T08:28:55.296Z">
 <meta property="article:author" content="Staskaer">
 <meta property="article:tag" content="VLA">
 <meta name="twitter:card" content="summary">
@@ -330,7 +335,7 @@ mjx-container[display="true"] + br {
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2026-05-03 23:40:14" itemprop="dateModified" datetime="2026-05-03T23:40:14+08:00">2026-05-03</time>
+                <time title="Modified: 2026-05-05 16:28:55" itemprop="dateModified" datetime="2026-05-05T16:28:55+08:00">2026-05-05</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -414,6 +419,31 @@ mjx-container[display="true"] + br {
 <img src="/2026/04/02/%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB26-4/lapa.png" class="">
 <img src="/2026/04/02/%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB26-4/jala.png" class="">
 <img src="/2026/04/02/%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB26-4/vlajepa.png" class="">
+<h2 id="vipa-vla-cvpr-2026">VIPA VLA cvpr 2026</h2>
+<p>使用3D信息来融入vla，而不是从2d rgb frame推理3d信息。3D编码器使用cut3r，多阶段对齐训练：</p>
+<ol type="1">
+<li>3D 视觉预训练：仅训练cut3r的projective layer，使用spatial vqa数据</li>
+<li>3D 动作预训练：训练projective layer和backbone，引入motion token，使用action数据来尝试预测action</li>
+<li>post train：训练backbone和dit，仅使用少量数据在真机微调</li>
+</ol>
+<p>Motion token是类似openvla的离散动作token（xyz+移动），在2阶段用于生成人手的动作（比如动作序列轨迹，end effector的traj），3阶段输入dit作为条件（相当于已经训练了一个粗轨迹出来了）。</p>
+<img src="/2026/04/02/%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB26-4/vipavla.png" class="">
+<h2 id="rehearsevla-cvpr-2026">RehearseVLA cvpr 2026</h2>
+<p>用一个world model来负责模拟仿真环境，它接受action后输出future frame，当作一个simulator来用，做few shot vla。</p>
+<p>仿真环境下有一个world model、Instant Reflector（判断vla是否结束，给出稠密的rl奖励，这和pi06的稀疏奖励不太一样）、Scale Head（vla模型判断当前的vla动作的不确定度）。当Scale Head大的时候，会在wm里探索更多的动作。然后再real world环境进行sft。</p>
+<p>其中world model使用vggt+clip几何约束，就是构建了一个action+x0-&gt;x1的映射。</p>
+<img src="/2026/04/02/%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB26-4/rephasevla.png" class="">
+<img src="/2026/04/02/%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB26-4/rephase_wm.png" class="">
+<h2 id="acot-vla-cvpr-2026">Acot vla cvpr 2026</h2>
+<p>在action空间进行cot推理，而不是像素空间或者文本空间。</p>
+<p>IAR负责从图像文本的kv cache里提取隐式动作先验（类似llm 的hiddent status）；EAR是一个带cross attention的dit，生成显示action traj cot（用gt action做监督）；AGP融合二者信息出action。</p>
+<p>训练的时候EAR因为随机初始化，所以ear的监督信号是独立的，agp用ear的gt作为输入。</p>
+<img src="/2026/04/02/%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB26-4/acotvla.png" class="">
+<h2 id="tuna-2-cvpr-2026">TUNA-2 cvpr 2026</h2>
+<p>统一多模态大模型，去掉了vae压缩生成和siglip的理解。直接对raw image切分patch编码后送入llm，llm直接通过一个flow matching在pixel space里做生成。</p>
+<p>第一步先把vae去掉，raw image切分后用siglip一类编码器编码送入llm，llm也不在vae latent space做diffusion。第二步把siglip去掉，直接切分，然后projective layer进入llm。</p>
+<p>这里因为直接在pixel space做diffusion，所以flow matching相关推导沿用jit的。在训练的时候用learnable mask强迫模型学习上下文。</p>
+<img src="/2026/04/02/%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB26-4/tuna2.png" class="">
 
     </div>
 
@@ -495,7 +525,7 @@ mjx-container[display="true"] + br {
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#mmada-vla-2026.4-arxiv"><span class="nav-number">1.</span> <span class="nav-text">MMaDA-VLA 2026.4 arxiv</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#lamp-2026.4-arxiv"><span class="nav-number">2.</span> <span class="nav-text">LaMP 2026.4 arxiv</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#pi0-0.5-0.6-0.7"><span class="nav-number">3.</span> <span class="nav-text">pi0 0.5 0.6 0.7</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#gigabrain-0.5m-2026.2-arxiv"><span class="nav-number">4.</span> <span class="nav-text">GigaBrain-0.5M* 2026.2 arxiv</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#jepa-lapa-jala-vla-jepa"><span class="nav-number">5.</span> <span class="nav-text">JEPA LAPA JALA VLA-JEPA</span></a></li></ol></div>
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#mmada-vla-2026.4-arxiv"><span class="nav-number">1.</span> <span class="nav-text">MMaDA-VLA 2026.4 arxiv</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#lamp-2026.4-arxiv"><span class="nav-number">2.</span> <span class="nav-text">LaMP 2026.4 arxiv</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#pi0-0.5-0.6-0.7"><span class="nav-number">3.</span> <span class="nav-text">pi0 0.5 0.6 0.7</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#gigabrain-0.5m-2026.2-arxiv"><span class="nav-number">4.</span> <span class="nav-text">GigaBrain-0.5M* 2026.2 arxiv</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#jepa-lapa-jala-vla-jepa"><span class="nav-number">5.</span> <span class="nav-text">JEPA LAPA JALA VLA-JEPA</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#vipa-vla-cvpr-2026"><span class="nav-number">6.</span> <span class="nav-text">VIPA VLA cvpr 2026</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#rehearsevla-cvpr-2026"><span class="nav-number">7.</span> <span class="nav-text">RehearseVLA cvpr 2026</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#acot-vla-cvpr-2026"><span class="nav-number">8.</span> <span class="nav-text">Acot vla cvpr 2026</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#tuna-2-cvpr-2026"><span class="nav-number">9.</span> <span class="nav-text">TUNA-2 cvpr 2026</span></a></li></ol></div>
       </div>
       <!--/noindex-->
 
